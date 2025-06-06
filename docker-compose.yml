@@ -1,54 +1,131 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:17
+    image: postgres:17-alpine
     container_name: vgu_care_db
     environment:
       POSTGRES_DB: vgu_care
       POSTGRES_USER: vgu_user
       POSTGRES_PASSWORD: vgu_password
+      POSTGRES_HOST_AUTH_METHOD: md5 
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"  
+      
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    deploy:
+      resources:
+        limits:
+          memory: 256M  
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vgu_user -d vgu_care"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
     networks:
       - vgu_network
 
   # Backend API
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      target: development
+      dockerfile: Dockerfile
     container_name: vgu_care_api
     environment:
       - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=vgu_care
+      - DB_USER=vgu_user
+      - DB_PASSWORD=vgu_password
       - DATABASE_URL=postgresql://vgu_user:vgu_password@postgres:5432/vgu_care
+      - JWT_SECRET=your_jwt_secret_key_here
+      - PORT=5000
     ports:
       - "5000:5000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
     networks:
       - vgu_network
 
   # Frontend React App
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: development
+      dockerfile: Dockerfile
     container_name: vgu_care_frontend
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/build
     environment:
       - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      - vgu_network
+
+  # Optional: PgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: vgu_care_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@vgu.edu.vn
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    profiles:
+      - tools
     networks:
       - vgu_network
 
 volumes:
   postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  backend_logs:
+    driver: local
 
 networks:
   vgu_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
