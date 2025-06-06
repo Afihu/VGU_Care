@@ -1,4 +1,4 @@
-const authService = require('./services/authService');
+const authService = require('../backend/services/authService');
 
 async function testAuth() {
   try {

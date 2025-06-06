@@ -18,25 +18,14 @@ The app aims to provide a platform for medical personnels and students to commun
 4. **Access the application:**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:5000
-   - Database: localhost:5432
+   - Database: localhost:5433 (through pgAdmin or any PostgreSQL client)
 
-## 📋 Current Implementation Status
+*Please refer to the [Installation Guide](docs/Installation.md) for detailed setup instructions if you are having problems.*
 
-### ✅ **Completed:**
-- Docker development environment setup
-- Database schema with sample data
-- Basic project structure
-- Basic authentication service (stub implementation)
+## 📚 Documentation
 
-### 🚧 **In Progress:**
-- User authentication system
-- API route structure
-
-### 📋 **Planned Features:**
-- Appointment Management
-- Communication Platform
-- Profile Management
-- Dashboard
+- **[Installation Guide](docs/Installation.md)** - Detailed setup instructions
+- **[Docker Guide](docs/Docker.md)** - Docker commands and troubleshooting
 
 ## 🏗️ Architecture
 
@@ -64,13 +53,6 @@ VGU_Care/
 ├── tests/                  # Test files
 └── README.md
 ```
-
-## 📚 Documentation
-
-- **[Installation Guide](docs/Installation.md)** - Detailed setup instructions
-- **[Docker Guide](docs/Docker.md)** - Docker commands and troubleshooting
-- **[API Documentation](docs/API_Documentation.md)** - Backend API reference
-- **[Backend README](docs/Backend_README.md)** - Backend development guide
 
 ## 📄 License
 
