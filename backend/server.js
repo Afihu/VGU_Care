@@ -15,11 +15,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // Routes (to be implemented)
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/appointments', require('./routes/appointmentRoutes'));
+// app.use('/api/auth', require('./routes/authRoutes'));
+// app.use('/api/appointments', require('./routes/appointmentRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`VGU Care Server running on port ${PORT}`);
 });
