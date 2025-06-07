@@ -1,11 +1,12 @@
-// This is a minimal Node.js server setup for testing purposes.
+import React from 'react';
+import Login from './pages/Login';
+
 function App() {
   return (
-    <div>
-      <h1>VGU Care Frontend</h1>
-      <p>React app is running!</p>
+    <div className="App">
+      <Login />
     </div>
   );
 }
 
-export default App; 
+export default App;

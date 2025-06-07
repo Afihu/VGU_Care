@@ -1,19 +1,9 @@
-const authService = require('../services/authService');
-
-exports.signup = async (req, res) => {
-  try {
-    const user = await authService.createUser(req.body.email, req.body.password);
-    res.status(201).json({ message: 'User created', userId: user.id });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+const signup = async (req, res) => {
+  res.json({ message: 'Signup functionality coming soon' });
 };
 
-exports.login = async (req, res) => {
-  try {
-    const token = await authService.authenticate(req.body.email, req.body.password);
-    res.json({ message: 'Login successful', token });
-  } catch (err) {
-    res.status(401).json({ error: err.message });
-  }
+const login = async (req, res) => {
+  res.json({ message: 'User login functionality coming soon' });
 };
+
+module.exports = { signup, login };
