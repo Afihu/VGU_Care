@@ -3,7 +3,11 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 
 exports.createUser = async (email, password, userData) => {
+  const client = await require('../config/database').pool.connect();
+  
   try {
+    await client.query('BEGIN');
+
     // Validate VGU email
     if (!email.includes('@vgu.edu.vn')) {
       throw new Error('Invalid VGU email domain');
@@ -14,15 +18,52 @@ exports.createUser = async (email, password, userData) => {
     const password_hash = await bcrypt.hash(password, saltRounds);
 
     // Insert user into database
-    const result = await query(`
+    const userResult = await client.query(`
       INSERT INTO users (name, gender, age, role, email, password_hash)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING user_id, email, role
     `, [userData.name, userData.gender, userData.age, userData.role, email, password_hash]);
 
-    return result.rows[0];
+    const user = userResult.rows[0];
+
+    // Insert role-specific data
+    if (userData.role === 'student') {
+      const { intakeYear, major } = userData.roleSpecificData || {};
+      if (!intakeYear || !major) {
+        throw new Error('Students must provide intake year and major');
+      }
+      
+      await client.query(`
+        INSERT INTO students (user_id, intake_year, major)
+        VALUES ($1, $2, $3)
+      `, [user.user_id, intakeYear, major]);
+      
+    } else if (userData.role === 'medical_staff') {
+      const { specialty } = userData.roleSpecificData || {};
+      if (!specialty) {
+        throw new Error('Medical staff must provide specialty');
+      }
+      
+      await client.query(`
+        INSERT INTO medical_staff (user_id, specialty)
+        VALUES ($1, $2)
+      `, [user.user_id, specialty]);
+      
+    } else if (userData.role === 'admin') {
+      await client.query(`
+        INSERT INTO admins (user_id)
+        VALUES ($1)
+      `, [user.user_id]);
+    }
+
+    await client.query('COMMIT');
+    return user;
+
   } catch (error) {
+    await client.query('ROLLBACK');
     throw new Error(`User creation failed: ${error.message}`);
+  } finally {
+    client.release();
   }
 };
 
