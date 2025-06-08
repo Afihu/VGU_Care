@@ -1,12 +1,22 @@
 import React from 'react';
-import './Header.css';
+import '../css/Header.css';
+import {useLocation} from 'react-router-dom';
 
 function Header() {
+    const location = useLocation();
+    const hideHeaderforPaths = ['/login']; //add more when needed
+
+    if (hideHeaderforPaths.includes(location.pathname)) {
+       return (
+        <></>
+       )
+    }
+
     return(
         <header className='header'>
             <img src = './assets/images/yes.jpg' className = 'logo-image' />
         </header>
-    )
+    );
 }
 
 export default Header;
