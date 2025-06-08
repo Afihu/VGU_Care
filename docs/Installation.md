@@ -248,6 +248,6 @@ docker-compose up --build
 | **Service** | **Internal Port** | **External Port** | **Access URL** |
 |-------------|------------------|-------------------|----------------|
 | **PostgreSQL** | 5432 | 5433 | `localhost:5433` |
-| **Backend API** | 5000 | 5000 | `http://localhost:5000` |
+| **Backend API** | 5001 | 5001 | `http://localhost:5001` |  <!-- Changed from 5000 -->
 | **Frontend** | 3000 | 3000 | `http://localhost:3000` |
 | **pgAdmin** | 80 | 8080 | `http://localhost:8080` |

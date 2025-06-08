@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -24,18 +23,10 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Login successful
         setMessage(`Login successful! Welcome ${data.user.email}`);
         console.log('Login successful:', data);
-        
-        // Store user data (optional)
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Redirect or handle successful login
-        // Example: window.location.href = '/dashboard';
-        
       } else {
-        // Login failed
         setMessage(data.message || 'Login failed');
         console.error('Login failed:', data);
       }
@@ -49,46 +40,72 @@ export default function Login() {
   };
 
   return (
-    <div className="p-4 max-w-sm mx-auto">
-      <h2 className="text-xl mb-4">Login</h2>
-      <form onSubmit={handleLogin} className="flex flex-col gap-3">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="p-2 border rounded"
-          required
-          disabled={isLoading}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="p-2 border rounded"
-          required
-          disabled={isLoading}
-        />
+    <div style={{ padding: '20px', maxWidth: '400px', margin: '50px auto', border: '1px solid #ccc', borderRadius: '8px' }}>
+      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>VGU Care Login</h2>
+      <form onSubmit={handleLogin}>
+        <div style={{ marginBottom: '15px' }}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={isLoading}
+            style={{ 
+              width: '100%', 
+              padding: '12px', 
+              fontSize: '16px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={isLoading}
+            style={{ 
+              width: '100%', 
+              padding: '12px', 
+              fontSize: '16px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
         <button 
           type="submit" 
-          className={`p-2 rounded text-white ${
-            isLoading 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-blue-500 hover:bg-blue-600'
-          }`}
           disabled={isLoading}
+          style={{ 
+            width: '100%', 
+            padding: '12px', 
+            backgroundColor: isLoading ? '#ccc' : '#007bff',
+            color: 'white',
+            border: 'none',
+            fontSize: '16px',
+            borderRadius: '4px',
+            cursor: isLoading ? 'not-allowed' : 'pointer'
+          }}
         >
           {isLoading ? 'Logging in...' : 'Login'}
         </button>
         {message && (
-          <p className={`text-sm mt-2 ${
-            message.includes('successful') 
-              ? 'text-green-600' 
-              : 'text-red-600'
-          }`}>
+          <div style={{ 
+            marginTop: '15px', 
+            padding: '10px',
+            borderRadius: '4px',
+            backgroundColor: message.includes('successful') ? '#d4edda' : '#f8d7da',
+            color: message.includes('successful') ? '#155724' : '#721c24',
+            border: `1px solid ${message.includes('successful') ? '#c3e6cb' : '#f5c6cb'}`
+          }}>
             {message}
-          </p>
+          </div>
         )}
       </form>
     </div>

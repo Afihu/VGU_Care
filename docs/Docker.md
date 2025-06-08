@@ -33,34 +33,17 @@ docker-compose up --build --no-deps frontend
 ```
 
 ### After Adding Dependencies
+
 ```bash
-# Option 1: If you have Node.js installed locally
-cd backend
+# Backend/Test dependencies (add to root package.json)
 npm install package-name
-cd ..
-docker-compose up --build --no-deps backend
 
-# Option 2: Docker-only (no Node.js needed)
-cd backend
-docker run --rm -v ${PWD}:/app -w /app node:18-alpine npm install package-name
-cd ..
-docker-compose up --build --no-deps backend
-
-# For frontend dependencies:
-# Option 1: With Node.js
+# Frontend dependencies (add to frontend/package.json)
 cd frontend
 npm install package-name
 cd ..
-docker-compose up --build --no-deps frontend
 
-# Option 2: Docker-only
-cd frontend
-docker run --rm -v ${PWD}:/app -w /app node:18-alpine npm install package-name
-cd ..
-docker-compose up --build --no-deps frontend
-
-# When OTHERS add dependencies (after git pull):
-docker-compose down
+# Rebuild services
 docker-compose up --build
 ```
 

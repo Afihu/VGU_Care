@@ -1,9 +1,10 @@
+ 
 const express = require('express');
 const router = express.Router();
 
-// Example route
-router.get('/test', (req, res) => {
-    res.json({ message: 'Appointment route working!' });
+// Placeholder route
+router.get('/', (req, res) => {
+  res.json({ message: 'Appointments endpoint' });
 });
 
-module.exports = router; 
+module.exports = router;

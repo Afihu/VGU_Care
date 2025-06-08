@@ -1,9 +1,10 @@
-const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
+const { getProfile, updateProfile, changePassword } = require('../controllers/userController');
+const authMiddleware = require('../middleware/auth');
 
-// Example route
-router.get('/test', (req, res) => {
-    res.json({ message: 'User route working!' });
-});
+// All user routes require authentication
+router.get('/me', authMiddleware, getProfile);
+router.patch('/profile', authMiddleware, updateProfile);
+router.patch('/change-password', authMiddleware, changePassword);
 
 module.exports = router;
