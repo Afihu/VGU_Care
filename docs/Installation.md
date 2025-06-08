@@ -5,7 +5,6 @@
 ### Required Installation:
 1. **[Docker Desktop](https://www.docker.com/get-started)** 
    - Downloads PostgreSQL, Node.js, and everything else automatically
-   - Works on Windows, Mac, and Linux
    - **This is the only thing you need to install!**
 
 2. **[Git](https://git-scm.com/)** - For version control
@@ -90,7 +89,7 @@ docker-compose --profile tools up --build
 1. **Open pgAdmin** (http://localhost:8080 if using Docker, or local installation)
 
 2. **Add New Server:**
-   - Right-click "Servers" → "Create" → "Server"
+   - Right-click "Servers" → "Register" → "Server"
    
 3. **General Tab:**
    ```

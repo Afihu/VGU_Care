@@ -19,7 +19,7 @@ const testUsers = {
 async function loginUser(email, password, userType) {
   try {
     console.log(`🔐 Logging in ${userType}...`);
-    const res = await fetch('http://localhost:5001/api/users/login', {
+    const res = await fetch('http://localhost:5001/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -108,7 +108,7 @@ async function testChangePassword(token, userType, passwordData) {
 async function testLoginWithNewPassword(email, newPassword, userType) {
   try {
     console.log(`🔐 Testing login with new password for ${userType}...`);
-    const res = await fetch('http://localhost:5001/api/users/login', {
+    const res = await fetch('http://localhost:5001/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: newPassword })

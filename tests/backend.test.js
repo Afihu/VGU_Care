@@ -37,7 +37,7 @@ const testUsers = {
 
 async function createTestUser(userData, userType) {
   try {
-    const res = await fetch('http://localhost:5001/api/users/signup', {
+    const res = await fetch('http://localhost:5001/api/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData)
@@ -64,7 +64,7 @@ async function createTestUser(userData, userType) {
 async function testLogin(email, password, userType) {
   try {
     console.log(`🧪 Testing ${userType} login...`);
-    const res = await fetch('http://localhost:5001/api/users/login', {
+    const res = await fetch('http://localhost:5001/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })

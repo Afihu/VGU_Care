@@ -1,9 +1,14 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const app = express();
+
+// Import query first (before using it)
+const { query } = require('./config/database');
 
 // Middleware
 app.use(express.json());
+app.use(cors());
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -14,19 +19,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Routes (to be implemented)
-// app.use('/api/auth', require('./routes/authRoutes'));
-// app.use('/api/appointments', require('./routes/appointmentRoutes'));
-app.use('/api/users', require('./routes/userRoutes'));
-
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(`VGU Care Server running on port ${PORT}`);
-});
-
-const { query } = require('./config/database');
-
-// Add this test endpoint
+// Database test endpoint
 app.get('/api/test-db', async (req, res) => {
     try {
         const result = await query('SELECT NOW() as current_time');
@@ -42,4 +35,22 @@ app.get('/api/test-db', async (req, res) => {
             error: error.message
         });
     }
+});
+
+// Routes - Add one by one to find the problematic one
+try {
+  app.use('/api', require('./routes/authRoutes'));
+  console.log('authRoutes loaded');
+} catch (error) {
+  console.log('authRoutes failed:', error.message);
+}
+
+// Comment out these until we fix the issue
+// app.use('/api/appointments', require('./routes/appointmentRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+
+// Start server
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => {
+  console.log(`VGU Care Server running on port ${PORT}`);
 });
