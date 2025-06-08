@@ -1,0 +1,15 @@
+.header{
+    background-color: #FFFFFF;
+    color: white;
+    display: flex;
+    align-items: center;
+
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.logo-image{
+    max-width: 80px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
