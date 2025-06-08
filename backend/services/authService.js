@@ -1,65 +1,28 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { query } = require('../config/database');
+const { query, pool } = require('../config/database');
+const userService = require('./userService');
 
-exports.createUser = async (email, password, userData) => {
-  try {
-    // Validate VGU email
-    if (!email.includes('@vgu.edu.vn')) {
-      throw new Error('Invalid VGU email domain');
+class AuthService {
+  async authenticate(email, password) {
+    const user = await userService.getUserByEmail(email);
+    
+    if (!user) {
+      throw new Error('Invalid email or password');
     }
 
-    // Hash password
-    const saltRounds = 12;
-    const password_hash = await bcrypt.hash(password, saltRounds);
-
-    // Insert user into database
-    const result = await query(`
-      INSERT INTO users (name, gender, age, role, email, password_hash)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING user_id, email, role
-    `, [userData.name, userData.gender, userData.age, userData.role, email, password_hash]);
-
-    return result.rows[0];
-  } catch (error) {
-    throw new Error(`User creation failed: ${error.message}`);
-  }
-};
-
-exports.authenticate = async (email, password) => {
-  try {
-    // Get user from database
-    const result = await query(`
-      SELECT user_id, email, password_hash, role, status
-      FROM users 
-      WHERE email = $1
-    `, [email]);
-
-    if (result.rows.length === 0) {
-      throw new Error('Invalid credentials');
-    }
-
-    const user = result.rows[0];
-
-    // Check if user is active
     if (user.status !== 'active') {
-      throw new Error('Account is inactive');
+      throw new Error('Account is not active');
     }
 
-    // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     if (!isValidPassword) {
-      throw new Error('Invalid credentials');
+      throw new Error('Invalid email or password');
     }
 
-    // Generate JWT token
     const token = jwt.sign(
-      { 
-        userId: user.user_id, 
-        email: user.email, 
-        role: user.role 
-      },
-      process.env.JWT_SECRET || 'your_jwt_secret_key_here',
+      { userId: user.user_id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
@@ -71,16 +34,86 @@ exports.authenticate = async (email, password) => {
         role: user.role
       }
     };
-  } catch (error) {
-    throw new Error(`Authentication failed: ${error.message}`);
   }
-};
 
-exports.verifyToken = async (token) => {
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_here');
-    return decoded;
-  } catch (error) {
-    throw new Error('Invalid token');
+  async createUser(email, password, userData) {
+    const { name, gender, age, role, roleSpecificData } = userData;
+    
+    // Check if user already exists
+    const userExists = await userService.checkUserExists(email);
+    if (userExists) {
+      throw new Error('User already exists with this email address');
+    }
+
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+
+      // Hash password
+      const saltRounds = 12;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+      // Insert into users table
+      const userResult = await client.query(`
+        INSERT INTO users (email, password_hash, name, gender, age, role, status, points)
+        VALUES ($1, $2, $3, $4, $5, $6, 'active', 0)
+        RETURNING user_id, email, role
+      `, [email, hashedPassword, name, gender, age, role]);
+
+      const newUser = userResult.rows[0];
+
+      // Insert into role-specific table
+      await this._createRoleSpecificRecord(client, newUser.user_id, role, roleSpecificData);
+
+      await client.query('COMMIT');
+      return newUser;
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
-};
+
+  async _createRoleSpecificRecord(client, userId, role, roleSpecificData = {}) {
+    switch (role) {
+      case 'student':
+        const { intakeYear = new Date().getFullYear(), major = 'Undeclared' } = roleSpecificData;
+        await client.query(`
+          INSERT INTO students (user_id, intake_year, major)
+          VALUES ($1, $2, $3)
+        `, [userId, intakeYear, major]);
+        break;
+
+      case 'medical_staff':
+        const { specialty = 'General Medicine' } = roleSpecificData;
+        await client.query(`
+          INSERT INTO medical_staff (user_id, specialty)
+          VALUES ($1, $2)
+        `, [userId, specialty]);
+        break;
+
+      case 'admin':
+        await client.query(`
+          INSERT INTO admins (user_id)
+          VALUES ($1)
+        `, [userId]);
+        break;
+
+      default:
+        throw new Error(`Invalid role: ${role}`);
+    }
+  }
+
+  verifyToken(token) {
+    try {
+      return jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
+  }
+}
+
+module.exports = new AuthService();
