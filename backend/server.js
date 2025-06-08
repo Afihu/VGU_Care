@@ -9,32 +9,33 @@ const { query } = require('./config/database');
 // Middleware
 app.use(express.json());
 app.use(cors());
+app.use(cors());
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
   res.json({ 
     message: 'VGU Care API is running!',
-    database: process.env.DATABASE_URL ? 'Connected' : 'Not configured',
+    database: process.env.DATABASE_URL ? 'Configured' : 'Not configured',
     timestamp: new Date().toISOString()
   });
 });
 
 // Database test endpoint
 app.get('/api/test-db', async (req, res) => {
-    try {
-        const result = await query('SELECT NOW() as current_time');
-        res.json({
-            status: 'success',
-            message: 'Database connected successfully',
-            timestamp: result.rows[0].current_time
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: 'error',
-            message: 'Database connection failed',
-            error: error.message
-        });
-    }
+  try {
+    const result = await query('SELECT NOW() as current_time');
+    res.json({
+      status: 'success',
+      message: 'Database connected successfully',
+      timestamp: result.rows[0].current_time
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Database connection failed',
+      error: error.message
+    });
+  }
 });
 
 // Routes - Add one by one to find the problematic one
