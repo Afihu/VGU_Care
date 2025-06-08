@@ -9,7 +9,6 @@ const { query } = require('./config/database');
 // Middleware
 app.use(express.json());
 app.use(cors());
-app.use(cors());
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -38,20 +37,31 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-// Routes - Add one by one to find the problematic one
+// Routes - Add error handling for all routes
 try {
   app.use('/api', require('./routes/authRoutes'));
-  console.log('authRoutes loaded');
+  console.log('✅ authRoutes loaded');
 } catch (error) {
-  console.log('authRoutes failed:', error.message);
+  console.error('❌ authRoutes failed:', error.message);
 }
 
-// Comment out these until we fix the issue
-// app.use('/api/appointments', require('./routes/appointmentRoutes'));
-app.use('/api/users', require('./routes/userRoutes'));
+try {
+  app.use('/api/users', require('./routes/userRoutes'));
+  console.log('✅ userRoutes loaded');
+} catch (error) {
+  console.error('❌ userRoutes failed:', error.message);
+}
+
+// Uncomment when implemented
+// try {
+//   app.use('/api/appointments', require('./routes/appointmentRoutes'));
+//   console.log('✅ appointmentRoutes loaded');
+// } catch (error) {
+//   console.error('❌ appointmentRoutes failed:', error.message);
+// }
 
 // Start server
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5001;  // Changed fallback from 5001 to 5001
 app.listen(PORT, () => {
   console.log(`VGU Care Server running on port ${PORT}`);
 });

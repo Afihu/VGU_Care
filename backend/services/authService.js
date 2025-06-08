@@ -1,39 +1,57 @@
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { query, pool } = require('../config/database');
+const { pool, query } = require('../config/database');
 const userService = require('./userService');
 
 class AuthService {
   async authenticate(email, password) {
-    const user = await userService.getUserByEmail(email);
-    
-    if (!user) {
-      throw new Error('Invalid email or password');
-    }
-
-    if (user.status !== 'active') {
-      throw new Error('Account is not active');
-    }
-
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
-    if (!isValidPassword) {
-      throw new Error('Invalid email or password');
-    }
-
-    const token = jwt.sign(
-      { userId: user.user_id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    return {
-      token,
-      user: {
-        id: user.user_id,
-        email: user.email,
-        role: user.role
+    try {
+      console.log(`[AUTH SERVICE] Attempting authentication for: ${email}`);
+      
+      // Use UserService instead of direct query
+      const user = await userService.getUserByEmail(email);
+      
+      if (!user) {
+        console.log('[AUTH SERVICE] User not found:', email);
+        throw new Error('Invalid credentials');
       }
-    };
+
+      console.log('[AUTH SERVICE] User found, verifying password');
+      
+      // Use UserService password verification
+      const isValidPassword = await userService.verifyPasswordByEmail(email, password);
+      
+      if (!isValidPassword) {
+        console.log('[AUTH SERVICE] Invalid password for:', email);
+        throw new Error('Invalid credentials');
+      }
+
+      // Generate JWT token with consistent property names
+      const token = jwt.sign(
+        { 
+          userId: user.id,  // Keep as userId (not id)
+          email: user.email, 
+          role: user.role 
+        },
+        process.env.JWT_SECRET || 'your_jwt_secret_key_here',
+        { expiresIn: '24h' }
+      );
+
+      console.log('[AUTH SERVICE] Authentication successful for:', email);
+      
+      return {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role
+        }
+      };
+      
+    } catch (error) {
+      console.error('[AUTH SERVICE] Authentication failed:', error.message);
+      throw new Error(`Authentication failed: ${error.message}`);
+    }
   }
 
   async createUser(email, password, userData) {
@@ -50,9 +68,8 @@ class AuthService {
     try {
       await client.query('BEGIN');
 
-      // Hash password
-      const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      // Use UserService for password hashing
+      const hashedPassword = await userService.hashPassword(password);
 
       // Insert into users table
       const userResult = await client.query(`
@@ -109,7 +126,7 @@ class AuthService {
 
   verifyToken(token) {
     try {
-      return jwt.verify(token, process.env.JWT_SECRET);
+      return jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_here');
     } catch (error) {
       throw new Error('Invalid token');
     }

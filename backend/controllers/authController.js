@@ -1,7 +1,4 @@
 const authService = require('../services/authService');
-const { query } = require('../config/database');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -9,47 +6,28 @@ const loginUser = async (req, res) => {
   console.log(`[LOGIN ATTEMPT] Email: ${email}`);
 
   try {
-    const result = await query('SELECT * FROM users WHERE email = $1', [email]);
-    const user = result.rows[0];
-
-    if (!user) {
-      console.log('[LOGIN FAILED] No user found for email:', email);
-      return res.status(401).json({ message: 'Login failed.' });
-    }
-
-    console.log('[LOGIN CHECK] User found:', user.email);
-
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
-    console.log('[LOGIN CHECK] Password match result:', passwordMatch);
-
-    if (!passwordMatch) {
-      console.log('[LOGIN FAILED] Incorrect password for:', email);
-      return res.status(401).json({ message: 'Login failed.' });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.user_id, 
-        email: user.email, 
-        role: user.role 
-      },
-      process.env.JWT_SECRET || 'your_jwt_secret_key_here',
-      { expiresIn: '24h' }
-    );
-
+    // Use authService.authenticate instead of duplicating logic
+    const authResult = await authService.authenticate(email, password);
+    
     console.log('[LOGIN SUCCESS] Email:', email);
     res.json({ 
       message: 'Login successful', 
       user: { 
-        email: user.email, 
-        role: user.role 
+        email: authResult.user.email, 
+        role: authResult.user.role 
       },
-      token: token 
+      token: authResult.token 
     });
 
   } catch (error) {
     console.error('[LOGIN ERROR]', error);
+    
+    // Handle authentication-specific errors
+    if (error.message.includes('Invalid credentials') || 
+        error.message.includes('User not found')) {
+      return res.status(401).json({ message: 'Login failed.' });
+    }
+    
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

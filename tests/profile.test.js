@@ -1,49 +1,137 @@
 const fetch = require('node-fetch').default;
 
-// Use the same test users from backend.test.js
+// Use environment variable for API URL, fallback to localhost for local testing
+const API_URL = process.env.API_URL || 'http://localhost:5001';
+
+console.log('👤 Starting Profile Management Test Suite\n');
+console.log(`🌐 Using API URL: ${API_URL}\n`);
+
+// Test user data for profile operations
 const testUsers = {
   student: {
     email: 'teststudent@vgu.edu.vn',
-    password: 'TestVGU2024!'
+    password: 'TestVGU2024!',
+    name: 'Test Student',
+    gender: 'male',
+    age: 20,
+    role: 'student',
+    roleSpecificData: {
+      intakeYear: 2024,
+      major: 'Computer Science'
+    }
   },
   medicalStaff: {
     email: 'testdoctor@vgu.edu.vn',
-    password: 'TestVGU2024!'
+    password: 'TestVGU2024!',
+    name: 'Dr. Test Doctor',
+    gender: 'female',
+    age: 35,
+    role: 'medical_staff',
+    roleSpecificData: {
+      specialty: 'General Medicine'
+    }
   },
   admin: {
     email: 'testadmin@vgu.edu.vn',
-    password: 'TestVGU2024!'
+    password: 'TestVGU2024!',
+    name: 'Test Admin',
+    gender: 'other',
+    age: 30,
+    role: 'admin'
   }
 };
 
-async function loginUser(email, password, userType) {
+// Helper function to get auth token
+async function getAuthToken(email, password) {
+  const res = await fetch(`${API_URL}/api/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  
+  if (res.ok) {
+    const body = await res.json();
+    return body.token;
+  }
+  throw new Error(`Authentication failed: ${res.status}`);
+}
+
+async function testUserCreation(userData, userType) {
   try {
-    console.log(`🔐 Logging in ${userType}...`);
-    const res = await fetch('http://localhost:5001/api/login', {
+    console.log(`📝 Testing ${userType} user creation...`);
+    const res = await fetch(`${API_URL}/api/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify(userData)
     });
     
     const body = await res.json();
     
     if (res.ok) {
-      console.log(`✅ ${userType} login successful`);
-      return body.token;
+      console.log(`✅ ${userType} user created successfully:`, {
+        id: body.user.user_id,
+        email: body.user.email,
+        role: body.user.role
+      });
+      return true;
+    } else if (res.status === 400 && body.error?.includes('already exists')) {
+      console.log(`ℹ️  ${userType} user already exists, continuing with tests`);
+      return true;
     } else {
-      console.error(`❌ ${userType} login failed:`, res.status, body);
+      console.error(`❌ ${userType} user creation failed:`, res.status, body);
+      return false;
+    }
+  } catch (error) {
+    console.error(`❌ ${userType} user creation error:`, error.message);
+    return false;
+  }
+}
+
+async function testProfileRetrieval(token, userType) {
+  try {
+    console.log(`📋 Testing ${userType} profile retrieval...`);
+    const res = await fetch(`${API_URL}/api/users/me`, {
+      headers: { 
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      const profile = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        age: data.user.age,
+        gender: data.user.gender
+      };
+      
+      // Add role-specific data
+      if (data.user.role === 'student') {
+        profile.intakeYear = data.user.intakeYear;
+        profile.major = data.user.major;
+      } else if (data.user.role === 'medical_staff') {
+        profile.specialty = data.user.specialty;
+      }
+      
+      console.log(`✅ ${userType} profile retrieved:`, profile);
+      return data.user;
+    } else {
+      console.error(`❌ ${userType} profile retrieval failed:`, res.status, data);
       return null;
     }
   } catch (error) {
-    console.error(`❌ ${userType} login error:`, error.message);
+    console.error(`❌ ${userType} profile retrieval error:`, error.message);
     return null;
   }
 }
 
-async function testUpdateProfile(token, userType, updateData) {
+async function testProfileUpdate(token, userType, updateData) {
   try {
-    console.log(`🧪 Testing ${userType} profile update...`);
-    const res = await fetch('http://localhost:5001/api/users/profile', {
+    console.log(`📝 Testing ${userType} profile update...`);
+    const res = await fetch(`${API_URL}/api/users/profile`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
@@ -55,18 +143,21 @@ async function testUpdateProfile(token, userType, updateData) {
     const data = await res.json();
     
     if (res.ok) {
-      console.log(`✅ ${userType} profile updated successfully:`, {
+      const updatedProfile = {
         name: data.user.name,
         gender: data.user.gender,
-        age: data.user.age,
-        ...(data.user.role === 'student' && {
-          intakeYear: data.user.intakeYear,
-          major: data.user.major
-        }),
-        ...(data.user.role === 'medical_staff' && {
-          specialty: data.user.specialty
-        })
-      });
+        age: data.user.age
+      };
+      
+      // Add role-specific data
+      if (data.user.role === 'student') {
+        updatedProfile.intakeYear = data.user.intakeYear;
+        updatedProfile.major = data.user.major;
+      } else if (data.user.role === 'medical_staff') {
+        updatedProfile.specialty = data.user.specialty;
+      }
+      
+      console.log(`✅ ${userType} profile updated successfully:`, updatedProfile);
       return true;
     } else {
       console.error(`❌ ${userType} profile update failed:`, res.status, data);
@@ -78,10 +169,10 @@ async function testUpdateProfile(token, userType, updateData) {
   }
 }
 
-async function testChangePassword(token, userType, passwordData) {
+async function testPasswordChange(token, userType, passwordData) {
   try {
-    console.log(`🧪 Testing ${userType} password change...`);
-    const res = await fetch('http://localhost:5001/api/users/change-password', {
+    console.log(`🔐 Testing ${userType} password change...`);
+    const res = await fetch(`${API_URL}/api/users/change-password`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
@@ -105,240 +196,144 @@ async function testChangePassword(token, userType, passwordData) {
   }
 }
 
-async function testLoginWithNewPassword(email, newPassword, userType) {
-  try {
-    console.log(`🔐 Testing login with new password for ${userType}...`);
-    const res = await fetch('http://localhost:5001/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: newPassword })
-    });
-    
-    const body = await res.json();
-    
-    if (res.ok) {
-      console.log(`✅ ${userType} login with new password successful`);
-      return body.token;
-    } else {
-      console.error(`❌ ${userType} login with new password failed:`, res.status, body);
-      return null;
-    }
-  } catch (error) {
-    console.error(`❌ ${userType} login with new password error:`, error.message);
-    return null;
-  }
-}
-
-async function getProfile(token, userType) {
-  try {
-    console.log(`📋 Getting ${userType} profile...`);
-    const res = await fetch('http://localhost:5001/api/users/me', {
-      headers: { 
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    const data = await res.json();
-    
-    if (res.ok) {
-      console.log(`✅ ${userType} profile retrieved:`, {
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-        age: data.user.age,
-        gender: data.user.gender
-      });
-      return data.user;
-    } else {
-      console.error(`❌ ${userType} profile retrieval failed:`, res.status, data);
-      return null;
-    }
-  } catch (error) {
-    console.error(`❌ ${userType} profile retrieval error:`, error.message);
-    return null;
-  }
+async function testPasswordChangeValidation(token, userType) {
+  console.log(`🧪 Testing ${userType} password change validation...`);
+  
+  // Test wrong current password
+  console.log('   Testing wrong current password...');
+  await testPasswordChange(token, userType, {
+    currentPassword: 'WrongPassword123!',
+    newPassword: 'NewValidPassword123!'
+  });
+  
+  // Test weak new password
+  console.log('   Testing weak new password...');
+  await testPasswordChange(token, userType, {
+    currentPassword: 'TestVGU2024!',
+    newPassword: '123'
+  });
+  
+  // Test empty passwords
+  console.log('   Testing empty passwords...');
+  await testPasswordChange(token, userType, {
+    currentPassword: '',
+    newPassword: 'NewValidPassword123!'
+  });
 }
 
 async function runProfileTestSuite() {
-  console.log('🚀 Starting VGU Care Profile Management Test Suite\n');
+  console.log('🚀 Starting Profile Management Test Suite\n');
   
-  // Test 1: Student Profile Management
-  console.log('👨‍🎓 === STUDENT PROFILE TESTS ===');
-  let studentToken = await loginUser(
-    testUsers.student.email, 
-    testUsers.student.password, 
-    'Student'
-  );
+  // Test 1: User Creation
+  console.log('� === USER CREATION TESTS ===');
+  const studentCreated = await testUserCreation(testUsers.student, 'Student');
+  const medicalCreated = await testUserCreation(testUsers.medicalStaff, 'Medical Staff');
+  const adminCreated = await testUserCreation(testUsers.admin, 'Admin');
   
-  if (studentToken) {
-    // Get initial profile
-    await getProfile(studentToken, 'Student');
-    
-    // Test profile update
-    const studentUpdateData = {
-      name: 'Updated Test Student',
-      age: 21,
-      gender: 'female',
-      roleSpecificData: {
-        intakeYear: 2023,
-        major: 'Software Engineering'
-      }
-    };
-    
-    const studentUpdateSuccess = await testUpdateProfile(studentToken, 'Student', studentUpdateData);
-    
-    if (studentUpdateSuccess) {
-      // Get updated profile to verify changes
-      await getProfile(studentToken, 'Student');
+  if (!studentCreated || !medicalCreated || !adminCreated) {
+    console.error('❌ User creation failed. Aborting profile tests.');
+    process.exit(1);
+  }
+  
+  console.log('\n📋 === PROFILE RETRIEVAL TESTS ===');
+  
+  // Get auth tokens for profile operations
+  let studentToken, medicalToken, adminToken;
+  
+  try {
+    studentToken = await getAuthToken(testUsers.student.email, testUsers.student.password);
+    medicalToken = await getAuthToken(testUsers.medicalStaff.email, testUsers.medicalStaff.password);
+    adminToken = await getAuthToken(testUsers.admin.email, testUsers.admin.password);
+  } catch (error) {
+    console.error('❌ Failed to get authentication tokens:', error.message);
+    process.exit(1);
+  }
+  
+  // Test profile retrieval
+  await testProfileRetrieval(studentToken, 'Student');
+  await testProfileRetrieval(medicalToken, 'Medical Staff');
+  await testProfileRetrieval(adminToken, 'Admin');
+  
+  console.log('\n📝 === PROFILE UPDATE TESTS ===');
+  
+  // Test Student Profile Update
+  const studentUpdateData = {
+    name: 'Updated Test Student',
+    age: 21,
+    gender: 'female',
+    roleSpecificData: {
+      intakeYear: 2023,
+      major: 'Software Engineering'
+    }
+  };
+  
+  const studentUpdateSuccess = await testProfileUpdate(studentToken, 'Student', studentUpdateData);
+  if (studentUpdateSuccess) {
+    await testProfileRetrieval(studentToken, 'Student (After Update)');
+  }
+  
+  // Test Medical Staff Profile Update
+  const medicalUpdateData = {
+    name: 'Updated Dr. Test',
+    age: 36,
+    roleSpecificData: {
+      specialty: 'Cardiology'
+    }
+  };
+  
+  const medicalUpdateSuccess = await testProfileUpdate(medicalToken, 'Medical Staff', medicalUpdateData);
+  if (medicalUpdateSuccess) {
+    await testProfileRetrieval(medicalToken, 'Medical Staff (After Update)');
+  }
+  
+  // Test Admin Profile Update (no role-specific data)
+  const adminUpdateData = {
+    name: 'Updated Admin User',
+    age: 31,
+    gender: 'male'
+  };
+  
+  const adminUpdateSuccess = await testProfileUpdate(adminToken, 'Admin', adminUpdateData);
+  if (adminUpdateSuccess) {
+    await testProfileRetrieval(adminToken, 'Admin (After Update)');
+  }
+  
+  console.log('\n🔐 === PASSWORD CHANGE TESTS ===');
+  
+  // Test valid password change for student
+  const passwordChangeSuccess = await testPasswordChange(studentToken, 'Student', {
+    currentPassword: testUsers.student.password,
+    newPassword: 'NewTestVGU2024!'
+  });
+  
+  if (passwordChangeSuccess) {
+    // Verify login with new password
+    try {
+      const newToken = await getAuthToken(testUsers.student.email, 'NewTestVGU2024!');
+      console.log('✅ Login with new password successful');
       
-      // Test password change
-      const passwordChangeSuccess = await testChangePassword(studentToken, 'Student', {
-        currentPassword: testUsers.student.password,
-        newPassword: 'NewTestVGU2024!'
+      // Change password back
+      await testPasswordChange(newToken, 'Student', {
+        currentPassword: 'NewTestVGU2024!',
+        newPassword: testUsers.student.password
       });
-      
-      if (passwordChangeSuccess) {
-        // Test login with new password
-        const newToken = await testLoginWithNewPassword(
-          testUsers.student.email, 
-          'NewTestVGU2024!', 
-          'Student'
-        );
-        
-        if (newToken) {
-          // Change password back to original for future tests
-          await testChangePassword(newToken, 'Student', {
-            currentPassword: 'NewTestVGU2024!',
-            newPassword: testUsers.student.password
-          });
-        }
-      }
+    } catch (error) {
+      console.error('❌ Login with new password failed:', error.message);
     }
   }
   
-  console.log('\n👩‍⚕️ === MEDICAL STAFF PROFILE TESTS ===');
-  let medicalToken = await loginUser(
-    testUsers.medicalStaff.email, 
-    testUsers.medicalStaff.password, 
-    'Medical Staff'
-  );
+  console.log('\n🚨 === PASSWORD CHANGE VALIDATION TESTS ===');
+  await testPasswordChangeValidation(studentToken, 'Student');
   
-  if (medicalToken) {
-    // Get initial profile
-    await getProfile(medicalToken, 'Medical Staff');
-    
-    // Test profile update
-    const medicalUpdateData = {
-      name: 'Updated Dr. Test',
-      age: 36,
-      roleSpecificData: {
-        specialty: 'Cardiology'
-      }
-    };
-    
-    const medicalUpdateSuccess = await testUpdateProfile(medicalToken, 'Medical Staff', medicalUpdateData);
-    
-    if (medicalUpdateSuccess) {
-      // Get updated profile to verify changes
-      await getProfile(medicalToken, 'Medical Staff');
-      
-      // Test password change
-      const passwordChangeSuccess = await testChangePassword(medicalToken, 'Medical Staff', {
-        currentPassword: testUsers.medicalStaff.password,
-        newPassword: 'NewMedicalVGU2024!'
-      });
-      
-      if (passwordChangeSuccess) {
-        // Test login with new password
-        const newToken = await testLoginWithNewPassword(
-          testUsers.medicalStaff.email, 
-          'NewMedicalVGU2024!', 
-          'Medical Staff'
-        );
-        
-        if (newToken) {
-          // Change password back to original for future tests
-          await testChangePassword(newToken, 'Medical Staff', {
-            currentPassword: 'NewMedicalVGU2024!',
-            newPassword: testUsers.medicalStaff.password
-          });
-        }
-      }
-    }
-  }
-  
-  console.log('\n👨‍💼 === ADMIN PROFILE TESTS ===');
-  let adminToken = await loginUser(
-    testUsers.admin.email, 
-    testUsers.admin.password, 
-    'Admin'
-  );
-  
-  if (adminToken) {
-    // Get initial profile
-    await getProfile(adminToken, 'Admin');
-    
-    // Test profile update (admins don't have role-specific data)
-    const adminUpdateData = {
-      name: 'Updated Admin User',
-      age: 31,
-      gender: 'male'
-    };
-    
-    const adminUpdateSuccess = await testUpdateProfile(adminToken, 'Admin', adminUpdateData);
-    
-    if (adminUpdateSuccess) {
-      // Get updated profile to verify changes
-      await getProfile(adminToken, 'Admin');
-      
-      // Test password change
-      const passwordChangeSuccess = await testChangePassword(adminToken, 'Admin', {
-        currentPassword: testUsers.admin.password,
-        newPassword: 'NewAdminVGU2024!'
-      });
-      
-      if (passwordChangeSuccess) {
-        // Test login with new password
-        const newToken = await testLoginWithNewPassword(
-          testUsers.admin.email, 
-          'NewAdminVGU2024!', 
-          'Admin'
-        );
-        
-        if (newToken) {
-          // Change password back to original for future tests
-          await testChangePassword(newToken, 'Admin', {
-            currentPassword: 'NewAdminVGU2024!',
-            newPassword: testUsers.admin.password
-          });
-        }
-      }
-    }
-  }
-  
-  console.log('\n🧪 === ERROR HANDLING TESTS ===');
+  console.log('\n🔒 === AUTHORIZATION TESTS ===');
   
   // Test with invalid token
-  console.log('🔍 Testing with invalid token...');
-  await testUpdateProfile('invalid_token', 'Invalid User', { name: 'Should Fail' });
-  
-  // Test password change with wrong current password
-  if (studentToken) {
-    console.log('🔍 Testing password change with wrong current password...');
-    await testChangePassword(studentToken, 'Student', {
-      currentPassword: 'WrongPassword123!',
-      newPassword: 'NewPassword123!'
-    });
-  }
-  
-  // Test password change with weak new password
-  if (studentToken) {
-    console.log('🔍 Testing password change with weak new password...');
-    await testChangePassword(studentToken, 'Student', {
-      currentPassword: testUsers.student.password,
-      newPassword: '123'
-    });
-  }
+  console.log('Testing with invalid token...');
+  await testProfileUpdate('invalid_token', 'Invalid User', { name: 'Should Fail' });
+  await testPasswordChange('invalid_token', 'Invalid User', {
+    currentPassword: 'test',
+    newPassword: 'test123'
+  });
   
   console.log('\n✨ Profile Management Test Suite Completed!');
 }

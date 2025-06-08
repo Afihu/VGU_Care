@@ -1,7 +1,7 @@
 const userService = require('./userService');
-const { pool } = require('../config/database');
+const BaseService = require('./baseService');
 
-class ProfileService {
+class ProfileService extends BaseService {
   async getProfile(userId) {
     const user = await userService.getUserById(userId);
     if (!user) {
@@ -21,10 +21,8 @@ class ProfileService {
       throw new Error('User not found');
     }
 
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
+    // Use BaseService transaction method
+    return await this.withTransaction(async (client) => {
       // Update basic user data
       if (name !== undefined || gender !== undefined || age !== undefined) {
         await userService.updateUser(userId, { name, gender, age });
@@ -39,17 +37,9 @@ class ProfileService {
         }
       }
 
-      await client.query('COMMIT');
-      
       // Return updated profile
       return await userService.getUserById(userId);
-
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   }
 
   async changePassword(userId, currentPassword, newPassword) {
