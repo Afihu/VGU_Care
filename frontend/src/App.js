@@ -3,6 +3,8 @@ import {BrowserRouter, Routes, Route} from 'react-router-dom';
 import Login from './pages/Login';
 import Header from './components/Header';
 import Home from './pages/Home';
+import RequestAppointment from './pages/RequestAppointment';
+import AppointmentUserView from './pages/AppointmentUserView';
 // Import other pages here, e.g. Home, Dashboard, etc.
 
 function App() {
@@ -14,6 +16,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/request-appointment" element={<RequestAppointment />} />
+          <Route path="/appointment-user-view" element={<AppointmentUserView />} />
           {/* Add other routes here */}
         </Routes>
 
