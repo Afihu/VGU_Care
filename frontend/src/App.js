@@ -5,6 +5,8 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import RequestAppointment from './pages/RequestAppointment';
 import AppointmentUserView from './pages/AppointmentUserView';
+import TrackMood from './pages/TrackMood';
+
 // Import other pages here, e.g. Home, Dashboard, etc.
 
 function App() {
@@ -18,6 +20,7 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/request-appointment" element={<RequestAppointment />} />
           <Route path="/appointment-user-view" element={<AppointmentUserView />} />
+          <Route path="/track-mmod" element={<TrackMood />} />
           {/* Add other routes here */}
         </Routes>
 

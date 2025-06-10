@@ -1,6 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function RequestAppointment() {
+  const navigate = useNavigate();
+  
   return (
     <div style={{ padding: '40px', margin: '20px auto',border: '1px solid #ddd', borderRadius: '8px', width: '60%', maxWidth: '1000px' }}>
       <h2 style={{ textAlign: 'center', marginTop: '5px', padding: '10px', fontSize: '30px'}}>Request an Appointment</h2>
@@ -95,6 +98,7 @@ export default function RequestAppointment() {
           Submit Request
         </button>
         <button 
+          onClick={() => navigate('/home')}
           type="button"
           style={{ 
             padding: '12px 24px',

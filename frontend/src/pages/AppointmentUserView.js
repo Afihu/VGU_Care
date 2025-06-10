@@ -15,7 +15,8 @@ export default function AppointmentUserView() {
           textAlign: 'center',
           fontWeight: 'bold',
           marginBottom: '30px',
-          width: 'fit-content'
+          width: 'fit-content',
+          marginLeft: '50px'
         }}
       >
         MY APPOINTMENTS
@@ -29,14 +30,15 @@ export default function AppointmentUserView() {
           <button
             type="button"
             style={{
-              padding: '18px 36px',
+              padding: '18px 28px',
               backgroundColor: '#03befc',
               color: 'black',
               fontSize: '12px',
               borderRadius: '15px',
               border: '2px solid #03befc',
               textAlign: 'center',
-              display: 'inline-block'
+              display: 'inline-block',
+              marginLeft: '50px'
             }}
           >
             ALL
@@ -45,7 +47,7 @@ export default function AppointmentUserView() {
           <button
             type="button"
             style={{
-              padding: '18px 36px',
+              padding: '18px 28px',
               backgroundColor: '#b4fac1',
               color: 'black',
               fontSize: '12px',
@@ -61,7 +63,7 @@ export default function AppointmentUserView() {
           <button
             type="button"
             style={{
-              padding: '18px 36px',
+              padding: '18px 28px',
               backgroundColor: '#bdbfbe',
               color: 'black',
               fontSize: '12px',
@@ -77,7 +79,7 @@ export default function AppointmentUserView() {
           <button
             type="button"
             style={{
-              padding: '18px 36px',
+              padding: '18px 28px',
               backgroundColor: '#fc9a9a',
               color: 'black',
               fontSize: '12px',
@@ -93,13 +95,13 @@ export default function AppointmentUserView() {
 
         {/* Image on the right */}
         <img
-          src="./assets/images/graveyard.jpg"
+          src="./assets/images/Healthy_Greens.jpg"
           alt="Graveyard"
           style={{
             width: '360px',
-            height: '450px',
+            height: '500px',
             objectFit: 'cover',
-            marginLeft: '300px'
+            marginLeft: '250px'
           }}
         />
       </div>

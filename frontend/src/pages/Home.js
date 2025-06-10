@@ -30,7 +30,7 @@ function Home(){
                     </button>
                 </div>
 
-                <div class='element-flex-container'>
+                <div class='element-flex-container' onClick={() => navigate('/track-mood')}>
                     <button class='track-mood-label'>Track Mood</button>
                     <button class='Button'>
                         <span class='track-mood-icon'></span>

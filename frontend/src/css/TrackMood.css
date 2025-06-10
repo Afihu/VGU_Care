@@ -1,0 +1,13 @@
+.title-box{
+    padding: 18px 36px;
+    background-color: #ed7166;
+    color: black;
+    font-size: 20px;
+    border-radius: 15px;
+    border: 2px solid #ed7166;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 30px;
+    width: fit-content;
+    margin-left: '50px'
+}
