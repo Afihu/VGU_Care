@@ -14,7 +14,7 @@ export default function AppointmentUserView() {
           border: '2px solid #fcf803',
           textAlign: 'center',
           fontWeight: 'bold',
-          marginBottom: '40px',
+          marginBottom: '30px',
           width: 'fit-content'
         }}
       >
@@ -26,7 +26,8 @@ export default function AppointmentUserView() {
         
         {/* Status boxes */}
         <div style={{ display: 'flex', gap: '100px', flexWrap: 'wrap' }}>
-          <div
+          <button
+            type="button"
             style={{
               padding: '18px 36px',
               backgroundColor: '#03befc',
@@ -39,9 +40,10 @@ export default function AppointmentUserView() {
             }}
           >
             ALL
-          </div>
+          </button>
 
-          <div
+          <button
+            type="button"
             style={{
               padding: '18px 36px',
               backgroundColor: '#b4fac1',
@@ -54,9 +56,10 @@ export default function AppointmentUserView() {
             }}
           >
             APPROVED
-          </div>
+          </button>
 
-          <div
+          <button
+            type="button"
             style={{
               padding: '18px 36px',
               backgroundColor: '#bdbfbe',
@@ -69,9 +72,10 @@ export default function AppointmentUserView() {
             }}
           >
             PENDING
-          </div>
+          </button>
 
-          <div
+          <button
+            type="button"
             style={{
               padding: '18px 36px',
               backgroundColor: '#fc9a9a',
@@ -84,7 +88,7 @@ export default function AppointmentUserView() {
             }}
           >
             REJECTED
-          </div>
+          </button>
         </div>
 
         {/* Image on the right */}
