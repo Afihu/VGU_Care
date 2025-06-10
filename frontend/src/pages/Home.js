@@ -1,19 +1,22 @@
 import React from 'react';
 import '../css/Home.css';
+import { useNavigate } from 'react-router-dom';
 // import header_jpeg from './assets/yes.jpg';
 
 function Home(){
+    const navigate = useNavigate();
+
     return(    
         <div>
             <div class='flex-container'>
-                <div class='element-flex-ontainer'>
+                <div class='element-flex-ontainer' onClick={() => navigate('/request-appointment')}>
                     <button class='req-appoint-label'>Request Appointment</button>
                     <button class='Button'>
                         <span class='request-appointment-icon'></span>
                     </button>
                 </div>
 
-                <div class='element-flex-container'>
+                <div class='element-flex-container' onClick={() => navigate('/appointment-user-view')}>
                     <button class='view-appointment-label'>View Appointments</button>
                     <button class='Button'>
                         <span class='view-appointment-icon'></span>
