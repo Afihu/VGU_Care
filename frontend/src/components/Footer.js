@@ -1,6 +1,7 @@
 import React from 'react';
 import '../css/Footer.css';
 import {useLocation} from 'react-router-dom';
+import logo_image from '../assets/images/yes.jpg';
 
 function Footer() {
     const location = useLocation();
@@ -14,7 +15,7 @@ function Footer() {
 
     return(
         <header className='header'>
-            <img src = './assets/images/yes.jpg' className = 'logo-image' />
+            <img src = {logo_image} className = 'logo-image' />
         </header>
     );
 }

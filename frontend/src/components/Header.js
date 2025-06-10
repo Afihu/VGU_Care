@@ -1,6 +1,7 @@
 import React from 'react';
 import '../css/Header.css';
 import {useLocation} from 'react-router-dom';
+import logo_image from '../assets/images/logo.jpg';
 
 function Header() {
     const location = useLocation();
@@ -14,7 +15,7 @@ function Header() {
 
     return(
         <header className='header'>
-            <img src = './assets/images/yes.jpg' className = 'logo-image' />
+            <img src={logo_image} className = 'logo-image' />
         </header>
     );
 }

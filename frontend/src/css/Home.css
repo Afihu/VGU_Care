@@ -70,8 +70,8 @@
     width: 1.8em;   /* Icon width, e.g., 2 times the button's font-size */
     height: 1.8em;  /* Icon height, same deal*/
 
-    -webkit-mask-image: url('../others/appointment-icon.svg'); 
-  mask-image: url('../others/appointment-icon.svg'); 
+    -webkit-mask-image: url('../assets/others/appointment-icon.svg'); 
+  mask-image: url('../assets/others/appointment-icon.svg'); 
 
     -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
@@ -99,8 +99,8 @@
     width: 1.8em;   /* Icon width, e.g., 2 times the button's font-size */
     height: 1.8em;  /* Icon height, same deal*/
 
-    -webkit-mask-image: url('../others/calendar.svg'); 
-  mask-image: url('../others/calendar.svg'); 
+    -webkit-mask-image: url('../assets/others/calendar.svg'); 
+  mask-image: url('../assets/others/calendar.svg'); 
 
     -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
@@ -129,8 +129,8 @@
     width: 1.8em;   /* Icon width, e.g., 2 times the button's font-size */
     height: 1.8em;  /* Icon height, same deal*/
 
-    -webkit-mask-image: url('../others/upd-health-data.svg'); 
-  mask-image: url('../others/upd-health-data.svg'); 
+    -webkit-mask-image: url('../assets/others/upd-health-data.svg'); 
+  mask-image: url('../assets/others/upd-health-data.svg'); 
 
     -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
@@ -159,8 +159,8 @@
     width: 1.8em;   /* Icon width, e.g., 2 times the button's font-size */
     height: 1.8em;  /* Icon height, same deal*/
 
-    -webkit-mask-image: url('../others/emotion.svg'); 
-  mask-image: url('../others/emotion.svg'); 
+    -webkit-mask-image: url('../assets/others/emotion.svg'); 
+  mask-image: url('../assets/others/emotion.svg'); 
 
     -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;

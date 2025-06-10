@@ -1,4 +1,5 @@
 import React from 'react';
+import greens from '../assets/images/Healthy_Greens.jpg';
 
 export default function AppointmentUserView() {
   return (
@@ -95,7 +96,7 @@ export default function AppointmentUserView() {
 
         {/* Image on the right */}
         <img
-          src="./assets/images/Healthy_Greens.jpg"
+          src={greens}
           alt="Graveyard"
           style={{
             width: '360px',

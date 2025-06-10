@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
+import api from '../services/api';
+import logo_image from '../assets/images/yes.jpg';
 
-export default function Login() {
+
+import {useNavigate} from 'react-router-dom'; 
+
+function Login() {
+  const navigateTo = useNavigate();
+
+  // initialize essential variables
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -10,22 +18,16 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     setMessage('');
-    
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await api.authService(email, password);
+      const data = response.json();
 
-      const data = await response.json();
-
+      //these should be handled by the page and thus not included in api refactor
       if (response.ok) {
-        setMessage(`Login successful! Welcome ${data.user.email}`);
+        setMessage(`Login successful!`);
         console.log('Login successful:', data);
         localStorage.setItem('user', JSON.stringify(data.user));
+        navigateTo('/home');
       } else {
         setMessage(data.message || 'Login failed');
         console.error('Login failed:', data);
@@ -40,74 +42,81 @@ export default function Login() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '400px', margin: '50px auto', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>VGU Care Login</h2>
-      <form onSubmit={handleLogin}>
-        <div style={{ marginBottom: '15px' }}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={isLoading}
-            style={{ 
-              width: '100%', 
-              padding: '12px', 
-              fontSize: '16px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-            style={{ 
-              width: '100%', 
-              padding: '12px', 
-              fontSize: '16px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-        <button 
-          type="submit" 
-          disabled={isLoading}
-          style={{ 
-            width: '100%', 
-            padding: '12px', 
-            backgroundColor: isLoading ? '#ccc' : '#007bff',
-            color: 'white',
-            border: 'none',
-            fontSize: '16px',
-            borderRadius: '4px',
-            cursor: isLoading ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
-        {message && (
-          <div style={{ 
-            marginTop: '15px', 
-            padding: '10px',
-            borderRadius: '4px',
-            backgroundColor: message.includes('successful') ? '#d4edda' : '#f8d7da',
-            color: message.includes('successful') ? '#155724' : '#721c24',
-            border: `1px solid ${message.includes('successful') ? '#c3e6cb' : '#f5c6cb'}`
-          }}>
-            {message}
+    <div>
+      <img src={logo_image}></img>
+      <div style={{ padding: '20px', maxWidth: '400px', margin: '50px auto', border: '1px solid #ccc', borderRadius: '8px'}}>
+        <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>VGU Care Login</h2>
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: '15px' }}>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isLoading}
+              style={{ 
+                width: '100%', 
+                padding: '12px', 
+                fontSize: '16px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                boxSizing: 'border-box'
+              }}
+            />
           </div>
-        )}
-      </form>
+          <div style={{ marginBottom: '15px' }}>
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isLoading}
+              style={{ 
+                width: '100%', 
+                padding: '12px', 
+                fontSize: '16px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={isLoading}
+            style={{ 
+              width: '100%', 
+              padding: '12px', 
+              backgroundColor: isLoading ? '#ccc' : '#26da02',
+              color: 'white',
+              border: 'none',
+              fontSize: '16px',
+              borderRadius: '4px',
+              cursor: isLoading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {isLoading ? 'Logging in...' : 'Login'}
+          </button>
+          {message && (
+            <div style={{ 
+              marginTop: '15px', 
+              padding: '10px',
+              borderRadius: '4px',
+              backgroundColor: message.includes('successful') ? '#d4edda' : '#f8d7da',
+              color: message.includes('successful') ? '#155724' : '#721c24',
+              border: `1px solid ${message.includes('successful') ? '#c3e6cb' : '#f5c6cb'}`
+            }}>
+              {message}
+            </div>
+          )}
+        </form>
+      </div>
     </div>
+      
+    
   );
 }
+
+export default Login;

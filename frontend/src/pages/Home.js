@@ -1,6 +1,9 @@
 import React from 'react';
 import '../css/Home.css';
 import { useNavigate } from 'react-router-dom';
+
+import image1 from '../assets/images/shrek.jpg';
+import image2 from '../assets/images/ocktor.png';
 // import header_jpeg from './assets/yes.jpg';
 
 function Home(){
@@ -41,8 +44,8 @@ function Home(){
             </div>
 
             <div class='flex-container'>
-                <img src = './assets/images/shrek.jpg' className = 'cover-image' />
-                <img src = './assets/images/ocktor.png' className = 'cover-image' />
+                <img src = {image1} className = 'cover-image' />
+                <img src = {image2} className = 'cover-image' />
             </div>
 
             <div>
