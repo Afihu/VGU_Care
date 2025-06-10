@@ -122,7 +122,7 @@
     border-radius: 5px;
     font-weight: bold;
     box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.5);
-    background-color: blue;
+    background-color: skyblue;
 }
 .update-hdata-icon {
     display: block; 
@@ -139,7 +139,7 @@
     -webkit-mask-size: contain;
   mask-size: contain;
 
-  background-color: blue;
+  background-color: skyblue;
 }
 
 

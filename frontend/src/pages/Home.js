@@ -21,7 +21,7 @@ function Home(){
                 </div>
 
                 <div class='element-flex-container'>
-                    <button class='update-hdata-label'>Uodate Health Data</button>
+                    <button class='update-hdata-label'>Update Health Data</button>
                     <button class='Button'>
                         <span class='update-hdata-icon'></span>
                     </button>
