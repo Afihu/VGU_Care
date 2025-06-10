@@ -1,0 +1,25 @@
+As we have implemented a role-based system during user login, we now need to implement privilege systems for each role.
+- Student:
+  - View/Update own profile
+  - View/create/update own appointments
+  - View/create/update own mood tracker entries
+  - Upload/edit/download/delete own medical documents
+  - View temporary advice
+- Medical Staff:
+  - View/update own profile
+  - View all student profiles
+  - View/create/update appointments of students who booked with them
+  - View student's mood tracker entries
+  - View stundent's medical documents
+    - Can also upload/edit/delete medical documents but only related to their appointments, such as prescriptions.
+  - Create/update/delete temporary advice
+  - View/create/update/delete system abuse reports
+- Admin:
+  - View all student profiles
+  - View all medical staff profiles
+  - View/create/update appointments for all students
+  - View/create/update mood tracker entries for all students
+  - View/create/update/delete medical documents for all students
+  - Create/update/delete temporary advice for all students
+  - View/create/update/delete system abuse reports for all users
+  - Manage user roles and permissions
