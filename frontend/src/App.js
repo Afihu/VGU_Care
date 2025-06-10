@@ -20,7 +20,7 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/request-appointment" element={<RequestAppointment />} />
           <Route path="/appointment-user-view" element={<AppointmentUserView />} />
-          <Route path="/track-mmod" element={<TrackMood />} />
+          <Route path="/track-mood" element={<TrackMood />} />
           {/* Add other routes here */}
         </Routes>
 
