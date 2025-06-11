@@ -52,13 +52,27 @@ try {
   console.error('❌ userRoutes failed:', error.message);
 }
 
-// Uncomment when implemented
-// try {
-//   app.use('/api/appointments', require('./routes/appointmentRoutes'));
-//   console.log('✅ appointmentRoutes loaded');
-// } catch (error) {
-//   console.error('❌ appointmentRoutes failed:', error.message);
-// }
+// Student role feature routes
+try {
+  app.use('/api/appointments', require('./routes/appointmentRoutes'));
+  console.log('✅ appointmentRoutes loaded');
+} catch (error) {
+  console.error('❌ appointmentRoutes failed:', error.message);
+}
+
+try {
+  app.use('/api/mood', require('./routes/moodRoutes'));
+  console.log('✅ moodRoutes loaded');
+} catch (error) {
+  console.error('❌ moodRoutes failed:', error.message);
+}
+
+try {
+  app.use('/api/documents', require('./routes/documentRoutes'));
+  console.log('✅ documentRoutes loaded');
+} catch (error) {
+  console.error('❌ documentRoutes failed:', error.message);
+}
 
 // Start server
 const PORT = process.env.PORT || 5001;  // Changed fallback from 5001 to 5001

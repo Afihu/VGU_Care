@@ -38,4 +38,8 @@ echo "👤 Running Profile Management Tests..."
 docker-compose --profile test run --rm test node tests/profile.test.js
 
 echo ""
+echo "👤 Running Appointment Management Tests..."
+docker-compose --profile test run --rm test node tests/appointment.test.js
+
+echo ""
 echo "✨ All tests completed!"
