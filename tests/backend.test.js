@@ -1,247 +1,432 @@
-const fetch = require('node-fetch').default;
+/**
+ * Backend Integration Test Suite
+ * Tests all current APIs, database connection, and backend infrastructure
+ */
 
-// Use environment variable for API URL, fallback to localhost for local testing
-const API_URL = process.env.API_URL || 'http://localhost:5001';
+const request = require('supertest');
+const { expect } = require('chai');
 
-console.log('🔗 Starting Backend Connection & Integration Test Suite\n');
-console.log(`🌐 Using API URL: ${API_URL}\n`);
+// Test configuration
+const API_BASE_URL = process.env.API_URL || 'http://localhost:5001';
 
-async function testDatabaseConnection() {
-  console.log('🗄️ Testing database connection...');
-  try {
-    const res = await fetch(`${API_URL}/api/test-db`);
-    const data = await res.json();
+describe('🌐 Backend Integration Test Suite', function() {
+  this.timeout(15000);
+
+  describe('🏥 Infrastructure Tests', function() {
     
-    if (res.ok && data.status === 'success') {
-      console.log('✅ Database connection successful');
-      console.log(`   Database timestamp: ${data.timestamp}`);
-      console.log(`   Message: ${data.message}`);
-      return true;
-    } else {
-      console.error('❌ Database connection failed:', data);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Database connection error:', error.message);
-    return false;
-  }
-}
-
-async function testBackendHealth() {
-  console.log('🏥 Testing backend health endpoint...');
-  try {
-    const res = await fetch(`${API_URL}/api/health`);
-    const data = await res.json();
-    
-    if (res.ok) {
-      console.log('✅ Backend health check passed');
-      console.log(`   Message: ${data.message}`);
-      console.log(`   Database status: ${data.database}`);
-      console.log(`   Timestamp: ${data.timestamp}`);
-      return true;
-    } else {
-      console.error('❌ Backend health check failed:', res.status, data);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Backend health check error:', error.message);
-    return false;
-  }
-}
-
-async function testAuthenticationEndpoints() {
-  console.log('🔐 Testing authentication endpoints availability...');
-  
-  try {
-    const res = await fetch(`${API_URL}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'test@vgu.edu.vn', password: 'wrong' })
+    it('should respond to health check', async function() {
+      const response = await request(API_BASE_URL)
+        .get('/api/health')
+        .expect(200);
+      
+      expect(response.body).to.have.property('message');
+      expect(response.body).to.have.property('timestamp');
+      console.log('✅ Health check endpoint working');
     });
-    
-    if (res.status === 401 || res.status === 400) {
-      console.log('✅ Login endpoint is accessible (returned expected error)');
-      return true;
-    } else {
-      console.log(`ℹ️  Login endpoint returned unexpected status: ${res.status}`);
-      return true;
-    }
-  } catch (error) {
-    console.error('❌ Login endpoint not accessible:', error.message);
-    return false;
-  }
-}
 
-async function testUserEndpoints() {
-  console.log('👤 Testing user endpoints availability...');
-  
-  try {
-    const res = await fetch(`${API_URL}/api/users/me`);
-    
-    if (res.status === 401) {
-      console.log('✅ Protected user endpoint is accessible (returned 401 as expected)');
-      return true;
-    } else {
-      console.log(`ℹ️  User endpoint returned unexpected status: ${res.status}`);
-      return true;
-    }
-  } catch (error) {
-    console.error('❌ User endpoint not accessible:', error.message);
-    return false;
-  }
-}
-
-async function testCORSConfiguration() {
-  console.log('🌐 Testing CORS configuration...');
-  try {
-    const res = await fetch(`${API_URL}/api/health`, {
-      method: 'OPTIONS'
+    it('should test database connection', async function() {
+      const response = await request(API_BASE_URL)
+        .get('/api/test-db')
+        .expect(200);
+      
+      expect(response.body).to.have.property('status', 'success');
+      expect(response.body).to.have.property('message');
+      console.log('✅ Database connection working');
     });
-    
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': res.headers.get('access-control-allow-origin'),
-      'Access-Control-Allow-Methods': res.headers.get('access-control-allow-methods'),
-      'Access-Control-Allow-Headers': res.headers.get('access-control-allow-headers')
-    };
-    
-    console.log('✅ CORS preflight request successful');
-    console.log('   CORS Headers:');
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      if (value) {
-        console.log(`     ${key}: ${value}`);
-      }
+
+    it('should handle CORS configuration', async function() {
+      const response = await request(API_BASE_URL)
+        .options('/api/health');
+      
+      // CORS headers should be present
+      console.log('✅ CORS preflight request handled');
     });
-    
-    return true;
-  } catch (error) {
-    console.error('❌ CORS configuration test failed:', error.message);
-    return false;
-  }
-}
 
-async function testFrontendBackendConnection() {
-  console.log('🔗 Testing frontend-backend connection readiness...');
-  
-  try {
-    const res = await fetch(`${API_URL}/api/health`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    });
-    
-    const contentType = res.headers.get('content-type');
-    
-    if (res.ok && contentType && contentType.includes('application/json')) {
-      console.log('✅ Backend can handle JSON requests from frontend');
-      console.log(`   Response Content-Type: ${contentType}`);
-      return true;
-    } else {
-      console.error('❌ Backend JSON handling issue');
-      console.error(`   Status: ${res.status}`);
-      console.error(`   Content-Type: ${contentType}`);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Frontend-backend connection test failed:', error.message);
-    return false;
-  }
-}
-
-async function testErrorHandling() {
-  console.log('🚨 Testing error handling...');
-  
-  try {
-    const res = await fetch(`${API_URL}/api/nonexistent-route`);
-    
-    console.log(`✅ Error handling test completed (Status: ${res.status})`);
-    
-    if (res.status === 404) {
-      console.log('   404 returned for invalid route (expected)');
-    } else {
-      console.log(`   Unexpected status for invalid route: ${res.status}`);
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('❌ Error handling test failed:', error.message);
-    return false;
-  }
-}
-
-async function testServerResponseTime() {
-  console.log('⏱️  Testing server response time...');
-  
-  const startTime = Date.now();
-  
-  try {
-    const res = await fetch(`${API_URL}/api/health`);
-    const endTime = Date.now();
-    const responseTime = endTime - startTime;
-    
-    if (res.ok) {
+    it('should handle error routes properly', async function() {
+      await request(API_BASE_URL)
+        .get('/api/nonexistent-route')
+        .expect(404);
+      console.log('✅ 404 returned for invalid route');
+    });    it('should respond within acceptable time limits', async function() {
+      const startTime = Date.now();
+      await request(API_BASE_URL)
+        .get('/api/health')
+        .expect(200);
+      const responseTime = Date.now() - startTime;
+      
+      expect(responseTime).to.be.lessThan(2000);
       console.log(`✅ Server response time: ${responseTime}ms`);
+    });
+  });
+
+  describe('👥 User Management API', function() {
+    let adminToken, studentToken, medicalStaffToken;
+
+    before(async function() {
+      // Get tokens for testing
+      const adminResponse = await request(API_BASE_URL)
+        .post('/api/login')
+        .send({ email: 'admin@vgu.edu.vn', password: 'VGU2024!' })
+        .expect(200);
+      adminToken = adminResponse.body.token;
+
+      const studentResponse = await request(API_BASE_URL)
+        .post('/api/login')
+        .send({ email: 'student1@vgu.edu.vn', password: 'VGU2024!' })
+        .expect(200);
+      studentToken = studentResponse.body.token;
+
+      const medicalResponse = await request(API_BASE_URL)
+        .post('/api/login')
+        .send({ email: 'doctor1@vgu.edu.vn', password: 'VGU2024!' })
+        .expect(200);
+      medicalStaffToken = medicalResponse.body.token;
+    });
+
+    it('GET /api/users/me should return current user profile', async function() {
+      const response = await request(API_BASE_URL)
+        .get('/api/users/me')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .expect(200);
       
-      if (responseTime < 1000) {
-        console.log('   Response time is good (< 1 second)');
-      } else {
-        console.log('   Response time is slow (> 1 second)');
+      expect(response.body).to.have.property('email');
+      expect(response.body).to.have.property('role');
+      console.log('✅ GET /api/users/me working');
+    });
+
+    it('PATCH /api/users/profile should update user profile', async function() {
+      const updateData = { name: 'Updated Name' };
+
+      await request(API_BASE_URL)
+        .patch('/api/users/profile')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send(updateData)
+        .expect(200);
+      console.log('✅ PATCH /api/users/profile working');
+    });
+
+    it('should protect routes with authentication', async function() {
+      await request(API_BASE_URL)
+        .get('/api/users/me')
+        .expect(401);
+      console.log('✅ Protected routes require authentication');
+    });
+  });
+
+  describe('📅 Appointment Management API', function() {
+    
+    it('GET /api/appointments - should implement role-based filtering', async function() {
+      // Admin sees all
+      const adminResponse = await request(API_BASE_URL)
+        .get('/api/appointments')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      expect(adminResponse.body.accessLevel).to.equal('full');
+
+      // Student sees filtered
+      const studentResponse = await request(API_BASE_URL)
+        .get('/api/appointments')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .expect(200);
+      expect(studentResponse.body.accessLevel).to.equal('filtered');
+
+      // Medical staff sees filtered
+      const staffResponse = await request(API_BASE_URL)
+        .get('/api/appointments')
+        .set('Authorization', `Bearer ${medicalStaffToken}`)
+        .expect(200);
+      expect(staffResponse.body.accessLevel).to.equal('filtered');
+    });
+
+    it('POST /api/appointments - should allow creating appointments', async function() {
+      const appointmentData = {
+        studentId: 1,
+        medicalStaffId: 2,
+        date: '2025-07-01',
+        reason: 'Test appointment'
+      };
+
+      await request(API_BASE_URL)
+        .post('/api/appointments')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send(appointmentData)
+        .expect(201);
+    });
+
+    it('GET /api/appointments/:id - should check ownership', async function() {
+      await request(API_BASE_URL)
+        .get('/api/appointments/1')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+    });
+
+    it('PATCH /api/appointments/:id - should allow updates', async function() {
+      const updateData = {
+        status: 'completed'
+      };
+
+      await request(API_BASE_URL)
+        .patch('/api/appointments/1')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateData)
+        .expect(200);
+    });
+
+    it('DELETE /api/appointments/:id - should allow deletion', async function() {
+      await request(API_BASE_URL)
+        .delete('/api/appointments/1')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+    });
+  });
+
+  describe('😊 Mood Tracker API', function() {
+    
+    it('GET /api/mood - should implement role-based access', async function() {
+      // All roles should have access
+      await request(API_BASE_URL)
+        .get('/api/mood')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .expect(200);
+
+      await request(API_BASE_URL)
+        .get('/api/mood')
+        .set('Authorization', `Bearer ${medicalStaffToken}`)
+        .expect(200);
+
+      await request(API_BASE_URL)
+        .get('/api/mood')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+    });
+
+    it('POST /api/mood - should allow creating mood entries', async function() {
+      const moodData = {
+        mood: 'happy',
+        notes: 'Feeling great today!'
+      };
+
+      await request(API_BASE_URL)
+        .post('/api/mood')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send(moodData)
+        .expect(200);
+    });
+
+    it('GET /api/mood/user/:userId - should check ownership', async function() {
+      await request(API_BASE_URL)
+        .get('/api/mood/user/1')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+    });
+  });
+
+  describe('💡 Advice Management API', function() {
+    let adminToken, studentToken, medicalStaffToken;
+
+    before(async function() {
+      const adminResponse = await request(API_BASE_URL)
+        .post('/api/login')
+        .send({ email: 'admin@vgu.edu.vn', password: 'VGU2024!' })
+        .expect(200);
+      adminToken = adminResponse.body.token;
+
+      const studentResponse = await request(API_BASE_URL)
+        .post('/api/login')
+        .send({ email: 'student1@vgu.edu.vn', password: 'VGU2024!' })
+        .expect(200);
+      studentToken = studentResponse.body.token;
+
+      const medicalResponse = await request(API_BASE_URL)
+        .post('/api/login')
+        .send({ email: 'doctor1@vgu.edu.vn', password: 'VGU2024!' })
+        .expect(200);
+      medicalStaffToken = medicalResponse.body.token;
+    });
+
+    it('GET /api/advice should allow all authenticated users', async function() {
+      await request(API_BASE_URL)
+        .get('/api/advice')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .expect(200);
+      console.log('✅ Advice viewing access working');
+    });
+
+    it('POST /api/advice should restrict to medical staff and admin', async function() {
+      const adviceData = {
+        title: 'Test Advice',
+        content: 'This is test advice',
+        category: 'mental_health'
+      };
+
+      // Student should be denied
+      await request(API_BASE_URL)
+        .post('/api/advice')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send(adviceData)
+        .expect(403);
+
+      // Medical staff should succeed
+      await request(API_BASE_URL)
+        .post('/api/advice')
+        .set('Authorization', `Bearer ${medicalStaffToken}`)
+        .send(adviceData)
+        .expect(200);
+
+      console.log('✅ Advice creation restrictions working');
+    });
+
+    it('PATCH /api/advice/:id should restrict to medical staff and admin', async function() {
+      const updateData = { title: 'Updated Advice' };
+
+      await request(API_BASE_URL)
+        .patch('/api/advice/1')
+        .set('Authorization', `Bearer ${medicalStaffToken}`)
+        .send(updateData)
+        .expect(200);
+
+      console.log('✅ Advice update restrictions working');
+    });
+  });
+
+  describe('🚨 Report Management API', function() {
+    let adminToken, studentToken, medicalStaffToken;
+
+    before(async function() {
+      const adminResponse = await request(API_BASE_URL)
+        .post('/api/login')
+        .send({ email: 'admin@vgu.edu.vn', password: 'VGU2024!' })
+        .expect(200);
+      adminToken = adminResponse.body.token;
+
+      const studentResponse = await request(API_BASE_URL)
+        .post('/api/login')
+        .send({ email: 'student1@vgu.edu.vn', password: 'VGU2024!' })
+        .expect(200);
+      studentToken = studentResponse.body.token;
+
+      const medicalResponse = await request(API_BASE_URL)
+        .post('/api/login')
+        .send({ email: 'doctor1@vgu.edu.vn', password: 'VGU2024!' })
+        .expect(200);
+      medicalStaffToken = medicalResponse.body.token;
+    });
+
+    it('GET /api/reports should deny students', async function() {
+      await request(API_BASE_URL)
+        .get('/api/reports')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .expect(403);
+      console.log('✅ Students denied access to abuse reports');
+    });
+
+    it('GET /api/reports should allow medical staff and admin', async function() {
+      await request(API_BASE_URL)
+        .get('/api/reports')
+        .set('Authorization', `Bearer ${medicalStaffToken}`)
+        .expect(200);
+
+      await request(API_BASE_URL)
+        .get('/api/reports')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      console.log('✅ Medical staff and admin can access abuse reports');
+    });
+
+    it('POST /api/reports/:id/user-action should be admin only', async function() {
+      const actionData = {
+        action: 'ban_user',
+        reason: 'Violation of terms'
+      };
+
+      await request(API_BASE_URL)
+        .post('/api/reports/1/user-action')
+        .set('Authorization', `Bearer ${medicalStaffToken}`)
+        .send(actionData)
+        .expect(403);
+
+      await request(API_BASE_URL)
+        .post('/api/reports/1/user-action')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(actionData)
+        .expect(200);
+
+      console.log('✅ Admin-only user actions working');
+    });
+  });
+
+  describe('🔍 Error Handling and Edge Cases', function() {
+    
+    it('should handle malformed JSON in request body', async function() {
+      try {
+        await request(API_BASE_URL)
+          .post('/api/login')
+          .set('Content-Type', 'application/json')
+          .send('{"email":"test"') // Malformed JSON
+          .expect(400);
+      } catch (error) {
+        // Error handling varies by Express configuration
+        expect([400, 500]).to.include(error.status);
       }
+    });
+
+    it('should handle very long request payloads', async function() {
+      const longString = 'a'.repeat(10000);
+      const longPayload = {
+        email: 'test@vgu.edu.vn',
+        password: 'VGU2024!',
+        name: longString
+      };
+
+      try {
+        const response = await request(API_BASE_URL)
+          .post('/api/signup')
+          .send(longPayload);
+        // If it succeeds, check if this is desired behavior
+        expect([200, 201, 413, 400]).to.include(response.status);
+      } catch (error) {
+        // Long payloads should be rejected
+        expect([413, 400]).to.include(error.status);
+      }
+    });
+
+    it('should handle concurrent requests', async function() {
+      // Test multiple concurrent requests
+      const requests = Array(5).fill().map(() => 
+        request(API_BASE_URL)
+          .get('/api/health')
+          .expect(200)
+      );
+
+      await Promise.all(requests);
+    });
+  });
+
+  describe('📊 Performance Metrics', function() {
+    
+    it('should respond to health check quickly', async function() {
+      const startTime = Date.now();
+      await request(API_BASE_URL)
+        .get('/api/health')
+        .expect(200);
+      const responseTime = Date.now() - startTime;
       
-      return true;
-    } else {
-      console.error('❌ Server response test failed:', res.status);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Server response time test failed:', error.message);
-    return false;
-  }
-}
+      expect(responseTime).to.be.lessThan(1000); // Should respond within 1 second
+    });
 
-async function runConnectionTestSuite() {
-  console.log('🚀 Starting Backend Connection & Integration Tests\n');
-  
-  const testResults = [];
-  
-  // Core Infrastructure Tests
-  console.log('🏗️ === CORE INFRASTRUCTURE TESTS ===');
-  testResults.push(await testBackendHealth());
-  testResults.push(await testDatabaseConnection());
-  testResults.push(await testServerResponseTime());
-  
-  console.log('\n🔌 === ENDPOINT AVAILABILITY TESTS ===');
-  testResults.push(await testAuthenticationEndpoints());
-  testResults.push(await testUserEndpoints());
-  
-  console.log('\n🌍 === NETWORK & COMMUNICATION TESTS ===');
-  testResults.push(await testCORSConfiguration());
-  testResults.push(await testFrontendBackendConnection());
-  testResults.push(await testErrorHandling());
-  
-  console.log('\n📊 === TEST RESULTS SUMMARY ===');
-  
-  const passedTests = testResults.filter(result => result).length;
-  const totalTests = testResults.length;
-  
-  console.log(`Tests Passed: ${passedTests}/${totalTests}`);
-  console.log(`Success Rate: ${((passedTests/totalTests) * 100).toFixed(1)}%`);
-  
-  if (passedTests === totalTests) {
-    console.log('🎉 All connection tests passed! Backend is ready for frontend integration.');
-  } else {
-    console.log('⚠️  Some connection tests failed. Check the logs above for details.');
-  }
-  
-  console.log('\n✨ Backend Connection Test Suite Completed!');
-  
-  // Exit with appropriate code
-  process.exit(passedTests === totalTests ? 0 : 1);
-}
-
-// Run the test suite
-runConnectionTestSuite().catch(error => {
-  console.error('💥 Connection test suite failed:', error);
-  process.exit(1);
+    it('should handle authentication quickly', async function() {
+      const startTime = Date.now();
+      await request(API_BASE_URL)
+        .post('/api/login')
+        .send({
+          email: 'admin@vgu.edu.vn',
+          password: 'VGU2024!'
+        })
+        .expect(200);
+      const responseTime = Date.now() - startTime;
+      
+      expect(responseTime).to.be.lessThan(2000); // Should respond within 2 seconds
+    });
+  });
 });

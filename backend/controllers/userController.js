@@ -1,4 +1,5 @@
 const profileService = require('../services/profileService');
+const userService = require('../services/userService');
 
 exports.getProfile = async (req, res) => {
   try {
@@ -60,5 +61,44 @@ exports.changePassword = async (req, res) => {
     } else {
       res.status(500).json({ error: err.message });
     }
+  }
+};
+
+// Role-based profile access - students can only view their own, medical staff + admin can view any
+exports.getProfileById = async (req, res) => {
+  try {
+    const targetUserId = parseInt(req.params.userId);
+    const profile = await profileService.getProfile(targetUserId);
+    
+    res.json({ user: profile });
+  } catch (err) {
+    console.error('Get profile by ID error:', err);
+    if (err.message === 'User not found') {
+      res.status(404).json({ error: err.message });
+    } else {
+      res.status(500).json({ error: err.message });
+    }
+  }
+};
+
+// Get all students - medical staff and admin only
+exports.getAllStudents = async (req, res) => {
+  try {
+    const students = await userService.getUsersByRole('student');
+    
+    res.json({ 
+      students: students.map(student => ({
+        id: student.id,
+        email: student.email,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        dateOfBirth: student.dateOfBirth,
+        phoneNumber: student.phoneNumber,
+        createdAt: student.createdAt
+      }))
+    });
+  } catch (err) {
+    console.error('Get all students error:', err);
+    res.status(500).json({ error: err.message });
   }
 };

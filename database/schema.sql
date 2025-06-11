@@ -79,6 +79,20 @@
 --    - admin_id (UUID, Primary Key)
 --    - user_id (UUID, Foreign Key referencing Users)
 
+-- 10. MedicalDocuments:
+--    - id (SERIAL, Primary Key)
+--    - student_id (INTEGER, Foreign Key referencing Users)
+--    - uploaded_by_id (INTEGER, Foreign Key referencing Users)
+--    - appointment_id (INTEGER, Foreign Key referencing Appointments, Null)
+--    - filename (VARCHAR(255), Not Null)
+--    - original_name (VARCHAR(255), Not Null)
+--    - file_type (VARCHAR(100), Not Null)
+--    - file_size (INTEGER, Not Null)
+--    - file_path (VARCHAR(500), Not Null) -- Local path or cloud URL
+--    - document_type (VARCHAR(50), Default 'other')
+--    - created_at (TIMESTAMP, Default CURRENT_TIMESTAMP)
+--    - updated_at (TIMESTAMP, Default CURRENT_TIMESTAMP)
+
 -- VGU Care Database Schema - Complete Implementation
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -166,25 +180,41 @@ CREATE TABLE abuse_reports (
     status VARCHAR(20) CHECK (status IN ('open', 'investigating', 'resolved')) NOT NULL DEFAULT 'open'
 );
 
+-- Medical Documents table
+CREATE TABLE medical_documents (
+    document_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    student_id UUID NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
+    uploaded_by_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    appointment_id UUID REFERENCES appointments(appointment_id) ON DELETE SET NULL,
+    filename VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    file_type VARCHAR(100) NOT NULL,
+    file_size INTEGER NOT NULL,
+    file_path VARCHAR(500) NOT NULL, -- Local path or cloud URL
+    document_type VARCHAR(50) DEFAULT 'other',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Dummy Data (10 users: 7 students, 2 medical staff, 1 admin)
 
 -- Insert Users
 INSERT INTO users (name, gender, age, role, email, password_hash, status, points) VALUES
 -- Students (7)
-('Nguyen Van A', 'male', 20, 'student', 'student1@vgu.edu.vn', '$2b$12$CYBv/TSzYrcG1WvFAAzTle2hpETmMFHxt07A8zspgyUk0zHFCg46G', 'active', 150),
-('Tran Thi B', 'female', 21, 'student', 'student2@vgu.edu.vn', '$2b$12$AIN2ffft18QdgKeQ9Kt.p.GFxb3QLRhCh1yc6399VvqK/hXnJEZNi', 'active', 200),
-('Le Van C', 'male', 19, 'student', 'student3@vgu.edu.vn', '$2b$12$MOI/qThiwQLjRZNSaZn82u/iLrbnEDNVejdGC8U68efkW.EXVMSZ6', 'active', 75),
-('Pham Thi D', 'female', 22, 'student', 'student4@vgu.edu.vn', '$2b$12$8ayQrKVjEGj8GW0thz3OrON6/ZpLQW7yhFU1hvQhPcJ4YGyh4BBzS', 'active', 300),
-('Hoang Van E', 'male', 20, 'student', 'student5@vgu.edu.vn', '$2b$12$GSBn91Wq.eVFbs0vSTo4nODq/dBwwvEww.JD0TkkByfkJJIj8756S', 'active', 125),
-('Vu Thi F', 'female', 21, 'student', 'student6@vgu.edu.vn', '$2b$12$ECRSdD9rctZBwohVCAMe8OyTW4R5CHAxRQUTuVBay4QR59r531EEu', 'inactive', 50),
-('Do Van G', 'male', 23, 'student', 'student7@vgu.edu.vn', '$2b$12$WE.C2tgnEpVYojPZCiEMF.uoSsSl2P1Y9KnSSzi4ASTBUkAT/NFWe', 'active', 175),
+('Nguyen Van A', 'male', 20, 'student', 'student1@vgu.edu.vn', '$2b$12$4tLZVVDG9bWtTXdikj/xhe4wxjJg5lZPMXWVVvvyB.clG.NUpXSqC', 'active', 150),
+('Tran Thi B', 'female', 21, 'student', 'student2@vgu.edu.vn', '$2b$12$2LUi0.lureGqwYkYV8kOtuLHpLu6vEFFVOwfzz2BY9bsP64HCf9U.', 'active', 200),
+('Le Van C', 'male', 19, 'student', 'student3@vgu.edu.vn', '$2b$12$aZYJjkjEw3kl6ABAmSxMBuq91OVuEeHOAlGpztp2vZ.MjVFR7YbIW', 'active', 75),
+('Pham Thi D', 'female', 22, 'student', 'student4@vgu.edu.vn', '$2b$12$2B10fzqG24hzePdpbYBQOe4TBZXhrFuJR3qRXGFs0DQNIGfusx5te', 'active', 300),
+('Hoang Van E', 'male', 20, 'student', 'student5@vgu.edu.vn', '$2b$12$eXAFQuLowZN.B8kzrelMz.Ro2GU93YZRD9rWpoXYsk/FIfwFRRPsi', 'active', 125),
+('Vu Thi F', 'female', 21, 'student', 'student6@vgu.edu.vn', '$2b$12$iJh38PWl1btTFLA1by9lZeAYyEdd12jqLqSDtqIQAasub2T4OMW9m', 'inactive', 50),
+('Do Van G', 'male', 23, 'student', 'student7@vgu.edu.vn', '$2b$12$nP7ixQ1ReXYFNtT0.cDSr.uzLtQSqNH1rL8z28GRat8ZQ7LI/itx6', 'active', 175),
 
 -- Medical Staff (2)
-('Dr. Nguyen Thi H', 'female', 35, 'medical_staff', 'doctor1@vgu.edu.vn', '$2b$12$9oh16K.310kNfYIuyI1hNO1.0X8v1ysdR1jU.k3NNwMvBu4HRPe2W', 'active', 0),
-('Dr. Tran Van I', 'male', 42, 'medical_staff', 'doctor2@vgu.edu.vn', '$2b$12$iuUsZmFCY4f5g73AWzW7YuFozHSkzQld5ETw9p/xemfyAmB1mG6eG', 'active', 0),
+('Dr. Nguyen Thi H', 'female', 35, 'medical_staff', 'doctor1@vgu.edu.vn', '$2b$12$GOnKE2aLMCSvqfvi05bS9ey4acijQv4CIh01ryPz7hMTTHa1li68e', 'active', 0),
+('Dr. Tran Van I', 'male', 42, 'medical_staff', 'doctor2@vgu.edu.vn', '$2b$12$.UH/nuONdK493/TF7NKpD.uq9ME.MXl5slGL5Mnt1MpZAI89n8cOC', 'active', 0),
 
 -- Admin (1)
-('Admin User', 'other', 30, 'admin', 'admin@vgu.edu.vn', '$2b$12$CeduiIqa1OiZAXxKS0G3dOqa6UHRsoMRx/2Qz6.FqH66wbrkg5SFe', 'active', 0);
+('Admin User', 'other', 30, 'admin', 'admin@vgu.edu.vn', '$2b$12$8diTle1/eMTsJkbocSWuEuKxinnbVHxr1aq8q6GRw66d0muM/ZjgC', 'active', 0);
 
 -- Insert Students (get user_ids for students)
 INSERT INTO students (user_id, intake_year, major)

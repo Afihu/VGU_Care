@@ -1,5 +1,5 @@
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database - Optimized
   postgres:
     image: postgres:17-alpine
     container_name: vgu_care_db
@@ -8,7 +8,14 @@ services:
       POSTGRES_USER: vgu_user
       POSTGRES_PASSWORD: vgu_password
       POSTGRES_HOST_AUTH_METHOD: md5 
-      POSTGRES_INITDB_ARGS: "--auth-host=md5"  
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+      # Performance optimizations
+      POSTGRES_SHARED_BUFFERS: 64MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 128MB
+      POSTGRES_MAINTENANCE_WORK_MEM: 16MB
+      POSTGRES_CHECKPOINT_COMPLETION_TARGET: 0.9
+      POSTGRES_WAL_BUFFERS: 16MB
+      POSTGRES_DEFAULT_STATISTICS_TARGET: 100
       
     ports:
       - "5433:5432"
@@ -33,13 +40,17 @@ services:
     restart: unless-stopped
     networks:
       - vgu_network
-
-  # Backend API
+  # Backend API - Optimized
   backend:
     build:
       context: .  
       dockerfile: backend/Dockerfile
       target: development
+      # Build optimization
+      cache_from:
+        - node:18-alpine
+      args:
+        BUILDKIT_INLINE_CACHE: 1
     container_name: vgu_care_api
     environment:
       - NODE_ENV=development
@@ -50,47 +61,74 @@ services:
       - DB_PASSWORD=vgu_password
       - DATABASE_URL=postgresql://vgu_user:vgu_password@postgres:5432/vgu_care
       - JWT_SECRET=your_jwt_secret_key_here
-      - PORT=5001  # Changed from 5000 to 5001
+      - PORT=5001
     ports:
-      - "5001:5001"  # Changed from "5000:5000" to "5001:5001"
+      - "5001:5001"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - ./backend:/app/backend
-      - ./tests:/app/tests
-      - ./package.json:/app/package.json
-      - /app/node_modules
+      # Use bind mounts for development files only
+      - ./backend:/app/backend:delegated
+      - ./tests:/app/tests:delegated
+      - ./package.json:/app/package.json:ro
+      # Use named volume for node_modules for better performance
+      - backend_node_modules:/app/node_modules
       - backend_logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5001/api/health"]  # Changed port
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5001/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 20s
     restart: unless-stopped
     networks:
       - vgu_network
-
-  # Frontend React App
+  # Frontend React App - Optimized
   frontend:
     build:
       context: ./frontend
       target: development
       dockerfile: Dockerfile
+      # Build optimization
+      cache_from:
+        - node:18-alpine
+      args:
+        BUILDKIT_INLINE_CACHE: 1
     container_name: vgu_care_frontend
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/build
+      # Use bind mounts with delegated consistency for better performance on macOS/Windows
+      - ./frontend:/app:delegated
+      # Use named volumes for node_modules for better performance
+      - frontend_node_modules:/app/node_modules
+      - frontend_build:/app/build
     environment:
-      - REACT_APP_API_URL=http://localhost:5001  # Changed from 5000 to 5001
+      - REACT_APP_API_URL=http://localhost:5001
       - REACT_APP_ENV=development
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=false  # Disable polling for better performance
+      - WATCHPACK_POLLING=false    # Disable polling for better performance
+      - FAST_REFRESH=true          # Enable Fast Refresh for faster development
+      - GENERATE_SOURCEMAP=false   # Disable source maps in development for faster builds
     depends_on:
       - backend
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
     stdin_open: true
     tty: true
     restart: unless-stopped
@@ -115,22 +153,35 @@ services:
       - tools
     networks:
       - vgu_network
-
-  # Test Runner Service
-  test:  
+  # Test Runner Service - Optimized
+  test:
     build:
-      context: .
-      dockerfile: tests/Dockerfile
+      context: .                    # Build from project root (not tests/ directory)
+      dockerfile: tests/Dockerfile  # Use the Dockerfile in tests/ directory
+      cache_from:
+        - node:18-alpine
+      args:
+        BUILDKIT_INLINE_CACHE: 1
     volumes:
-      - ./tests:/app/tests
-      - ./backend:/app/backend
-      - ./package.json:/app/package.json
-      - ./package-lock.json:/app/package-lock.json
+      - ./tests:/app/tests:delegated
+      - ./backend:/app/backend:ro
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+      # Use named volume for node_modules
+      - test_node_modules:/app/node_modules
     depends_on:
       backend:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
     networks:
       - vgu_network
     profiles:
@@ -152,6 +203,15 @@ volumes:
   pgadmin_data:
     driver: local
   backend_logs:
+    driver: local
+  # Named volumes for node_modules to improve performance
+  backend_node_modules:
+    driver: local
+  frontend_node_modules:
+    driver: local
+  frontend_build:
+    driver: local
+  test_node_modules:
     driver: local
 
 networks:

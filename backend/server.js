@@ -52,13 +52,40 @@ try {
   console.error('❌ userRoutes failed:', error.message);
 }
 
-// Uncomment when implemented
-// try {
-//   app.use('/api/appointments', require('./routes/appointmentRoutes'));
-//   console.log('✅ appointmentRoutes loaded');
-// } catch (error) {
-//   console.error('❌ appointmentRoutes failed:', error.message);
-// }
+try {
+  app.use('/api/admin', require('./routes/adminRoutes'));
+  console.log('✅ adminRoutes loaded');
+} catch (error) {
+  console.error('❌ adminRoutes failed:', error.message);
+}
+
+try {
+  app.use('/api/appointments', require('./routes/appointmentRoutes'));
+  console.log('✅ appointmentRoutes loaded');
+} catch (error) {
+  console.error('❌ appointmentRoutes failed:', error.message);
+}
+
+try {
+  app.use('/api/mood', require('./routes/moodRoutes'));
+  console.log('✅ moodRoutes loaded');
+} catch (error) {
+  console.error('❌ moodRoutes failed:', error.message);
+}
+
+try {
+  app.use('/api/advice', require('./routes/adviceRoutes'));
+  console.log('✅ adviceRoutes loaded');
+} catch (error) {
+  console.error('❌ adviceRoutes failed:', error.message);
+}
+
+try {
+  app.use('/api/reports', require('./routes/reportRoutes'));
+  console.log('✅ reportRoutes loaded');
+} catch (error) {
+  console.error('❌ reportRoutes failed:', error.message);
+}
 
 // Start server
 const PORT = process.env.PORT || 5001;  // Changed fallback from 5001 to 5001
