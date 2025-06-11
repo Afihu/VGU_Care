@@ -18,6 +18,7 @@ bash tests/run-tests.sh
 docker-compose --profile test run --rm test node tests/auth-service.test.js
 docker-compose --profile test run --rm test node tests/backend.test.js  
 docker-compose --profile test run --rm test node tests/profile.test.js
+docker-compose --profile test run --rm test node tests/appointment.test.js
 ```
 
 ### Troubleshooting

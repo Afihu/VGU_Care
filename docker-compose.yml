@@ -156,6 +156,7 @@ volumes:
 
 networks:
   vgu_network:
+    name: vgu_network  # Explicitly set the network name
     driver: bridge
     ipam:
       config:
