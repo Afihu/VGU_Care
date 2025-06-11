@@ -17,6 +17,7 @@
     align-items: center;
     justify-content: center;
     width: 100%;
+    max-width: 800px;
 }
 
 .mood-select{
@@ -42,13 +43,19 @@
     width: 100%;
 }
 
-.entry-card{
+.entry-table{
     width: 100%;
+    margin-left: 100px
+}
+
+.entry-card{
+    width: 80%;
     padding: 20px;
-    background-color: #ffffff;
+    background-color: #9a9696;
     border-radius: 15px;
     margin-top: 20px;
-    border-color: #a8a8a8;
+    border-color: #ffffff;
+    color: #ffffff;
 }
 
 .note-input{
