@@ -47,4 +47,8 @@ echo "👤 Running Role Privileges Tests..."
 docker-compose --profile test run --rm test npx mocha tests/privilege.test.js
 
 echo ""
+echo "👤 Running Appointment Management Tests..."
+docker-compose --profile test run --rm test node tests/appointment.test.js
+
+echo ""
 echo "✨ All tests completed!"
