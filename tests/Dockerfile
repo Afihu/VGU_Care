@@ -6,6 +6,9 @@ RUN apk add --no-cache curl wget
 
 WORKDIR /app
 
+# Update npm to latest compatible version for Node 18
+RUN npm install -g npm@10.9.2
+
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci && npm cache clean --force

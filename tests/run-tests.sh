@@ -28,23 +28,23 @@ echo ""
 
 echo ""
 echo "🔗 Running Backend Connection Tests..." 
-docker-compose --profile test run --rm test npx mocha tests/backend.test.js
+docker-compose --profile test run --rm test node tests/backend.test.js
 
 
 echo ""
 echo "🔗 Running Database Tests..." 
-docker-compose --profile test run --rm test npx mocha tests/database.test.js
+docker-compose --profile test run --rm test node tests/database.test.js
 
 echo "🔐 Running Authentication Service Tests..."
-docker-compose --profile test run --rm test npx mocha tests/auth.test.js
+docker-compose --profile test run --rm test node tests/auth.test.js
 
 echo ""
 echo "👤 Running Profile Tests..."
-docker-compose --profile test run --rm test npx mocha tests/profile.test.js
+docker-compose --profile test run --rm test node tests/profile.test.js
 
 echo ""
 echo "👤 Running Role Privileges Tests..."
-docker-compose --profile test run --rm test npx mocha tests/privilege.test.js
+docker-compose --profile test run --rm test node tests/privilege.test.js
 
 echo ""
 echo "👤 Running Appointment Management Tests..."

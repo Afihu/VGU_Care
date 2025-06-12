@@ -1,41 +1,27 @@
-# Multi-stage build for optimized development and production
+# Nuclear Dockerfile - Run as root to avoid permission issues on Windows
+FROM node:18-alpine
 
-# Dependencies stage - cached layer
-FROM node:18-alpine AS dependencies
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci && npm cache clean --force
-
-# Development stage - optimized for hot reloading
-FROM node:18-alpine AS development
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Install dependencies
+RUN apk add --no-cache bash
+
+# Copy package files
 COPY package*.json ./
-RUN npm ci && npm cache clean --force
+
+# Install npm dependencies
+RUN npm ci --silent && npm cache clean --force
 
 # Copy source code
 COPY . .
 
+# Create cache directory with full permissions (running as root)
+RUN mkdir -p /app/node_modules/.cache && \
+    chmod -R 777 /app/node_modules && \
+    chmod -R 777 /app
+
+# Expose port
 EXPOSE 3000
-USER node
+
+# Run as root (no USER directive) to avoid permission issues
 CMD ["npm", "start"]
-
-# Build stage - optimized production build
-FROM dependencies AS builder
-COPY . .
-RUN npm run build
-
-# Production stage - minimal nginx image
-FROM nginx:alpine AS production
-# Copy custom nginx config if needed
-# COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copy built app
-COPY --from=builder /app/build /usr/share/nginx/html
-
-# Add non-root user for security
-RUN addgroup -g 1001 -S nginx && adduser -S nginx -u 1001
-
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]

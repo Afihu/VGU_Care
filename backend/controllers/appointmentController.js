@@ -1,34 +1,30 @@
+const appointmentService = require('../services/appointmentService');
+const adminService = require('../services/adminService');
+
 /**
  * Appointment Controller with Role-Based Access Control
- * Demonstrates how to use the appointment access middleware
+ * Integrates real AppointmentService with role-based middleware
  */
 
 // Get appointments with role-based filtering
 exports.getAppointments = async (req, res) => {
   try {
-    // Use the filter from requireAppointmentAccess middleware
-    const filter = req.appointmentAccess.filter;
     const userRole = req.appointmentAccess.role;
-    
-    // Mock data for demonstration
-    const mockAppointments = [
-      { id: 1, studentId: 1, medicalStaffId: 2, date: '2025-06-15', status: 'scheduled' },
-      { id: 2, studentId: 2, medicalStaffId: 2, date: '2025-06-16', status: 'completed' },
-      { id: 3, studentId: 1, medicalStaffId: 3, date: '2025-06-17', status: 'pending' }
-    ];
-    
-    // Apply role-based filtering
-    let filteredAppointments = mockAppointments;
+    const userId = req.appointmentAccess.userId;
+    let appointments = [];
     
     if (userRole === 'student') {
-      filteredAppointments = mockAppointments.filter(apt => apt.studentId === filter.studentId);
-    } else if (userRole === 'medical_staff') {
-      filteredAppointments = mockAppointments.filter(apt => apt.medicalStaffId === filter.medicalStaffId);
+      // Students see only their own appointments
+      appointments = await appointmentService.getAppointmentsByUserId(userId);
+    } else if (userRole === 'admin') {
+      // Admins see all appointments
+      appointments = await adminService.getAllAppointments();    } else if (userRole === 'medical_staff') {
+      // Medical staff see appointments where they are assigned
+      appointments = await appointmentService.getAppointmentsByMedicalStaff(userId);
     }
-    // Admin sees all appointments (no filtering)
     
     res.json({ 
-      appointments: filteredAppointments,
+      appointments,
       userRole: userRole,
       accessLevel: userRole === 'admin' ? 'full' : 'filtered'
     });
@@ -41,32 +37,34 @@ exports.getAppointments = async (req, res) => {
 // Create appointment with role-based validation
 exports.createAppointment = async (req, res) => {
   try {
-    const { studentId, medicalStaffId, date, reason } = req.body;
+    const { symptoms, priorityLevel } = req.body; // Student API format
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
     
-    // Role-based validation
-    if (userRole === 'student' && studentId !== userId) {
-      return res.status(403).json({ 
-        error: 'Students can only book appointments for themselves' 
+    // Validate required fields
+    if (!symptoms || !priorityLevel) {
+      return res.status(400).json({ 
+        error: 'Symptoms and priority level are required' 
       });
     }
     
-    // Mock appointment creation
-    const newAppointment = {
-      id: Math.floor(Math.random() * 1000),
-      studentId,
-      medicalStaffId,
-      date,
-      reason,
-      status: 'pending',
-      createdBy: userId,
-      createdAt: new Date().toISOString()
-    };
+    let appointment;
+    
+    if (userRole === 'student') {
+      // Students create appointments for themselves
+      appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel);
+    } else if (userRole === 'admin') {
+      // Admin can create appointments for students via different route (/api/admin/appointments/users/:userId)
+      return res.status(400).json({ 
+        error: 'Admins should use /api/admin/appointments/users/:userId endpoint' 
+      });    } else if (userRole === 'medical_staff') {
+      // Medical staff can create appointments for students with their assignment
+      appointment = await appointmentService.createAppointmentByMedicalStaff(userId, symptoms, priorityLevel);
+    }
     
     res.status(201).json({ 
       message: 'Appointment created successfully',
-      appointment: newAppointment 
+      appointment 
     });
   } catch (error) {
     console.error('Create appointment error:', error);
@@ -81,28 +79,42 @@ exports.getAppointmentById = async (req, res) => {
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
     
-    // Mock appointment data
-    const mockAppointment = { 
-      id: appointmentId, 
-      studentId: 1, 
-      medicalStaffId: 2, 
-      date: '2025-06-15', 
-      status: 'scheduled',
-      reason: 'Regular checkup'
-    };
+    let appointment;
     
-    // Check access permissions
-    const hasAccess = userRole === 'admin' || 
-                     (userRole === 'student' && mockAppointment.studentId === userId) ||
-                     (userRole === 'medical_staff' && mockAppointment.medicalStaffId === userId);
-    
-    if (!hasAccess) {
-      return res.status(403).json({ 
-        error: 'You do not have access to this appointment' 
-      });
+    if (userRole === 'admin') {
+      // Admin can access any appointment - fetch from admin service
+      const allAppointments = await adminService.getAllAppointments();
+      appointment = allAppointments.find(apt => apt.id === appointmentId);
+    } else {
+      // Students and medical staff - get specific appointment and check ownership
+      appointment = await appointmentService.getAppointmentById(appointmentId);
+      
+      if (!appointment) {
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+      
+      // Check access permissions
+      if (userRole === 'student' && appointment.userId !== userId) {
+        return res.status(403).json({ 
+          error: 'You do not have access to this appointment' 
+        });
+      }
+        if (userRole === 'medical_staff') {
+        // Medical staff can access appointments where they are assigned
+        const isAssigned = await appointmentService.isMedicalStaffAssigned(appointmentId, userId);
+        if (!isAssigned) {
+          return res.status(403).json({ 
+            error: 'You can only access appointments where you are assigned' 
+          });
+        }
+      }
     }
     
-    res.json({ appointment: mockAppointment });
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+    
+    res.json({ appointment });
   } catch (error) {
     console.error('Get appointment by ID error:', error);
     res.status(500).json({ error: error.message });
@@ -115,11 +127,81 @@ exports.updateAppointment = async (req, res) => {
     const appointmentId = parseInt(req.params.appointmentId);
     const updates = req.body;
     const userRole = req.appointmentAccess.role;
+    const userId = req.appointmentAccess.userId;
+    
+    let updatedAppointment;
+    
+    if (userRole === 'admin') {
+      // Admin can update any appointment via admin service
+      updatedAppointment = await adminService.updateAppointment(appointmentId, updates);
+    } else if (userRole === 'student') {
+      // Students can only update their own appointments
+      // First check ownership
+      const appointment = await appointmentService.getAppointmentById(appointmentId);
+      
+      if (!appointment) {
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+      
+      if (appointment.userId !== userId) {
+        return res.status(403).json({ 
+          error: 'You can only update your own appointments' 
+        });
+      }
+      
+      // Students have limited update permissions
+      const allowedFields = ['symptoms', 'status', 'priorityLevel', 'dateScheduled'];
+      const studentUpdates = {};
+      
+      for (const field of allowedFields) {
+        if (updates[field] !== undefined) {
+          studentUpdates[field] = updates[field];
+        }
+      }
+      
+      if (Object.keys(studentUpdates).length === 0) {
+        return res.status(400).json({ 
+          error: 'No valid fields provided for update. Allowed: symptoms, status, priorityLevel, dateScheduled' 
+        });
+      }
+      
+      updatedAppointment = await appointmentService.updateAppointment(appointmentId, studentUpdates);    } else if (userRole === 'medical_staff') {
+      // Medical staff can update appointments where they are assigned
+      const appointment = await appointmentService.getAppointmentById(appointmentId);
+      
+      if (!appointment) {
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+      
+      const isAssigned = await appointmentService.isMedicalStaffAssigned(appointmentId, userId);
+      if (!isAssigned) {
+        return res.status(403).json({ 
+          error: 'You can only update appointments where you are assigned' 
+        });
+      }
+      
+      // Medical staff have different update permissions than students
+      const allowedFields = ['status', 'dateScheduled', 'symptoms']; // Medical staff can complete appointments
+      const medicalStaffUpdates = {};
+      
+      for (const field of allowedFields) {
+        if (updates[field] !== undefined) {
+          medicalStaffUpdates[field] = updates[field];
+        }
+      }
+      
+      if (Object.keys(medicalStaffUpdates).length === 0) {
+        return res.status(400).json({ 
+          error: 'No valid fields provided for update. Allowed: status, dateScheduled, symptoms' 
+        });
+      }
+      
+      updatedAppointment = await appointmentService.updateAppointment(appointmentId, medicalStaffUpdates);
+    }
     
     res.json({ 
       message: 'Appointment updated successfully',
-      appointmentId,
-      updates,
+      appointment: updatedAppointment,
       updatedBy: userRole 
     });
   } catch (error) {

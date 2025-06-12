@@ -38,13 +38,13 @@ class AuthService {
       );
 
       console.log('[AUTH SERVICE] Authentication successful for:', email);
-      
-      return {
+        return {
         token,
         user: {
           id: user.id,
           email: user.email,
-          role: user.role
+          role: user.role,
+          status: user.status
         }
       };
       

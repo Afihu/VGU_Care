@@ -201,20 +201,20 @@ CREATE TABLE medical_documents (
 -- Insert Users
 INSERT INTO users (name, gender, age, role, email, password_hash, status, points) VALUES
 -- Students (7)
-('Nguyen Van A', 'male', 20, 'student', 'student1@vgu.edu.vn', '$2b$12$4tLZVVDG9bWtTXdikj/xhe4wxjJg5lZPMXWVVvvyB.clG.NUpXSqC', 'active', 150),
-('Tran Thi B', 'female', 21, 'student', 'student2@vgu.edu.vn', '$2b$12$2LUi0.lureGqwYkYV8kOtuLHpLu6vEFFVOwfzz2BY9bsP64HCf9U.', 'active', 200),
-('Le Van C', 'male', 19, 'student', 'student3@vgu.edu.vn', '$2b$12$aZYJjkjEw3kl6ABAmSxMBuq91OVuEeHOAlGpztp2vZ.MjVFR7YbIW', 'active', 75),
-('Pham Thi D', 'female', 22, 'student', 'student4@vgu.edu.vn', '$2b$12$2B10fzqG24hzePdpbYBQOe4TBZXhrFuJR3qRXGFs0DQNIGfusx5te', 'active', 300),
-('Hoang Van E', 'male', 20, 'student', 'student5@vgu.edu.vn', '$2b$12$eXAFQuLowZN.B8kzrelMz.Ro2GU93YZRD9rWpoXYsk/FIfwFRRPsi', 'active', 125),
-('Vu Thi F', 'female', 21, 'student', 'student6@vgu.edu.vn', '$2b$12$iJh38PWl1btTFLA1by9lZeAYyEdd12jqLqSDtqIQAasub2T4OMW9m', 'inactive', 50),
-('Do Van G', 'male', 23, 'student', 'student7@vgu.edu.vn', '$2b$12$nP7ixQ1ReXYFNtT0.cDSr.uzLtQSqNH1rL8z28GRat8ZQ7LI/itx6', 'active', 175),
+('Nguyen Van A', 'male', 20, 'student', 'student1@vgu.edu.vn', '$2b$12$NVIBRd1VdyKN2e/eV4uMqefPYtSAlKci343BU18GaWj6Rj7jTCpe6', 'active', 150),
+('Tran Thi B', 'female', 21, 'student', 'student2@vgu.edu.vn', '$2b$12$bFpQZVl7aTYz3zhtS4c0XOVgpLLtUpJeQlTU5zWGfgbHDjeEjuru2', 'active', 200),
+('Le Van C', 'male', 19, 'student', 'student3@vgu.edu.vn', '$2b$12$Z5gK28IK2biizpQxrvZb2.3pLshpqTncmUlPADq/YY/rzZiNBYZkS', 'active', 75),
+('Pham Thi D', 'female', 22, 'student', 'student4@vgu.edu.vn', '$2b$12$Sc5DQfh7YloypZ5eir.bJe3uGwFmRWRG0L8eT/RSlCS4/FTmC9t.y', 'active', 300),
+('Hoang Van E', 'male', 20, 'student', 'student5@vgu.edu.vn', '$2b$12$Jsvo.9VqVbffjKVskQSXD.6j5R0QPlycRwnPHrs3.MPMpa2VXCg4i', 'active', 125),
+('Vu Thi F', 'female', 21, 'student', 'student6@vgu.edu.vn', '$2b$12$4qlS/tiEd64CxhGemRYMT.t5weGwKti.EcYLwemIsWEghYIWEpWFC', 'inactive', 50),
+('Do Van G', 'male', 23, 'student', 'student7@vgu.edu.vn', '$2b$12$dFyTJomnzcrasdQjdh6btOiYlKORm46M.ewxa36E/9N7ehDUD278K', 'active', 175),
 
 -- Medical Staff (2)
-('Dr. Nguyen Thi H', 'female', 35, 'medical_staff', 'doctor1@vgu.edu.vn', '$2b$12$GOnKE2aLMCSvqfvi05bS9ey4acijQv4CIh01ryPz7hMTTHa1li68e', 'active', 0),
-('Dr. Tran Van I', 'male', 42, 'medical_staff', 'doctor2@vgu.edu.vn', '$2b$12$.UH/nuONdK493/TF7NKpD.uq9ME.MXl5slGL5Mnt1MpZAI89n8cOC', 'active', 0),
+('Dr. Nguyen Thi H', 'female', 35, 'medical_staff', 'doctor1@vgu.edu.vn', '$2b$12$0lRBaz/nebDejhzF/gWxiOfu258rjxK2gGpDhDRmxlpRTgaUDy4ja', 'active', 0),
+('Dr. Tran Van I', 'male', 42, 'medical_staff', 'doctor2@vgu.edu.vn', '$2b$12$7s4qUDBo2tK/q.eDGMz8Bea6gNtT59g9HDJX1hsCd1OBrUIi9rEn2', 'active', 0),
 
 -- Admin (1)
-('Admin User', 'other', 30, 'admin', 'admin@vgu.edu.vn', '$2b$12$8diTle1/eMTsJkbocSWuEuKxinnbVHxr1aq8q6GRw66d0muM/ZjgC', 'active', 0);
+('Admin User', 'other', 30, 'admin', 'admin@vgu.edu.vn', '$2b$12$BL51RqLPDeyQa0ekO31HwegbWltt1/NeomeoHHoVqBdkoVLXyIhey', 'active', 0);
 
 -- Insert Students (get user_ids for students)
 INSERT INTO students (user_id, intake_year, major)

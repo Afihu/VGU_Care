@@ -91,12 +91,10 @@ services:
       start_period: 20s
     restart: unless-stopped
     networks:
-      - vgu_network
-  # Frontend React App - Optimized
+      - vgu_network  
   frontend:
     build:
       context: ./frontend
-      target: development
       dockerfile: Dockerfile
       # Build optimization
       cache_from:
@@ -104,21 +102,25 @@ services:
       args:
         BUILDKIT_INLINE_CACHE: 1
     container_name: vgu_care_frontend
+    user: "0:0"  # Run as root to avoid permission issues
     ports:
       - "3000:3000"
     volumes:
-      # Use bind mounts with delegated consistency for better performance on macOS/Windows
+      # Use bind mounts with delegated consistency
       - ./frontend:/app:delegated
-      # Use named volumes for node_modules for better performance
+      # Use named volumes for node_modules
       - frontend_node_modules:/app/node_modules
       - frontend_build:/app/build
     environment:
       - REACT_APP_API_URL=http://localhost:5001
       - REACT_APP_ENV=development
-      - CHOKIDAR_USEPOLLING=false  # Disable polling for better performance
-      - WATCHPACK_POLLING=false    # Disable polling for better performance
-      - FAST_REFRESH=true          # Enable Fast Refresh for faster development
-      - GENERATE_SOURCEMAP=false   # Disable source maps in development for faster builds
+      - CHOKIDAR_USEPOLLING=false
+      - WATCHPACK_POLLING=false
+      - FAST_REFRESH=true
+      - GENERATE_SOURCEMAP=false
+      # ESLint cache disable to avoid permission issues
+      - ESLINT_NO_DEV_ERRORS=true
+      - DISABLE_ESLINT_PLUGIN=false
     depends_on:
       - backend
     deploy:

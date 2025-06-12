@@ -146,10 +146,103 @@ class AppointmentService extends BaseService {
       // This might indicate the appointment_id was not found,
       // or if optimistic locking is used, that the row was changed.
       throw new Error("Appointment not found or update failed");
-    }
-
-    console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(result.rows[0], null, 2));
+    }    console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(result.rows[0], null, 2));
     return result.rows[0];
+  }
+
+  async getAppointmentsByMedicalStaff(medicalStaffUserId) {
+    // Get medical staff's staff_id from user_id
+    const staffResult = await query(
+      'SELECT staff_id FROM medical_staff WHERE user_id = $1',
+      [medicalStaffUserId]
+    );
+    
+    if (staffResult.rows.length === 0) {
+      throw new Error('Medical staff not found');
+    }
+    
+    const staffId = staffResult.rows[0].staff_id;
+    
+    const result = await query(
+      `
+      SELECT 
+        a.appointment_id as "id",
+        a.user_id as "userId",
+        a.status,
+        a.date_requested as "dateRequested",
+        a.date_scheduled as "dateScheduled",
+        a.priority_level as "priorityLevel",
+        a.symptoms,
+        u.name as "studentName",
+        u.email as "studentEmail",
+        EXISTS(SELECT 1 FROM temporary_advice ta WHERE ta.appointment_id = a.appointment_id) as "hasAdvice"
+      FROM appointments a
+      JOIN users u ON a.user_id = u.user_id
+      WHERE a.medical_staff_id = $1
+      ORDER BY a.date_requested DESC
+      `,
+      [staffId]
+    );
+
+    return result.rows;
+  }
+
+  async createAppointmentByMedicalStaff(medicalStaffUserId, symptoms, priorityLevel, studentUserId = null) {
+    // Get medical staff's staff_id from user_id
+    const staffResult = await query(
+      'SELECT staff_id FROM medical_staff WHERE user_id = $1',
+      [medicalStaffUserId]
+    );
+    
+    if (staffResult.rows.length === 0) {
+      throw new Error('Medical staff not found');
+    }
+    
+    const staffId = staffResult.rows[0].staff_id;
+    
+    // If no student specified, this would need to be handled in frontend
+    // For now, medical staff can create appointments and assign them later
+    const dateScheduled = '2025-06-25 10:47:49.334376'; // Default scheduled time
+    
+    const result = await query(
+      `
+      INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, medical_staff_id)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING 
+        appointment_id as "id",
+        user_id as "userId",
+        status,
+        date_requested as "dateRequested",
+        date_scheduled as "dateScheduled",
+        priority_level as "priorityLevel",
+        symptoms
+      `,
+      [studentUserId || medicalStaffUserId, symptoms, priorityLevel, dateScheduled, staffId]
+    );
+
+    console.log(`[DEBUG] Medical staff appointment created:`, result.rows[0]);
+    return result.rows[0];
+  }
+
+  async isMedicalStaffAssigned(appointmentId, medicalStaffUserId) {
+    // Get medical staff's staff_id from user_id
+    const staffResult = await query(
+      'SELECT staff_id FROM medical_staff WHERE user_id = $1',
+      [medicalStaffUserId]
+    );
+    
+    if (staffResult.rows.length === 0) {
+      return false;
+    }
+    
+    const staffId = staffResult.rows[0].staff_id;
+    
+    const result = await query(
+      'SELECT appointment_id FROM appointments WHERE appointment_id = $1 AND medical_staff_id = $2',
+      [appointmentId, staffId]
+    );
+    
+    return result.rows.length > 0;
   }
 }
 
