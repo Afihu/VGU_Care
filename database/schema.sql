@@ -136,6 +136,7 @@ CREATE TABLE admins (
 CREATE TABLE appointments (
     appointment_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    medical_staff_id UUID REFERENCES medical_staff(staff_id) ON DELETE SET NULL,
     status VARCHAR(20) CHECK (status IN ('scheduled', 'completed', 'cancelled')) NOT NULL DEFAULT 'scheduled',
     date_requested TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     date_scheduled TIMESTAMP NULL,
