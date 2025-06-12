@@ -52,6 +52,14 @@ try {
   console.error('❌ userRoutes failed:', error.message);
 }
 
+// Medical staff route
+try {
+  app.use('/api/medical-staff', require('./routes/medicalStaffRoutes'));
+  console.log('✅ medicalStaffRoutes loaded');
+} catch (error) {
+  console.error('❌ medicalStaffRoutes failed:', error.message);
+}
+
 try {
   app.use('/api/admin', require('./routes/adminRoutes'));
   console.log('✅ adminRoutes loaded');
