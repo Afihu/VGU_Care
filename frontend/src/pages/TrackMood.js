@@ -21,7 +21,7 @@ export default function TrackMood() {
                 <div className="mood-form">
                     <h1>Mood Tracker</h1>
                     <form onSubmit={handleSubmit}>
-                        <label style={{textAlign: 'left'}}><b>How are you feeling?</b></label>
+                        <label style={{textAlign: 'left', marginBottom: '20px'}}><b>How are you feeling?</b></label>
                         <select value={mood} onChange={(e) => setMood(e.target.value)} className="mood-select">
                             <option value="">Select a mood...</option>
                             <option value="Happy">Happy</option>
