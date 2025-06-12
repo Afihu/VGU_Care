@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../css/TrackMood.css';
+import MoodEntryList from '../components/MoodEntryList';
+
 
 export default function TrackMood() {
     const navigate = useNavigate();
@@ -15,6 +17,40 @@ export default function TrackMood() {
         // Here you'll later send mood/note to backend
     };
 
+    // Sample entries for testing
+    const [entries, setEntries] = useState([
+        {
+            mood: "Happy",
+            note: "Got high grade in stats. Yayyyyyyyyyyyyyyyyyyyyyyyy",
+            date: "6/12/2025",
+            time: "09:36:16 PM"
+        },
+        {
+            mood: "Anxious",
+            note: "My big deadline is coming.",
+            date: "6/10/2025",
+            time: "10:03:15 PM"
+        },
+        {
+            mood: "Happy",
+            note: "Had a great day!",
+            date: "6/10/2025",
+            time: "9:58:38 PM"
+        },
+        {
+            mood: "Neutral",
+            note: "Just an average day.",
+            date: "6/10/2025",
+            time: "9:58:38 PM"
+        },
+        {
+            mood: "Sad",
+            note: "Feeling down today.",
+            date: "6/10/2025",
+            time: "9:58:38 PM"
+        }
+    ]);
+    
     return (
         <div>
             <div style={{display: 'flex', alignItems: 'flex-start', flexDirection: 'row', padding: '30px' }}>
@@ -45,25 +81,8 @@ export default function TrackMood() {
                     {saved && <p className="success-message">Mood saved successfully</p>}
                 </div>
 
-                <div className="entry-table">
-                    <h2>Previous Entries (test labels)</h2>
-                    <div className="entry-card">
-                        <strong>Anxious</strong> - 6/10/2025, 10:03:15 PM
-                        <p>My big deadline is coming.</p>
-                    </div>
-                    <div className="entry-card">
-                        <strong>Happy</strong> - 6/10/2025, 9:58:38 PM
-                        <p>Had a great day!</p>
-                    </div>
-                    <div className="entry-card">
-                        <strong>Neutral</strong> - 6/10/2025, 9:58:38 PM
-                        <p>Just an average day.</p>
-                    </div>
-                    <div className="entry-card">
-                        <strong>Sad</strong> - 6/10/2025, 9:58:38 PM
-                        <p>Feeling down today.</p>
-                    </div>
-                </div>
+                <MoodEntryList entries={entries} />
+
             </div>
         </div>
     );
