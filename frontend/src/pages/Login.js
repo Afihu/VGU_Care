@@ -42,10 +42,10 @@ function Login() {
   };
 
   return (
-    <div>
-      <img src={logo_image}></img>
-      <div style={{ padding: '20px', maxWidth: '400px', margin: '50px auto', border: '1px solid #ccc', borderRadius: '8px'}}>
-        <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>VGU Care Login</h2>
+    <div style={{display : 'flex', paddingTop : '40px', alignItems : 'center', flexDirection: 'column'} }>
+      <img src={logo_image} className="login_logo" style = {{maxWidth: '300px'}}/>
+      <div style={{ padding: '30px', paddingTop: '15px', maxWidth: '600px', width: '500px', margin: '50px auto', border: '1px solid #ccc', borderRadius: '8px', boxShadow: '2px 2px 5px 0 rgba(0, 0, 0, 0.5)'}}>
+        <h2 style={{ textAlign: 'center', marginBottom: '20px', fontFamily: "Consolas", fontSize: "large", borderBottom: "1px solid rgba(0, 0, 0, 0.3)", color: "blue" }}>Login</h2>
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: '15px' }}>
             <input
@@ -59,7 +59,7 @@ function Login() {
                 width: '100%', 
                 padding: '12px', 
                 fontSize: '16px',
-                border: '1px solid #ddd',
+                border: '1px solid #ccc',
                 borderRadius: '4px',
                 boxSizing: 'border-box'
               }}
@@ -76,13 +76,18 @@ function Login() {
               style={{ 
                 width: '100%', 
                 padding: '12px', 
+                paddingBottom: '12px',
                 fontSize: '16px',
-                border: '1px solid #ddd',
+                border: '1px solid #ccc',
                 borderRadius: '4px',
                 boxSizing: 'border-box'
               }}
             />
+            <label style={{ fontSize: "14px", color: "#4fa7ff", fontFamily: "Consolas" }}>
+              Forgot password?
+            </label>
           </div>
+
           <button 
             type="submit" 
             disabled={isLoading}
@@ -94,7 +99,8 @@ function Login() {
               border: 'none',
               fontSize: '16px',
               borderRadius: '4px',
-              cursor: isLoading ? 'not-allowed' : 'pointer'
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              boxShadow: '2px 1px 1px 1px rgba(0, 0, 0, 0.2)'
             }}
           >
             {isLoading ? 'Logging in...' : 'Login'}
