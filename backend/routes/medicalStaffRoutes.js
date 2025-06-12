@@ -34,6 +34,6 @@ router.post('/appointments/:appointmentId/reject', rejectAppointment);
 
 // Temporary advice management
 router.get('/advice/sent', getAdviceBySentByStaff);
-router.post('/advice', sendAdvice);
+router.post('/appointments/:appointmentId', sendAdvice);
 
 module.exports = router;

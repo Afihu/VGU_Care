@@ -126,89 +126,74 @@ exports.getAppointmentById = async (req, res) => {
 // Update appointment with role-based permissions
 exports.updateAppointment = async (req, res) => {
   try {
-    const appointmentId = parseInt(req.params.appointmentId);
-    const updates = req.body;
-    const userRole = req.appointmentAccess.role;
-    const userId = req.appointmentAccess.userId;
-    
-    let updatedAppointment;
+    const appointmentId = req.params.appointmentId;
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    const updateData = req.body;
+
+    console.log('Update appointment request:', {
+      appointmentId,
+      userId,
+      userRole,
+      updateData
+    });
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(appointmentId)) {
+      return res.status(400).json({ 
+        error: 'Invalid appointment ID format',
+        appointmentId: appointmentId 
+      });
+    }
+
+    // Get the appointment first to check permissions
+    const appointment = await appointmentService.getAppointmentById(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    // Permission checks based on role
+    let canUpdate = false;
     
     if (userRole === 'admin') {
-      // Admin can update any appointment via admin service
-      updatedAppointment = await adminService.updateAppointment(appointmentId, updates);
+      canUpdate = true;
     } else if (userRole === 'student') {
       // Students can only update their own appointments
-      // First check ownership
-      const appointment = await appointmentService.getAppointmentById(appointmentId);
-      
-      if (!appointment) {
-        return res.status(404).json({ error: 'Appointment not found' });
-      }
-      
-      if (appointment.userId !== userId) {
-        return res.status(403).json({ 
-          error: 'You can only update your own appointments' 
-        });
-      }
-      
-      // Students have limited update permissions
-      const allowedFields = ['symptoms', 'status', 'priorityLevel', 'dateScheduled'];
-      const studentUpdates = {};
-      
-      for (const field of allowedFields) {
-        if (updates[field] !== undefined) {
-          studentUpdates[field] = updates[field];
-        }
-      }
-      
-      if (Object.keys(studentUpdates).length === 0) {
-        return res.status(400).json({ 
-          error: 'No valid fields provided for update. Allowed: symptoms, status, priorityLevel, dateScheduled' 
-        });
-      }
-      
-      updatedAppointment = await appointmentService.updateAppointment(appointmentId, studentUpdates);    } else if (userRole === 'medical_staff') {
-      // Medical staff can update appointments where they are assigned
-      const appointment = await appointmentService.getAppointmentById(appointmentId);
-      
-      if (!appointment) {
-        return res.status(404).json({ error: 'Appointment not found' });
-      }
-      
-      const isAssigned = await appointmentService.isMedicalStaffAssigned(appointmentId, userId);
-      if (!isAssigned) {
-        return res.status(403).json({ 
-          error: 'You can only update appointments where you are assigned' 
-        });
-      }
-      
-      // Medical staff have different update permissions than students
-      const allowedFields = ['status', 'dateScheduled', 'symptoms']; // Medical staff can complete appointments
-      const medicalStaffUpdates = {};
-      
-      for (const field of allowedFields) {
-        if (updates[field] !== undefined) {
-          medicalStaffUpdates[field] = updates[field];
-        }
-      }
-      
-      if (Object.keys(medicalStaffUpdates).length === 0) {
-        return res.status(400).json({ 
-          error: 'No valid fields provided for update. Allowed: status, dateScheduled, symptoms' 
-        });
-      }
-      
-      updatedAppointment = await appointmentService.updateAppointment(appointmentId, medicalStaffUpdates);
+      canUpdate = appointment.userId === userId;
+    } else if (userRole === 'medical_staff') {
+      // Medical staff can update appointments assigned to them or any appointment
+      canUpdate = true; // Medical staff generally have broad update permissions
     }
+
+    if (!canUpdate) {
+      return res.status(403).json({ 
+        error: 'You do not have permission to update this appointment' 
+      });
+    }
+
+    // Validate updateData
+    if (updateData.status && !['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'].includes(updateData.status)) {
+      return res.status(400).json({ 
+        error: 'Invalid status value',
+        validStatuses: ['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled']
+      });
+    }
+
+    // Update the appointment
+    const updatedAppointment = await appointmentService.updateAppointment(appointmentId, updateData);
     
     res.json({ 
+      success: true,
       message: 'Appointment updated successfully',
-      appointment: updatedAppointment,
-      updatedBy: userRole 
+      appointment: updatedAppointment 
     });
   } catch (error) {
     console.error('Update appointment error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message || 'Failed to update appointment',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 

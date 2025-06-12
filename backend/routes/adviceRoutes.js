@@ -6,6 +6,7 @@ const {
   getAdviceForStudent,
   getAdviceBySentByStaff
 } = require('../controllers/adviceController');
+const { sendAdviceForAppointment } = require('../services/adviceService');
 
 // All advice routes require authentication
 router.use(authMiddleware);
