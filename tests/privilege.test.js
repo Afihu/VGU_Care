@@ -207,6 +207,18 @@ async function runPrivilegeTests() {
                 }
             }
         });
+        
+        // Access pending appointments
+        privilegeTest.it('medical staff should access pending appointments', async function() {
+            await ApiTestUtils.testAuthenticatedRequest(
+                tokens.medicalStaff, 
+                '/api/appointments/pending', 
+                'GET', 
+                null, 
+                200  // Just test they CAN access it
+            );
+            console.log('✅ Medical staff can access pending appointments');
+        });
 
         privilegeTest.it('medical staff should create appointments', async function() {
             const appointmentData = {

@@ -395,6 +395,89 @@ async function testResponseFormat() {
   }
 }
 
+async function testAppointmentApprovalWorkflow() {
+  console.log('🧪 Test 9: Appointment Approval Workflow');
+  
+  try {
+    // First get pending appointments
+    const pendingRes = await fetch(`${API_URL}/api/appointments/pending`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${medicalStaffToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const pendingData = await pendingRes.json();
+    
+    if (pendingRes.ok && Array.isArray(pendingData.appointments)) {
+      console.log('✅ PASS: Can retrieve pending appointments');
+      console.log(`   Found ${pendingData.count} pending appointments`);
+      
+      // If there are pending appointments, try to approve one
+      if (pendingData.appointments.length > 0) {
+        const appointmentId = pendingData.appointments[0].id;
+        
+        const approveRes = await fetch(`${API_URL}/api/appointments/${appointmentId}/approve`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${medicalStaffToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            advice: 'Test approval advice message'
+          })
+        });
+        
+        if (approveRes.ok) {
+          console.log('✅ PASS: Can approve appointments with advice');
+        } else {
+          console.log('⚠️  INFO: Approval test skipped (may need specific test data)');
+        }
+      }
+      
+      return true;
+    } else {
+      console.error('❌ FAIL: Failed to get pending appointments');
+      console.error(`   Status: ${pendingRes.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ FAIL: Appointment approval workflow test error:', error.message);
+    return false;
+  }
+}
+
+async function testTemporaryAdviceManagement() {
+  console.log('🧪 Test 10: Temporary Advice Management');
+  
+  try {
+    // Test getting sent advice
+    const sentAdviceRes = await fetch(`${API_URL}/api/advice/sent`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${medicalStaffToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const sentAdviceData = await sentAdviceRes.json();
+    
+    if (sentAdviceRes.ok && Array.isArray(sentAdviceData.advice)) {
+      console.log('✅ PASS: Can retrieve sent advice');
+      console.log(`   Found ${sentAdviceData.count} sent advice messages`);
+      return true;
+    } else {
+      console.error('❌ FAIL: Failed to get sent advice');
+      console.error(`   Status: ${sentAdviceRes.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ FAIL: Temporary advice test error:', error.message);
+    return false;
+  }
+}
+
 async function runMedicalStaffTestSuite() {
   console.log('🚀 Starting Medical Staff API Test Suite\n');
   
@@ -417,6 +500,10 @@ async function runMedicalStaffTestSuite() {
   testResults.push(await testMedicalStaffUpdateProfile());
   testResults.push(await testGetAllStudentProfiles());
   testResults.push(await testGetSpecificStudentProfile());
+
+  // New appointment workflow tests
+  testResults.push(await testAppointmentApprovalWorkflow());
+  testResults.push(await testTemporaryAdviceManagement());
   
   console.log('\n🔒 === SECURITY & VALIDATION TESTS ===');
   

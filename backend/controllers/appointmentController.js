@@ -1,5 +1,7 @@
 const appointmentService = require('../services/appointmentService');
 const adminService = require('../services/adminService');
+const adviceService = require('../services/adviceService');
+
 
 /**
  * Appointment Controller with Role-Based Access Control
@@ -223,6 +225,123 @@ exports.deleteAppointment = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete appointment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Get pending appointments for medical staff review
+ */
+exports.getPendingAppointments = async (req, res) => {
+  try {
+    const userRole = req.user.role;
+    
+    if (userRole !== 'medical_staff') {
+      return res.status(403).json({ 
+        error: 'Only medical staff can view pending appointments' 
+      });
+    }
+    
+    const appointments = await appointmentService.getPendingAppointments();
+    
+    res.json({ 
+      appointments,
+      count: appointments.length,
+      message: 'Pending appointments retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Get pending appointments error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Approve appointment - Medical staff only
+ * Implements "Approve / Reject Appointment" use case
+ */
+exports.approveAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { dateScheduled, advice } = req.body; // Optional advice message
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    
+    if (userRole !== 'medical_staff') {
+      return res.status(403).json({ 
+        error: 'Only medical staff can approve appointments' 
+      });
+    }
+    
+    // Approve the appointment
+    const appointment = await appointmentService.approveAppointment(
+      appointmentId, 
+      userId, 
+      dateScheduled
+    );
+    
+    let sentAdvice = null;
+    
+    // Send temporary advice if provided
+    if (advice && advice.trim()) {
+      sentAdvice = await adviceService.sendAdviceForAppointment(
+        appointmentId,
+        advice.trim(),
+        userId
+      );
+    }
+    
+    res.json({ 
+      message: 'Appointment approved successfully',
+      appointment,
+      advice: sentAdvice
+    });
+  } catch (error) {
+    console.error('Approve appointment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Reject appointment - Medical staff only
+ */
+exports.rejectAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { reason, advice } = req.body; // Optional rejection reason and advice
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    
+    if (userRole !== 'medical_staff') {
+      return res.status(403).json({ 
+        error: 'Only medical staff can reject appointments' 
+      });
+    }
+    
+    // Reject the appointment
+    const appointment = await appointmentService.rejectAppointment(
+      appointmentId,
+      userId,
+      reason
+    );
+    
+    let sentAdvice = null;
+    
+    // Send temporary advice if provided (e.g., alternative care suggestions)
+    if (advice && advice.trim()) {
+      sentAdvice = await adviceService.sendAdviceForAppointment(
+        appointmentId,
+        advice.trim(),
+        userId
+      );
+    }
+    
+    res.json({ 
+      message: 'Appointment rejected successfully',
+      appointment,
+      advice: sentAdvice
+    });
+  } catch (error) {
+    console.error('Reject appointment error:', error);
     res.status(500).json({ error: error.message });
   }
 };

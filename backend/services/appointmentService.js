@@ -244,6 +244,106 @@ class AppointmentService extends BaseService {
     
     return result.rows.length > 0;
   }
+
+    /**
+   * Approve appointment - Medical staff only
+   * Implements "Approve / Reject Appointment" use case
+   */
+  async approveAppointment(appointmentId, medicalStaffUserId, dateScheduled = null) {
+    // Get medical staff's staff_id
+    const staffResult = await query(
+      'SELECT staff_id FROM medical_staff WHERE user_id = $1',
+      [medicalStaffUserId]
+    );
+    
+    if (staffResult.rows.length === 0) {
+      throw new Error('Medical staff not found');
+    }
+    
+    const staffId = staffResult.rows[0].staff_id;
+    
+    const result = await query(`
+      UPDATE appointments 
+      SET status = 'approved', 
+          medical_staff_id = $1,
+          date_scheduled = COALESCE($2, CURRENT_TIMESTAMP + INTERVAL '1 week')
+      WHERE appointment_id = $3 AND status = 'pending'
+      RETURNING 
+        appointment_id as "id",
+        user_id as "userId", 
+        status,
+        date_requested as "dateRequested",
+        date_scheduled as "dateScheduled",
+        priority_level as "priorityLevel",
+        symptoms
+    `, [staffId, dateScheduled, appointmentId]);
+    
+    if (result.rows.length === 0) {
+      throw new Error('Appointment not found or already processed');
+    }
+    
+    return result.rows[0];
+  }
+
+    /**
+   * Reject appointment - Medical staff only
+   */
+  async rejectAppointment(appointmentId, medicalStaffUserId, reason = null) {
+    const staffResult = await query(
+      'SELECT staff_id FROM medical_staff WHERE user_id = $1',
+      [medicalStaffUserId]
+    );
+    
+    if (staffResult.rows.length === 0) {
+      throw new Error('Medical staff not found');
+    }
+    
+    const staffId = staffResult.rows[0].staff_id;
+    
+    const result = await query(`
+      UPDATE appointments 
+      SET status = 'rejected', 
+          medical_staff_id = $1
+      WHERE appointment_id = $2 AND status = 'pending'
+      RETURNING 
+        appointment_id as "id",
+        user_id as "userId",
+        status,
+        date_requested as "dateRequested", 
+        priority_level as "priorityLevel",
+        symptoms
+    `, [staffId, appointmentId]);
+    
+    if (result.rows.length === 0) {
+      throw new Error('Appointment not found or already processed');
+    }
+    
+    return result.rows[0];
+  }
+
+    /**
+   * Get pending appointments for medical staff review
+   */
+  async getPendingAppointments() {
+    const result = await query(`
+      SELECT 
+        a.appointment_id as "id",
+        a.user_id as "userId",
+        a.status,
+        a.date_requested as "dateRequested",
+        a.priority_level as "priorityLevel", 
+        a.symptoms,
+        u.name as "studentName",
+        u.email as "studentEmail"
+      FROM appointments a
+      JOIN users u ON a.user_id = u.user_id
+      WHERE a.status = 'pending'
+      ORDER BY a.priority_level DESC, a.date_requested ASC
+    `);
+    
+    return result.rows;
+  }
+
 }
 
 module.exports = new AppointmentService();

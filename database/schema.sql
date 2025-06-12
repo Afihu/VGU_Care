@@ -262,3 +262,14 @@ FROM students s LIMIT 3;
 INSERT INTO mood_entries (student_id, mood, notes)
 SELECT s.student_id, 'happy', 'Feeling great today!'
 FROM students s LIMIT 2;
+
+-- Update the appointments table status to include approval workflow
+ALTER TABLE appointments DROP CONSTRAINT IF EXISTS appointments_status_check;
+ALTER TABLE appointments ADD CONSTRAINT appointments_status_check 
+CHECK (status IN ('pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'));
+
+-- Set default to 'pending' instead of 'scheduled'
+ALTER TABLE appointments ALTER COLUMN status SET DEFAULT 'pending';
+
+-- Add created_by_staff_id to temporary_advice for medical staff tracking
+ALTER TABLE temporary_advice ADD COLUMN created_by_staff_id UUID REFERENCES medical_staff(staff_id) ON DELETE CASCADE;
