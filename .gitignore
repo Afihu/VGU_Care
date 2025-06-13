@@ -46,4 +46,3 @@ coverage/
 # Ignore session files
 *.session.sql
 *.tex
-*.png
