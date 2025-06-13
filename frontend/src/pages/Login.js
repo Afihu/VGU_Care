@@ -20,7 +20,7 @@ function Login() {
     setMessage('');
     try {
       const response = await api.authService(email, password);
-      const data = response.json();
+      const data = await response.json();
 
       //these should be handled by the page and thus not included in api refactor
       if (response.ok) {
