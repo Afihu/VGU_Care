@@ -46,10 +46,37 @@ function Login() {
   };
 
   return (
-    <div style={{display : 'flex', paddingTop : '40px', alignItems : 'center', flexDirection: 'column'} }>
+    <div 
+      style={{
+        display : 'flex', 
+        paddingTop : '40px', 
+        alignItems : 'center', 
+        flexDirection: 'column'
+      }}
+    >
       <img src={logo_image} className="login_logo" style = {{maxWidth: '300px'}}/>
-      <div style={{ padding: '30px', paddingTop: '15px', maxWidth: '600px', width: '500px', margin: '50px auto', border: '1px solid #ccc', borderRadius: '8px', boxShadow: '2px 2px 5px 0 rgba(0, 0, 0, 0.5)'}}>
-        <h2 style={{ textAlign: 'center', marginBottom: '20px', fontFamily: "Consolas", fontSize: "larger", borderBottom: "1px solid rgba(0, 0, 0, 0.3)", color: "#0077B6" }}>Login</h2>
+      <div 
+        style={{ 
+          padding: '30px', 
+          paddingTop: '15px', 
+          maxWidth: '600px', 
+          width: '500px', 
+          margin: '50px auto', 
+          border: '1px solid #ccc', 
+          borderRadius: '8px', 
+          boxShadow: '2px 2px 5px 0 rgba(0, 0, 0, 0.5)'
+        }}
+      >
+        <h2 
+          style={{ 
+            textAlign: 'center', 
+            marginBottom: '20px', 
+            fontFamily: "Consolas", 
+            fontSize: "larger", 
+            borderBottom: "1px solid rgba(0, 0, 0, 0.3)", 
+            color: "#0077B6" 
+          }}
+        >Login</h2>
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: '15px' }}>
             <input
@@ -139,14 +166,16 @@ function Login() {
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
           {message && (
-            <div style={{ 
-              marginTop: '15px', 
-              padding: '10px',
-              borderRadius: '4px',
-              backgroundColor: message.includes('successful') ? '#d4edda' : '#f8d7da',
-              color: message.includes('successful') ? '#155724' : '#721c24',
-              border: `1px solid ${message.includes('successful') ? '#c3e6cb' : '#f5c6cb'}`
-            }}>
+            <div 
+              style={{ 
+                marginTop: '15px', 
+                padding: '10px',
+                borderRadius: '4px',
+                backgroundColor: message.includes('successful') ? '#d4edda' : '#f8d7da',
+                color: message.includes('successful') ? '#155724' : '#721c24',
+                border: `1px solid ${message.includes('successful') ? '#c3e6cb' : '#f5c6cb'}`
+              }}
+            >
               {message}
             </div>
           )}
