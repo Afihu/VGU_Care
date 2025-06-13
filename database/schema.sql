@@ -273,3 +273,8 @@ ALTER TABLE appointments ALTER COLUMN status SET DEFAULT 'pending';
 
 -- Add created_by_staff_id to temporary_advice for medical staff tracking
 ALTER TABLE temporary_advice ADD COLUMN created_by_staff_id UUID REFERENCES medical_staff(staff_id) ON DELETE CASCADE;
+
+-- Add these columns to the existing abuse_reports table
+
+ALTER TABLE abuse_reports ADD COLUMN IF NOT EXISTS appointment_id UUID REFERENCES appointments(appointment_id) ON DELETE SET NULL;
+ALTER TABLE abuse_reports ADD COLUMN IF NOT EXISTS report_type VARCHAR(50) DEFAULT 'system_abuse' CHECK (report_type IN ('system_abuse', 'false_urgency', 'inappropriate_behavior', 'other'));

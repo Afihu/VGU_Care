@@ -162,8 +162,9 @@ exports.updateAppointment = async (req, res) => {
       // Students can only update their own appointments
       canUpdate = appointment.userId === userId;
     } else if (userRole === 'medical_staff') {
-      // Medical staff can update appointments assigned to them or any appointment
-      canUpdate = true; // Medical staff generally have broad update permissions
+      // Medical staff can update appointments assigned to them
+      const isAssigned = await appointmentService.isMedicalStaffAssigned(appointmentId, userId);
+      canUpdate = isAssigned;
     }
 
     if (!canUpdate) {
@@ -172,7 +173,31 @@ exports.updateAppointment = async (req, res) => {
       });
     }
 
-    // Validate updateData
+    // ROLE-BASED STATUS VALIDATION
+    if (updateData.status) {
+      const newStatus = updateData.status.toLowerCase();
+      
+      if (userRole === 'student') {
+        // Students can only schedule or cancel their appointments
+        if (!['scheduled', 'cancelled'].includes(newStatus)) {
+          return res.status(403).json({
+            error: 'Students can only schedule or cancel appointments',
+            allowedStatuses: ['scheduled', 'cancelled']
+          });
+        }
+      } else if (userRole === 'medical_staff') {
+        // Medical staff can approve, reject, schedule, or complete appointments
+        if (!['approved', 'rejected', 'scheduled', 'completed'].includes(newStatus)) {
+          return res.status(403).json({
+            error: 'Medical staff can approve, reject, schedule, or complete appointments',
+            allowedStatuses: ['approved', 'rejected', 'scheduled', 'completed']
+          });
+        }
+      }
+      // Admin can set any status (no additional restrictions)
+    }
+
+    // Validate general updateData
     if (updateData.status && !['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'].includes(updateData.status)) {
       return res.status(400).json({ 
         error: 'Invalid status value',

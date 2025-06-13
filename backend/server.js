@@ -88,11 +88,20 @@ try {
   console.error('❌ adviceRoutes failed:', error.message);
 }
 
+// Admin abuse report route
 try {
   app.use('/api/reports', require('./routes/reportRoutes'));
   console.log('✅ reportRoutes loaded');
 } catch (error) {
   console.error('❌ reportRoutes failed:', error.message);
+}
+
+// Medical staff abuse report route
+try {
+  app.use('/api/abuse-reports', require('./routes/abuseReportRoutes'));
+  console.log('✅ abuseReportRoutes loaded');
+} catch (error) {
+  console.error('❌ abuseReportRoutes failed:', error.message);
 }
 
 // Start server

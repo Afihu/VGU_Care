@@ -67,7 +67,7 @@ class AppointmentService extends BaseService {
     return result.rows[0];
   }
 
-  async updateAppointment(appointmentId, updateData) {
+    async updateAppointment(appointmentId, updateData) {
     const { symptoms, status, priorityLevel, dateScheduled } = updateData;
 
     console.log('[DEBUG] updateAppointment - Received updateData:', JSON.stringify(updateData, null, 2));
@@ -88,18 +88,19 @@ class AppointmentService extends BaseService {
       const normalizedStatus = typeof status === 'string' ? status.trim().toLowerCase() : status;
       console.log(`[DEBUG] updateAppointment - Normalized status: '${normalizedStatus}' (type: ${typeof normalizedStatus})`);
 
-      // Allow student to set status to 'scheduled' (e.g., when rescheduling) or 'cancelled'
-      if (normalizedStatus !== "cancelled" && normalizedStatus !== "scheduled") {
-        console.log(`[DEBUG] Invalid status update attempt. Status must be 'scheduled' or 'cancelled'. Received: '${normalizedStatus}'`);
-        throw new Error("Invalid status update. Allowed statuses are 'scheduled' or 'cancelled'.");
+      // REMOVE THE RESTRICTIVE VALIDATION - Let the controller handle role-based validation
+      const validStatuses = ['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'];
+      if (!validStatuses.includes(normalizedStatus)) {
+        console.log(`[DEBUG] Invalid status update attempt. Status must be one of: ${validStatuses.join(', ')}. Received: '${normalizedStatus}'`);
+        throw new Error(`Invalid status update. Allowed statuses are: ${validStatuses.join(', ')}.`);
       }
+      
       updates.push(`status = $${paramCount}`);
       values.push(normalizedStatus);
       paramCount++;
     }
 
     if (priorityLevel !== undefined) {
-      // Assuming priorityLevel is one of 'low', 'medium', 'high' as per schema
       const validPriorityLevels = ['low', 'medium', 'high'];
       const normalizedPriorityLevel = typeof priorityLevel === 'string' ? priorityLevel.trim().toLowerCase() : priorityLevel;
       if (!validPriorityLevels.includes(normalizedPriorityLevel)) {
@@ -112,9 +113,8 @@ class AppointmentService extends BaseService {
     }
 
     if (dateScheduled !== undefined) {
-      // Add validation for dateScheduled if necessary (e.g., format, future date)
       updates.push(`date_scheduled = $${paramCount}`);
-      values.push(dateScheduled); // Ensure this is a valid timestamp string or Date object
+      values.push(dateScheduled);
       paramCount++;
     }
 
@@ -143,10 +143,10 @@ class AppointmentService extends BaseService {
     const result = await query(queryText, values);
 
     if (result.rows.length === 0) {
-      // This might indicate the appointment_id was not found,
-      // or if optimistic locking is used, that the row was changed.
       throw new Error("Appointment not found or update failed");
-    }    console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(result.rows[0], null, 2));
+    }
+    
+    console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(result.rows[0], null, 2));
     return result.rows[0];
   }
 
