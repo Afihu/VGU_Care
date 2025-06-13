@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import RequestAppointment from './pages/RequestAppointment';
 import AppointmentUserView from './pages/AppointmentUserView';
 import TrackMood from './pages/TrackMood';
+import PasswordRetrieve from './pages/PasswordRetrieve';
 
 // Import other pages here, e.g. Home, Dashboard, etc.
 
@@ -19,6 +20,7 @@ function App() {
       <main className="main-content-wrapper">
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/password-retrieve" element={<PasswordRetrieve />} />
           
           {/* Add other routes here */}
 
