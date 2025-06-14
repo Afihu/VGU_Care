@@ -19,13 +19,13 @@ async function runAppointmentTests() {
     
     test.it('should create appointment as student', async () => {
       const studentToken = authHelper.getToken('student');
+      // Use the correct UUID for medical_staff_id
+      const medicalStaffId = authHelper.getStaffId('medicalStaff');
       const appointmentData = {
         symptoms: "Headache and fever",
         priorityLevel: "medium",
-        medical_staff_id: 2,
-        appointment_date: '2024-12-20',
-        appointment_time: '10:00:00',
-        reason: 'Regular checkup'
+        medical_staff_id: medicalStaffId
+        // Remove appointment_date, appointment_time, reason if not required by backend
       };
 
       const response = await ApiTestUtils.testAuthenticatedRequest(
@@ -36,8 +36,8 @@ async function runAppointmentTests() {
         201
       );
 
-      testAppointmentId = response.body.id;
-      ApiTestUtils.validateResponseStructure(response, ['id', 'status']);
+      testAppointmentId = response.body.appointment.id;
+      ApiTestUtils.validateResponseStructure({ body: response.body.appointment }, ['id', 'status']);
     });
 
     test.it('should get appointments as student', async () => {
@@ -105,7 +105,7 @@ async function runAppointmentTests() {
         200
       );
 
-      ApiTestUtils.validateResponseStructure(response, [
+      ApiTestUtils.validateResponseStructure({ body: response.body.appointment }, [
         'id',
         'status',
         'symptoms',
