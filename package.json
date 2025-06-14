@@ -1,0 +1,53 @@
+{
+  "name": "vgu_care",
+  "version": "1.0.0",
+  "description": "This project is a Web App created for the module of Programming Exercise.",
+  "main": "backend/server.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "test": "echo \"Choose: npm run test:auth, test:backend, test:appointment, or test:profile\"",
+    "test:auth": "node tests/auth.test.js",
+    "test:backend": "node tests/backend.test.js",
+    "test:appointment": "node tests/appointment.test.js",
+    "test:profile": "node tests/profile.test.js",
+    "test:all": "npm run test:auth && npm run test:backend && npm run test:appointment && npm run test:profile",
+    "docker:test": "docker-compose --profile test run --rm test npm run test:all",
+    "frontend:start": "cd frontend && npm start",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:install": "cd frontend && npm install",
+    "db:update-hashes": "node database/update-hashes.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.28.0"
+  },  "devDependencies": {
+    "chai": "^4.3.7",
+    "jest": "^29.3.0",
+    "mocha": "^10.2.0",
+    "node-fetch": "^2.7.0",
+    "nodemon": "^3.0.0",
+    "supertest": "^6.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Afihu/VGU_Care.git"
+  },
+  "keywords": ["healthcare", "university", "student-portal", "medical-appointments"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Afihu/VGU_Care/issues"
+  },
+  "homepage": "https://github.com/Afihu/VGU_Care#readme"
+}
