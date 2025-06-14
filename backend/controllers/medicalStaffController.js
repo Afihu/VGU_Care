@@ -8,7 +8,7 @@ exports.getProfile = async (req, res) => {
     
     res.json({ 
       success: true,
-      user: profile 
+      staff: profile 
     });
   } catch (err) {
     console.error('Get medical staff profile error:', err);

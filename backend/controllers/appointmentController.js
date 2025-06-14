@@ -37,7 +37,7 @@ exports.getAppointments = async (req, res) => {
 // Create appointment with role-based validation
 exports.createAppointment = async (req, res) => {
   try {
-    const { symptoms, priorityLevel } = req.body; // Student API format
+    const { symptoms, priorityLevel, medical_staff_id } = req.body; // Student API format
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
     
@@ -49,10 +49,12 @@ exports.createAppointment = async (req, res) => {
     }
     
     let appointment;
+    // Ensure there are NO references to appointmentId in this function
+    // (Removed all debug logs or code referencing appointmentId here)
     
     if (userRole === 'student') {
       // Students create appointments for themselves
-      appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel);
+      appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel, medical_staff_id);
     } else if (userRole === 'admin') {
       // Admin can create appointments for students via different route (/api/admin/appointments/users/:userId)
       return res.status(400).json({ 
@@ -75,7 +77,7 @@ exports.createAppointment = async (req, res) => {
 // Get specific appointment with ownership/assignment check
 exports.getAppointmentById = async (req, res) => {
   try {
-    const appointmentId = parseInt(req.params.appointmentId);
+    const appointmentId = req.params.appointmentId;
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
     
@@ -124,11 +126,13 @@ exports.getAppointmentById = async (req, res) => {
 // Update appointment with role-based permissions
 exports.updateAppointment = async (req, res) => {
   try {
-    const appointmentId = parseInt(req.params.appointmentId);
+    const appointmentId = req.params.appointmentId;
     const updates = req.body;
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
     
+    console.log('[DEBUG] updateAppointment - appointmentId:', appointmentId);
+    console.log('[DEBUG] updateAppointment - request body:', updates);
     let updatedAppointment;
     
     if (userRole === 'admin') {
@@ -213,7 +217,7 @@ exports.updateAppointment = async (req, res) => {
 // Delete appointment with role-based permissions
 exports.deleteAppointment = async (req, res) => {
   try {
-    const appointmentId = parseInt(req.params.appointmentId);
+    const appointmentId = req.params.appointmentId;
     const userRole = req.appointmentAccess.role;
     
     res.json({ 

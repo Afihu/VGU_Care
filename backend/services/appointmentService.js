@@ -44,25 +44,41 @@ class AppointmentService extends BaseService {
     return result.rows[0] || null;
   }
 
-  async createAppointment(userId, symptoms, priorityLevel) {
+  async createAppointment(userId, symptoms, priorityLevel, medicalStaffId = null) {
     const dateScheduled = '2025-06-25 10:47:49.334376'; // Set the desired date_scheduled value
 
-    const result = await query(
-      `
-      INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled)
-      VALUES ($1, $2, $3, $4)
-      RETURNING 
-        appointment_id as "id",
-        user_id as "userId",
-        status,
-        date_requested as "dateRequested",
-        date_scheduled as "dateScheduled",
-        priority_level as "priorityLevel",
-        symptoms
-      `,
-      [userId, symptoms, priorityLevel, dateScheduled]
-    );
+    let queryText, values;
+    if (medicalStaffId) {
+      queryText = `
+        INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, medical_staff_id)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING 
+          appointment_id as "id",
+          user_id as "userId",
+          status,
+          date_requested as "dateRequested",
+          date_scheduled as "dateScheduled",
+          priority_level as "priorityLevel",
+          symptoms
+      `;
+      values = [userId, symptoms, priorityLevel, dateScheduled, medicalStaffId];
+    } else {
+      queryText = `
+        INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled)
+        VALUES ($1, $2, $3, $4)
+        RETURNING 
+          appointment_id as "id",
+          user_id as "userId",
+          status,
+          date_requested as "dateRequested",
+          date_scheduled as "dateScheduled",
+          priority_level as "priorityLevel",
+          symptoms
+      `;
+      values = [userId, symptoms, priorityLevel, dateScheduled];
+    }
 
+    const result = await query(queryText, values);
     console.log(`[DEBUG] Appointment created:`, result.rows[0]);
     return result.rows[0];
   }

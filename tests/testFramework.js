@@ -254,14 +254,14 @@ class SimpleTest {
       throw new Error(message || `Expected array length ${expectedLength}, but got ${array.length}`);
     }
   }
-
   assertIncludes(array, value, message) {
     if (!Array.isArray(array)) {
       throw new Error(message || `Expected an array, but got ${typeof array}`);
     }
     if (!array.includes(value)) {
       throw new Error(message || `Expected array to include ${value}`);
-    }  }
+    }
+  }
 }
 
 // Export the test framework and utilities

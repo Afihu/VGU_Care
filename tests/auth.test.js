@@ -124,8 +124,8 @@ async function runAuthTests() {
                 null, 
                 200
             );
-            
-            authTest.assertProperty(response.body, 'email', 'Token validation should return user data');
+              authTest.assertProperty(response.body, 'user', 'Token validation should return user data');
+            authTest.assertProperty(response.body.user, 'email', 'User should have email property');
             console.log('✅ Admin token validation successful');
         });
 
@@ -142,8 +142,8 @@ async function runAuthTests() {
                 null, 
                 200
             );
-            
-            authTest.assertProperty(response.body, 'email', 'Token validation should return user data');
+              authTest.assertProperty(response.body, 'user', 'Token validation should return user data');
+            authTest.assertProperty(response.body.user, 'email', 'User should have email property');
             console.log('✅ Student token validation successful');
         });
 
@@ -160,8 +160,8 @@ async function runAuthTests() {
                 null, 
                 200
             );
-            
-            authTest.assertProperty(response.body, 'email', 'Token validation should return user data');
+              authTest.assertProperty(response.body, 'user', 'Token validation should return user data');
+            authTest.assertProperty(response.body.user, 'email', 'User should have email property');
             console.log('✅ Medical staff token validation successful');
         });
 
@@ -223,10 +223,10 @@ async function runAuthTests() {
                 null, 
                 200
             );
-            
-            authTest.assertProperty(response.body, 'email', 'Profile should contain email');
-            authTest.assertEqual(response.body.email, 'admin@vgu.edu.vn', 'Profile email should match');
-            authTest.assertEqual(response.body.role, 'admin', 'Profile role should match');
+              authTest.assertProperty(response.body, 'user', 'Profile should contain user object');
+            authTest.assertProperty(response.body.user, 'email', 'Profile should contain email');
+            authTest.assertEqual(response.body.user.email, 'admin@vgu.edu.vn', 'Profile email should match');
+            authTest.assertEqual(response.body.user.role, 'admin', 'Profile role should match');
             console.log('✅ Admin profile access successful');
         });
 
@@ -243,10 +243,10 @@ async function runAuthTests() {
                 null, 
                 200
             );
-            
-            authTest.assertProperty(response.body, 'email', 'Profile should contain email');
-            authTest.assertEqual(response.body.email, 'student1@vgu.edu.vn', 'Profile email should match');
-            authTest.assertEqual(response.body.role, 'student', 'Profile role should match');
+              authTest.assertProperty(response.body, 'user', 'Profile should contain user object');
+            authTest.assertProperty(response.body.user, 'email', 'Profile should contain email');
+            authTest.assertEqual(response.body.user.email, 'student1@vgu.edu.vn', 'Profile email should match');
+            authTest.assertEqual(response.body.user.role, 'student', 'Profile role should match');
             console.log('✅ Student profile access successful');
         });
 
@@ -263,10 +263,10 @@ async function runAuthTests() {
                 null, 
                 200
             );
-            
-            authTest.assertProperty(response.body, 'email', 'Profile should contain email');
-            authTest.assertEqual(response.body.email, 'doctor1@vgu.edu.vn', 'Profile email should match');
-            authTest.assertEqual(response.body.role, 'medical_staff', 'Profile role should match');
+              authTest.assertProperty(response.body, 'user', 'Profile should contain user object');
+            authTest.assertProperty(response.body.user, 'email', 'Profile should contain email');
+            authTest.assertEqual(response.body.user.email, 'doctor1@vgu.edu.vn', 'Profile email should match');
+            authTest.assertEqual(response.body.user.role, 'medical_staff', 'Profile role should match');
             console.log('✅ Medical staff profile access successful');
         });
     });
