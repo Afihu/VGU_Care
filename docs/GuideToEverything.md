@@ -172,9 +172,7 @@ docker-compose up -d
 bash tests/run-tests.sh
 
 # Or run individual tests
-docker-compose --profile test run --rm test node tests/auth-service.test.js
-docker-compose --profile test run --rm test node tests/backend.test.js  
-docker-compose --profile test run --rm test node tests/profile.test.js
+docker-compose --profile test run --rm test node tests/<test-name>.test.js
 ```
 
 #### Using the Docker Manager Script

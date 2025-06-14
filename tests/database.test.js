@@ -3,75 +3,8 @@
  * Tests database connections and ensures all users, appointments, etc are correctly inserted
  */
 
-const SimpleTest = require('./testFramework');
-const https = require('https');
-const http = require('http');
-
-// Test configuration
-const API_BASE_URL = process.env.API_URL || 'http://backend:5001';
-
-// Helper function to make HTTP requests
-function makeRequest(url, method = 'GET', data = null, headers = {}) {
-  return new Promise((resolve, reject) => {
-    const urlObj = new URL(url);
-    const isHttps = urlObj.protocol === 'https:';
-    const lib = isHttps ? https : http;
-    
-    const options = {
-      hostname: urlObj.hostname,
-      port: urlObj.port || (isHttps ? 443 : 80),
-      path: urlObj.pathname + urlObj.search,
-      method: method,
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      }
-    };
-
-    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      const postData = JSON.stringify(data);
-      options.headers['Content-Length'] = Buffer.byteLength(postData);
-    }
-
-    const req = lib.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => body += chunk);
-      res.on('end', () => {
-        try {
-          const response = {
-            status: res.statusCode,
-            headers: res.headers,
-            body: body ? JSON.parse(body) : {}
-          };
-          resolve(response);
-        } catch (e) {
-          resolve({
-            status: res.statusCode,
-            headers: res.headers,
-            body: body
-          });
-        }
-      });
-    });
-
-    req.on('error', (error) => {
-      console.error('Request error:', error.message);
-      reject(error);
-    });
-
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('Request timeout'));
-    });
-
-    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      req.write(JSON.stringify(data));
-    }
-
-    req.end();
-  });
-}
+const { SimpleTest, makeRequest, API_BASE_URL } = require('./testFramework');
+const AuthHelper = require('./authHelper');
 
 // Create test suite
 const databaseTest = new SimpleTest('🗄️ Database Test Suite');
@@ -100,48 +33,23 @@ databaseTest.describe('🔌 Database Connection Tests', function() {
   });
 });
 
-// Get authentication tokens for database tests
-async function authenticateUsers() {
-  const users = {
-    admin: { email: 'admin@vgu.edu.vn', password: 'VGU2024!' },
-    student: { email: 'student1@vgu.edu.vn', password: 'VGU2024!' },
-    medical: { email: 'doctor1@vgu.edu.vn', password: 'VGU2024!' }
-  };
-
-  const tokens = {};
-
-  for (const [role, credentials] of Object.entries(users)) {
-    try {
-      const response = await makeRequest(`${API_BASE_URL}/api/login`, 'POST', credentials);
-      if (response.status === 200 && response.body.token) {
-        tokens[role] = response.body.token;
-        console.log(`✅ ${role} authentication successful`);
-      } else {
-        console.log(`❌ ${role} authentication failed`);
-      }
-    } catch (error) {
-      console.log(`❌ ${role} authentication error:`, error.message);
-    }
-  }
-
-  return tokens;
-}
+// Setup authentication for database tests
+const authHelper = new AuthHelper();
 
 databaseTest.describe('👥 User Data Verification', function() {
 
-  let tokens;
-
   databaseTest.it('should authenticate test users', async function() {
-    tokens = await authenticateUsers();
-    databaseTest.assertExists(tokens.admin, 'Admin token should exist');
-    databaseTest.assertExists(tokens.student, 'Student token should exist');
-    databaseTest.assertExists(tokens.medical, 'Medical staff token should exist');
+    await authHelper.authenticateAllUsers();
+    
+    databaseTest.assertExists(authHelper.getToken('admin'), 'Admin token should exist');
+    databaseTest.assertExists(authHelper.getToken('student'), 'Student token should exist');
+    databaseTest.assertExists(authHelper.getToken('medicalStaff'), 'Medical staff token should exist');
     console.log('✅ All test users can authenticate');
   });
 
   databaseTest.it('should verify admin user data', async function() {
     const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, {
-      'Authorization': `Bearer ${tokens.admin}`
+      'Authorization': `Bearer ${authHelper.getToken('admin')}`
     });
     
     databaseTest.assertEqual(response.status, 200, 'Admin profile should be accessible');
@@ -150,10 +58,9 @@ databaseTest.describe('👥 User Data Verification', function() {
     databaseTest.assertEqual(response.body.user.role, 'admin', 'Admin role should be correct');
     console.log('✅ Admin user data verified');
   });
-
   databaseTest.it('should verify student user data', async function() {
     const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, {
-      'Authorization': `Bearer ${tokens.student}`
+      'Authorization': `Bearer ${authHelper.getToken('student')}`
     });
     
     databaseTest.assertEqual(response.status, 200, 'Student profile should be accessible');
@@ -162,10 +69,9 @@ databaseTest.describe('👥 User Data Verification', function() {
     databaseTest.assertEqual(response.body.user.role, 'student', 'Student role should be correct');
     console.log('✅ Student user data verified');
   });
-
   databaseTest.it('should verify medical staff user data', async function() {
     const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, {
-      'Authorization': `Bearer ${tokens.medical}`
+      'Authorization': `Bearer ${authHelper.getToken('medicalStaff')}`
     });
     
     databaseTest.assertEqual(response.status, 200, 'Medical staff profile should be accessible');

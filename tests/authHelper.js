@@ -93,13 +93,12 @@ class AuthHelper {
     
     return response;
   }
-
   /**
    * Test token validation
    */
   async testTokenValidation(token, shouldBeValid = true) {
     const headers = { Authorization: `Bearer ${token}` };
-    const response = await makeRequest(`${API_BASE_URL}/api/profile`, 'GET', null, headers);
+    const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, headers);
     
     if (shouldBeValid) {
       if (response.status === 401 || response.status === 403) {
