@@ -26,8 +26,8 @@ function Home(){
                     </button>
                 </div>
 
-                <div class='element-flex-container'>
-                    <button class='update-hdata-label'>Update Health Data</button>
+                <div class='element-flex-container' onClick={() => navigate('/document-upload')}>
+                    <button class='update-hdata-label'>Upload Health Data</button>
                     <button class='Button'>
                         <span class='update-hdata-icon'></span>
                     </button>
