@@ -26,13 +26,6 @@ function Home(){
                     </button>
                 </div>
 
-                <div class='element-flex-container' onClick={() => navigate('/document-upload')}>
-                    <button class='update-hdata-label'>Upload Health Data</button>
-                    <button class='Button'>
-                        <span class='update-hdata-icon'></span>
-                    </button>
-                </div>
-
                 <div class='element-flex-container' onClick={() => navigate('/track-mood')}>
                     <button class='track-mood-label'>Track Mood</button>
                     <button class='Button'>

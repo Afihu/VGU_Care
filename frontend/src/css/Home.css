@@ -113,36 +113,6 @@
 }
 
 
-.update-hdata-label {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: larger;
-    width: 100%;
-    height: 50px;
-    border: none;
-    border-radius: 5px;
-    font-weight: bold;
-    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.5);
-    background-color: skyblue;
-}
-.update-hdata-icon {
-    display: block; 
-    width: 1.8em;   /* Icon width, e.g., 2 times the button's font-size */
-    height: 1.8em;  /* Icon height, same deal*/
-
-    -webkit-mask-image: url('../assets/others/upd-health-data.svg'); 
-  mask-image: url('../assets/others/upd-health-data.svg'); 
-
-    -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-    -webkit-mask-position: center;
-  mask-position: center;
-    -webkit-mask-size: contain;
-  mask-size: contain;
-
-  background-color: skyblue;
-}
-
-
 .track-mood-label {
     font-family: Arial, Helvetica, sans-serif;
     font-size: larger;

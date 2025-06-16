@@ -9,7 +9,6 @@ import RequestAppointment from './pages/RequestAppointment';
 import AppointmentUserView from './pages/AppointmentUserView';
 import TrackMood from './pages/TrackMood';
 import PasswordRetrieve from './pages/PasswordRetrieve';
-import DocumentUpload from './pages/DocumentUpload';
 
 // Import other pages here, e.g. Home, Dashboard, etc.
 
@@ -29,7 +28,6 @@ function App() {
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/request-appointment" element={<ProtectedRoute><RequestAppointment /></ProtectedRoute>} />
           <Route path="/appointment-user-view" element={<ProtectedRoute><AppointmentUserView /></ProtectedRoute>} />
-          <Route path="/document-upload" element={<ProtectedRoute><DocumentUpload /></ProtectedRoute>} />
           <Route path="/track-mood" element={<ProtectedRoute><TrackMood /></ProtectedRoute>} />
         </Routes>
 
