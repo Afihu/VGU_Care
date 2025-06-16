@@ -3,8 +3,14 @@ const moodEntryService = require('../services/moodEntryService');
 // Create a new mood entry (student only)
 exports.createMoodEntry = async (req, res) => {
   try {
+    console.log('[DEBUG] moodEntry create - appointmentAccess:', req.appointmentAccess);
+    console.log('[DEBUG] moodEntry create - body:', req.body);
+    
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
+    
+    console.log('[DEBUG] userRole:', userRole, 'userId:', userId);
+    
     if (userRole !== 'student') {
       return res.status(403).json({ error: 'Only students can create mood entries' });
     }
@@ -16,9 +22,13 @@ exports.createMoodEntry = async (req, res) => {
     if (!allowedMoods.includes(mood)) {
       return res.status(400).json({ error: 'Invalid mood value' });
     }
+    
+    console.log('[DEBUG] About to call moodEntryService.createMoodEntry with userId:', userId);
     const entry = await moodEntryService.createMoodEntry(userId, mood, notes);
+    console.log('[DEBUG] Successfully created mood entry:', entry);
     res.status(201).json({ moodEntry: entry });
   } catch (error) {
+    console.log('[DEBUG] moodEntry create error:', error.message);
     res.status(500).json({ error: error.message });
   }
 };

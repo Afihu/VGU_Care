@@ -1,7 +1,13 @@
 /**
  * Role-Based Access Control Test Suite
  * Tests each role's privileges across different endpoints
- * Consolidated to focus on authorization rather than feature testing
+ * Consolidated t                await ApiTestUtils.testAuthenticatedRequest(
+                    authHelper.getToken('student'), 
+                    '/api/admin/users/students', 
+                    'GET', 
+                    null, 
+                    403
+                ); on authorization rather than feature testing
  */
 
 const { SimpleTest, ApiTestUtils, makeRequest, API_BASE_URL } = require('./testFramework');
@@ -29,10 +35,10 @@ async function runPrivilegeTests() {
     });
 
     // Admin privilege tests
-    privilegeTest.describe('👑 Admin Privileges', function() {
-        privilegeTest.it('admin should access admin routes', async function() {            await ApiTestUtils.testAuthenticatedRequest(
+    privilegeTest.describe('👑 Admin Privileges', function() {        privilegeTest.it('admin should access admin routes', async function() {
+            await ApiTestUtils.testAuthenticatedRequest(
                 authHelper.getToken('admin'), 
-                '/api/admin/users', 
+                '/api/admin/users/students', 
                 'GET', 
                 null, 
                 200
@@ -58,15 +64,26 @@ async function runPrivilegeTests() {
                 200
             );
             console.log('✅ Admin can access user management');
-        });
-
-        privilegeTest.it('admin should create appointments', async function() {
+        });        privilegeTest.it('admin should create appointments', async function() {
+            // Admin creates appointment for a specific user (student ID)
             const appointmentData = {
-                symptoms: 'Admin-created appointment',
+                medical_staff_id: 2,
+                appointment_date: '2024-12-25',
+                appointment_time: '14:00:00',
+                reason: 'Admin-created appointment test',
+                symptoms: 'Admin-created symptoms for testing',
                 priorityLevel: 'high'
-            };            await ApiTestUtils.testAuthenticatedRequest(
+            };            // Use the correct admin endpoint with a student user ID
+            const studentUser = authHelper.getUser('student');
+            
+            // Ensure studentUser.id exists
+            if (!studentUser || !studentUser.id) {
+                throw new Error('Student user ID not found');
+            }
+            
+            await ApiTestUtils.testAuthenticatedRequest(
                 authHelper.getToken('admin'), 
-                '/api/appointments', 
+                `/api/admin/appointments/users/${studentUser.id}`, 
                 'POST', 
                 appointmentData, 
                 201
@@ -212,7 +229,7 @@ async function runPrivilegeTests() {
         privilegeTest.it('medical staff should NOT access admin routes', async function() {
             try {                await ApiTestUtils.testAuthenticatedRequest(
                     authHelper.getToken('medicalStaff'), 
-                    '/api/admin/users', 
+                    '/api/admin/users/students', 
                     'GET', 
                     null, 
                     403
@@ -329,9 +346,8 @@ async function runPrivilegeTests() {
             }
         });
 
-        privilegeTest.it('should maintain consistent role enforcement', async function() {
-            const restrictedEndpoints = [
-                '/api/admin/users',
+        privilegeTest.it('should maintain consistent role enforcement', async function() {            const restrictedEndpoints = [
+                '/api/admin/users/students',
                 '/api/admin/appointments'
             ];
 

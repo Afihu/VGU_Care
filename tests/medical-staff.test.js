@@ -24,8 +24,7 @@ async function runMedicalStaffTests() {
   });
 
   // Medical Staff Profile Management
-  test.describe('👨‍⚕️ Medical Staff Profile Management', function() {
-    test.it('should get medical staff profile', async function() {      const response = await ApiTestUtils.testAuthenticatedRequest(
+  test.describe('👨‍⚕️ Medical Staff Profile Management', function() {    test.it('should get medical staff profile', async function() {      const response = await ApiTestUtils.testAuthenticatedRequest(
         authHelper.getToken('medicalStaff'),
         '/api/medical-staff/profile',
         'GET',
@@ -33,11 +32,11 @@ async function runMedicalStaffTests() {
         200
       );
 
-      ApiTestUtils.validateResponseStructure(response, ['success', 'user']);
-      test.assertProperty(response.body.user, 'name', 'Profile should have name');
-      test.assertProperty(response.body.user, 'email', 'Profile should have email');
-      test.assertProperty(response.body.user, 'role', 'Profile should have role');
-      test.assertEqual(response.body.user.role, 'medical_staff', 'Role should be medical_staff');
+      ApiTestUtils.validateResponseStructure(response, ['success', 'staff']);
+      test.assertProperty(response.body.staff, 'name', 'Profile should have name');
+      test.assertProperty(response.body.staff, 'email', 'Profile should have email');
+      test.assertProperty(response.body.staff, 'role', 'Profile should have role');
+      test.assertEqual(response.body.staff.role, 'medical_staff', 'Role should be medical_staff');
       console.log('✅ Medical staff profile retrieved successfully');
     });
 
@@ -132,8 +131,7 @@ async function runMedicalStaffTests() {
   });
 
   // Appointment Management
-  test.describe('📅 Appointment Management', function() {
-    test.it('should view assigned appointments', async function() {
+  test.describe('📅 Appointment Management', function() {    test.it('should view assigned appointments', async function() {
       const response = await ApiTestUtils.testAuthenticatedRequest(
         authHelper.getToken('medicalStaff'),
         '/api/appointments',
@@ -142,7 +140,7 @@ async function runMedicalStaffTests() {
         200
       );
 
-      test.assertTrue(Array.isArray(response.body), 'Appointments should be an array');
+      test.assertTrue(Array.isArray(response.body.appointments), 'Appointments should be an array');
       console.log('✅ Medical staff can view assigned appointments');
     });
 
@@ -158,9 +156,8 @@ async function runMedicalStaffTests() {
         'POST',
         appointmentData,
         201
-      );
-
-      test.assertProperty(response.body, 'appointment_id', 'Should return appointment ID');
+      );      test.assertProperty(response.body, 'appointment', 'Should return appointment object');
+      test.assertProperty(response.body.appointment, 'id', 'Should return appointment ID');
       console.log('✅ Medical staff can create appointments');
     });
   });

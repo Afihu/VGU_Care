@@ -8,7 +8,8 @@ exports.getProfile = async (req, res) => {
     
     res.json({ 
       success: true,
-      staff: profile 
+      staff: profile,
+      user: profile // Add user field for backward compatibility
     });
   } catch (err) {
     console.error('Get medical staff profile error:', err);

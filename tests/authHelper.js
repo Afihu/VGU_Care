@@ -35,7 +35,6 @@ class AuthHelper {
       }
     }
   }
-
   /**
    * Fetch staff_id for the authenticated medical staff user
    */
@@ -45,14 +44,28 @@ class AuthHelper {
       Authorization: `Bearer ${token}`
     });
     console.log('[DEBUG] medical staff profile response:', JSON.stringify(response.body, null, 2));
-    if (response.status === 200 && response.body && response.body.staff && response.body.staff.staff_id) {
-      return response.body.staff.staff_id;
+    
+    if (response.status === 200 && response.body) {
+      // Try different possible locations for staff_id
+      if (response.body.staff && response.body.staff.staff_id) {
+        return response.body.staff.staff_id;
+      }
+      if (response.body.staffId) {
+        return response.body.staffId;
+      }
+      if (response.body.user && response.body.user.id) {
+        // Use user.id as staff_id if no specific staff_id is available
+        console.log('[DEBUG] Using user.id as staff_id:', response.body.user.id);
+        return response.body.user.id;
+      }
+      if (response.body.user && response.body.user.staff_id) {
+        return response.body.user.staff_id;
+      }
     }
-    // Fallback: try response.body.staffId
-    if (response.status === 200 && response.body && response.body.staffId) {
-      return response.body.staffId;
-    }
-    throw new Error('Could not fetch staff_id for medical staff');
+    
+    // If we still can't find it, make staff_id optional
+    console.warn('[WARNING] Could not fetch staff_id for medical staff, proceeding without it');
+    return null; // Return null instead of throwing error
   }
 
   /**

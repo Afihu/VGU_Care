@@ -1,28 +1,71 @@
 const { query } = require("../config/database");
 
-class MoodEntryService {
-  async createMoodEntry(userId, mood, notes = null) {
-    const result = await query(
-      `INSERT INTO mood_entries (user_id, mood, notes)
-       VALUES ($1, $2, $3)
-       RETURNING entry_id as "id", user_id, mood, entry_date, notes`,
-      [userId, mood, notes]
-    );
-    return result.rows[0];
-  }
-
-  async getMoodEntriesByUser(userId) {
-    const result = await query(
-      `SELECT entry_id as "id", user_id, mood, entry_date, notes
-       FROM mood_entries
-       WHERE user_id = $1
-       ORDER BY entry_date DESC`,
+class MoodEntryService {  async createMoodEntry(userId, mood, notes = null) {
+    // First get the student_id from user_id
+    const studentResult = await query(
+      `SELECT student_id FROM students WHERE user_id = $1`,
       [userId]
     );
-    return result.rows;
+    
+    if (studentResult.rows.length === 0) {
+      throw new Error('Student not found for user');
+    }
+    
+    const studentId = studentResult.rows[0].student_id;
+    
+    const result = await query(
+      `INSERT INTO mood_entries (student_id, mood, notes)
+       VALUES ($1, $2, $3)
+       RETURNING entry_id as "id", student_id, mood, entry_date, notes`,
+      [studentId, mood, notes]
+    );
+    
+    // Return user_id instead of student_id for API consistency
+    const entry = result.rows[0];
+    entry.user_id = userId;
+    delete entry.student_id;
+    return entry;
+  }  async getMoodEntriesByUser(userId) {
+    // First get the student_id from user_id
+    const studentResult = await query(
+      `SELECT student_id FROM students WHERE user_id = $1`,
+      [userId]
+    );
+    
+    if (studentResult.rows.length === 0) {
+      throw new Error('Student not found for user');
+    }
+    
+    const studentId = studentResult.rows[0].student_id;
+    
+    const result = await query(
+      `SELECT entry_id as "id", student_id, mood, entry_date, notes
+       FROM mood_entries
+       WHERE student_id = $1
+       ORDER BY entry_date DESC`,
+      [studentId]
+    );
+    
+    // Return user_id instead of student_id for API consistency
+    return result.rows.map(entry => {
+      entry.user_id = userId;
+      delete entry.student_id;
+      return entry;
+    });
   }
-
   async updateMoodEntry(entryId, userId, updates) {
+    // First get the student_id from user_id
+    const studentResult = await query(
+      `SELECT student_id FROM students WHERE user_id = $1`,
+      [userId]
+    );
+    
+    if (studentResult.rows.length === 0) {
+      throw new Error('Student not found for user');
+    }
+    
+    const studentId = studentResult.rows[0].student_id;
+    
     const fields = [];
     const values = [];
     let idx = 1;
@@ -39,18 +82,21 @@ class MoodEntryService {
       throw new Error("No valid fields to update");
     }
     values.push(entryId);
-    values.push(userId);
-
-    const result = await query(
+    values.push(studentId);    const result = await query(
       `UPDATE mood_entries SET ${fields.join(", ")}
-       WHERE entry_id = $${idx++} AND user_id = $${idx}
-       RETURNING entry_id as "id", user_id, mood, entry_date, notes`,
+       WHERE entry_id = $${idx++} AND student_id = $${idx}
+       RETURNING entry_id as "id", student_id, mood, entry_date, notes`,
       values
     );
     if (result.rows.length === 0) {
       throw new Error("Mood entry not found or not owned by user");
     }
-    return result.rows[0];
+    
+    // Return user_id instead of student_id for API consistency
+    const entry = result.rows[0];
+    entry.user_id = userId;
+    delete entry.student_id;
+    return entry;
   }
 
   // Check if a medical staff has an appointment with a student (by userId)
