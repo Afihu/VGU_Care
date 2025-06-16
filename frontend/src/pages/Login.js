@@ -108,7 +108,7 @@ function Login() {
             }}
           >Login</h2>
           <form onSubmit={handleLogin}>
-            <div style={{ marginBottom: '15px' }}>
+            <div style={{ marginBottom: '10px' }}>
               <input
                 type="email"
                 placeholder="Email"
@@ -173,17 +173,18 @@ function Login() {
                 onClick={() => setPasswordVisibility(!passwordVisible)}
               ></div>
 
-              <label 
+              <p 
                 style={{ 
                   fontSize: "14px", 
                   color: "#4fa7ff", 
                   fontFamily: "Consolas",
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  margin: '7px 0px 0px'
                 }}
 
                 onClick={() => navigateTo('/password-retrieve')}
               > Forgot password?
-              </label>
+              </p>
             </div>
 
             <button 
@@ -192,7 +193,7 @@ function Login() {
               style={{ 
                 width: '100%', 
                 padding: '12px', 
-                backgroundColor: isLoading ? '#ccc' : '#26da02',
+                background: isLoading ? '#ccc' : 'linear-gradient(90deg,rgba(59, 159, 85, 1) 24%, rgba(3, 107, 46, 1) 72%)',
                 color: 'white',
                 border: 'none',
                 fontSize: '16px',
@@ -217,6 +218,27 @@ function Login() {
                 {message}
               </div>
             )}
+
+            <p 
+                style={{ 
+                  fontSize: "14px", 
+                  color: "#4fa7ff", 
+                  fontFamily: "Consolas",
+                  margin: '7px 0px 0px'
+                }}
+
+              > Don't have an account? {' '}
+                <span
+                  // onClick={() => navigateTo()}
+                  style={{
+                    color: 'blue',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Signup
+                </span>
+              </p>
+
           </form>
         </div>
       </div>
