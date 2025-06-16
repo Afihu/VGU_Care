@@ -1,0 +1,86 @@
+const moodEntryService = require('../services/moodEntryService');
+
+// Create a new mood entry (student only)
+exports.createMoodEntry = async (req, res) => {
+  try {
+    const userRole = req.appointmentAccess.role;
+    const userId = req.appointmentAccess.userId;
+    if (userRole !== 'student') {
+      return res.status(403).json({ error: 'Only students can create mood entries' });
+    }
+    const { mood, notes } = req.body;
+    if (!mood) {
+      return res.status(400).json({ error: 'Mood is required' });
+    }
+    const allowedMoods = ['happy', 'sad', 'neutral', 'anxious', 'stressed'];
+    if (!allowedMoods.includes(mood)) {
+      return res.status(400).json({ error: 'Invalid mood value' });
+    }
+    const entry = await moodEntryService.createMoodEntry(userId, mood, notes);
+    res.status(201).json({ moodEntry: entry });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get all mood entries for the authenticated student
+exports.getMoodEntries = async (req, res) => {
+  try {
+    const userRole = req.appointmentAccess.role;
+    const userId = req.appointmentAccess.userId;
+    if (userRole !== 'student') {
+      return res.status(403).json({ error: 'Only students can view their mood entries' });
+    }
+    const entries = await moodEntryService.getMoodEntriesByUser(userId);
+    res.json({ moodEntries: entries });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Medical staff: Get all mood entries for a specific student (if they have an appointment with them)
+exports.getMoodEntriesForStudent = async (req, res) => {
+  try {
+    const userRole = req.appointmentAccess.role;
+    const staffUserId = req.appointmentAccess.userId;
+    const studentUserId = req.params.studentUserId;
+    if (userRole !== 'medical_staff') {
+      return res.status(403).json({ error: 'Only medical staff can view student mood entries' });
+    }
+    // Check if staff has an appointment with this student
+    const hasAppointment = await moodEntryService.staffHasAppointmentWithStudent(staffUserId, studentUserId);
+    if (!hasAppointment) {
+      return res.status(403).json({ error: 'You do not have access to this student\'s mood entries' });
+    }
+    const entries = await moodEntryService.getMoodEntriesByUser(studentUserId);
+    res.json({ moodEntries: entries });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Update a mood entry (student can only update their own)
+exports.updateMoodEntry = async (req, res) => {
+  try {
+    const userRole = req.appointmentAccess.role;
+    const userId = req.appointmentAccess.userId;
+    if (userRole !== 'student') {
+      return res.status(403).json({ error: 'Only students can update mood entries' });
+    }
+    const entryId = req.params.entryId;
+    const { mood, notes } = req.body;
+    if (!mood && notes === undefined) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    if (mood) {
+      const allowedMoods = ['happy', 'sad', 'neutral', 'anxious', 'stressed'];
+      if (!allowedMoods.includes(mood)) {
+        return res.status(400).json({ error: 'Invalid mood value' });
+      }
+    }
+    const updated = await moodEntryService.updateMoodEntry(entryId, userId, { mood, notes });
+    res.json({ moodEntry: updated });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

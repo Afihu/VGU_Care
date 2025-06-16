@@ -29,4 +29,8 @@ echo "🏥 Running Medical Staff Tests..."
 docker-compose --profile test run --rm test node tests/medical-staff.test.js
 
 echo ""
+echo "😊 Running Mood Entry Tests..."
+docker-compose --profile test run --rm test node tests/mood.test.js
+
+echo ""
 echo "✨ All tests completed!"

@@ -165,7 +165,7 @@ CREATE TABLE health_documents (
 -- Mood Entry table
 CREATE TABLE mood_entries (
     entry_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id UUID NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     mood VARCHAR(20) CHECK (mood IN ('happy', 'sad', 'neutral', 'anxious', 'stressed')) NOT NULL,
     entry_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     notes TEXT NULL
@@ -259,6 +259,11 @@ SELECT s.user_id, 'medium', 'Headache and fever', CURRENT_TIMESTAMP + INTERVAL '
 FROM students s LIMIT 3;
 
 -- Sample mood entries
-INSERT INTO mood_entries (student_id, mood, notes)
-SELECT s.student_id, 'happy', 'Feeling great today!'
+INSERT INTO mood_entries (user_id, mood, notes)
+SELECT s.user_id, 'happy', 'Feeling great today!'
 FROM students s LIMIT 2;
+
+INSERT INTO mood_entries (user_id, mood, notes)
+SELECT u.user_id, 'happy', 'Test mood entry from schema.sql'
+FROM users u
+WHERE u.email = 'student1@vgu.edu.vn';

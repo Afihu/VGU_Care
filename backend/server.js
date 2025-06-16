@@ -96,6 +96,9 @@ try {
   console.error('❌ appointmentRoutes failed:', error.message);
 }
 
+app.use('/api/mood-entries', require('./routes/moodEntryRoutes'));
+console.log('✅ moodEntryRoutes loaded');
+
 try {
   app.use('/api/mood', require('./routes/moodRoutes'));
   console.log('✅ moodRoutes loaded');

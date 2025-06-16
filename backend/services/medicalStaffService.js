@@ -6,15 +6,19 @@ class MedicalStaffService extends BaseService {
   // Get medical staff profile by user ID
   async getMedicalStaffProfile(userId) {
     const user = await userService.getUserById(userId);
-    
     if (!user) {
       throw new Error('User not found');
     }
-    
     if (user.role !== 'medical_staff') {
       throw new Error('Access denied: User is not medical staff');
     }
-    
+    // Fetch staff_id from medical_staff table
+    const staffResult = await query('SELECT staff_id FROM medical_staff WHERE user_id = $1', [userId]);
+    if (staffResult.rows.length > 0) {
+      user.staff_id = staffResult.rows[0].staff_id;
+    } else {
+      user.staff_id = null;
+    }
     return user;
   }
 
