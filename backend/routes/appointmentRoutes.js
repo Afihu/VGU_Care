@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAppointments, createAppointment, getAppointmentById, updateAppointment, deleteAppointment } = require('../controllers/appointmentController');
+const { getAppointments, createAppointment, getAppointmentById, updateAppointment, deleteAppointment, getPendingAppointments, approveAppointment, rejectAppointment } = require('../controllers/appointmentController');
 const authMiddleware = require('../middleware/auth');
 const { requireAppointmentAccess } = require('../middleware/roleMiddleware');
 
@@ -17,6 +17,9 @@ router.use(authMiddleware);
 // Get appointments with role-based filtering
 router.get('/', requireAppointmentAccess, getAppointments);
 
+// Get pending appointments for medical staff review
+router.get('/pending', requireAppointmentAccess, getPendingAppointments);
+
 // Create appointment - students can book their own, medical staff and admin can book for anyone
 router.post('/', requireAppointmentAccess, createAppointment);
 
@@ -25,6 +28,10 @@ router.get('/:appointmentId', requireAppointmentAccess, getAppointmentById);
 
 // Update appointment
 router.patch('/:appointmentId', requireAppointmentAccess, updateAppointment);
+
+// Approve/reject appointment routes - medical staff only
+router.post('/:appointmentId/approve', requireAppointmentAccess, approveAppointment);
+router.post('/:appointmentId/reject', requireAppointmentAccess, rejectAppointment);
 
 // Delete appointment
 router.delete('/:appointmentId', requireAppointmentAccess, deleteAppointment);

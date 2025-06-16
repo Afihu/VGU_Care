@@ -43,12 +43,24 @@ class AppointmentService extends BaseService {
   
     return result.rows[0] || null;
   }
-
   async createAppointment(userId, symptoms, priorityLevel, medicalStaffId = null) {
     const dateScheduled = '2025-06-25 10:47:49.334376'; // Set the desired date_scheduled value
 
+    // If no medical staff is specified, automatically assign to the least busy one
+    let assignedStaffId = medicalStaffId;
+    if (!assignedStaffId) {
+      try {
+        const leastAssignedStaff = await this.getLeastAssignedMedicalStaff();
+        assignedStaffId = leastAssignedStaff.staff_id;
+        console.log(`[DEBUG] Auto-assigned appointment to medical staff: ${leastAssignedStaff.name} (${leastAssignedStaff.appointment_count} existing appointments)`);
+      } catch (error) {
+        console.log(`[DEBUG] Could not auto-assign medical staff: ${error.message}`);
+        // Continue without assignment if no medical staff available
+      }
+    }
+
     let queryText, values;
-    if (medicalStaffId) {
+    if (assignedStaffId) {
       queryText = `
         INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, medical_staff_id)
         VALUES ($1, $2, $3, $4, $5)
@@ -61,7 +73,7 @@ class AppointmentService extends BaseService {
           priority_level as "priorityLevel",
           symptoms
       `;
-      values = [userId, symptoms, priorityLevel, dateScheduled, medicalStaffId];
+      values = [userId, symptoms, priorityLevel, dateScheduled, assignedStaffId];
     } else {
       queryText = `
         INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled)
@@ -83,7 +95,7 @@ class AppointmentService extends BaseService {
     return result.rows[0];
   }
 
-  async updateAppointment(appointmentId, updateData) {
+    async updateAppointment(appointmentId, updateData) {
     const { symptoms, status, priorityLevel, dateScheduled } = updateData;
 
     console.log('[DEBUG] updateAppointment - Received updateData:', JSON.stringify(updateData, null, 2));
@@ -104,18 +116,19 @@ class AppointmentService extends BaseService {
       const normalizedStatus = typeof status === 'string' ? status.trim().toLowerCase() : status;
       console.log(`[DEBUG] updateAppointment - Normalized status: '${normalizedStatus}' (type: ${typeof normalizedStatus})`);
 
-      // Allow student to set status to 'scheduled' (e.g., when rescheduling) or 'cancelled'
-      if (normalizedStatus !== "cancelled" && normalizedStatus !== "scheduled") {
-        console.log(`[DEBUG] Invalid status update attempt. Status must be 'scheduled' or 'cancelled'. Received: '${normalizedStatus}'`);
-        throw new Error("Invalid status update. Allowed statuses are 'scheduled' or 'cancelled'.");
+      // REMOVE THE RESTRICTIVE VALIDATION - Let the controller handle role-based validation
+      const validStatuses = ['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'];
+      if (!validStatuses.includes(normalizedStatus)) {
+        console.log(`[DEBUG] Invalid status update attempt. Status must be one of: ${validStatuses.join(', ')}. Received: '${normalizedStatus}'`);
+        throw new Error(`Invalid status update. Allowed statuses are: ${validStatuses.join(', ')}.`);
       }
+      
       updates.push(`status = $${paramCount}`);
       values.push(normalizedStatus);
       paramCount++;
     }
 
     if (priorityLevel !== undefined) {
-      // Assuming priorityLevel is one of 'low', 'medium', 'high' as per schema
       const validPriorityLevels = ['low', 'medium', 'high'];
       const normalizedPriorityLevel = typeof priorityLevel === 'string' ? priorityLevel.trim().toLowerCase() : priorityLevel;
       if (!validPriorityLevels.includes(normalizedPriorityLevel)) {
@@ -128,9 +141,8 @@ class AppointmentService extends BaseService {
     }
 
     if (dateScheduled !== undefined) {
-      // Add validation for dateScheduled if necessary (e.g., format, future date)
       updates.push(`date_scheduled = $${paramCount}`);
-      values.push(dateScheduled); // Ensure this is a valid timestamp string or Date object
+      values.push(dateScheduled);
       paramCount++;
     }
 
@@ -159,10 +171,10 @@ class AppointmentService extends BaseService {
     const result = await query(queryText, values);
 
     if (result.rows.length === 0) {
-      // This might indicate the appointment_id was not found,
-      // or if optimistic locking is used, that the row was changed.
       throw new Error("Appointment not found or update failed");
-    }    console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(result.rows[0], null, 2));
+    }
+    
+    console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(result.rows[0], null, 2));
     return result.rows[0];
   }
 
@@ -260,6 +272,135 @@ class AppointmentService extends BaseService {
     
     return result.rows.length > 0;
   }
+
+    /**
+   * Approve appointment - Medical staff only
+   * Implements "Approve / Reject Appointment" use case
+   */
+  async approveAppointment(appointmentId, medicalStaffUserId, dateScheduled = null) {
+    // Get medical staff's staff_id
+    const staffResult = await query(
+      'SELECT staff_id FROM medical_staff WHERE user_id = $1',
+      [medicalStaffUserId]
+    );
+    
+    if (staffResult.rows.length === 0) {
+      throw new Error('Medical staff not found');
+    }
+    
+    const staffId = staffResult.rows[0].staff_id;
+    
+    const result = await query(`
+      UPDATE appointments 
+      SET status = 'approved', 
+          medical_staff_id = $1,
+          date_scheduled = COALESCE($2, CURRENT_TIMESTAMP + INTERVAL '1 week')
+      WHERE appointment_id = $3 AND status = 'pending'
+      RETURNING 
+        appointment_id as "id",
+        user_id as "userId", 
+        status,
+        date_requested as "dateRequested",
+        date_scheduled as "dateScheduled",
+        priority_level as "priorityLevel",
+        symptoms
+    `, [staffId, dateScheduled, appointmentId]);
+    
+    if (result.rows.length === 0) {
+      throw new Error('Appointment not found or already processed');
+    }
+    
+    return result.rows[0];
+  }
+
+    /**
+   * Reject appointment - Medical staff only
+   */
+  async rejectAppointment(appointmentId, medicalStaffUserId, reason = null) {
+    const staffResult = await query(
+      'SELECT staff_id FROM medical_staff WHERE user_id = $1',
+      [medicalStaffUserId]
+    );
+    
+    if (staffResult.rows.length === 0) {
+      throw new Error('Medical staff not found');
+    }
+    
+    const staffId = staffResult.rows[0].staff_id;
+    
+    const result = await query(`
+      UPDATE appointments 
+      SET status = 'rejected', 
+          medical_staff_id = $1
+      WHERE appointment_id = $2 AND status = 'pending'
+      RETURNING 
+        appointment_id as "id",
+        user_id as "userId",
+        status,
+        date_requested as "dateRequested", 
+        priority_level as "priorityLevel",
+        symptoms
+    `, [staffId, appointmentId]);
+    
+    if (result.rows.length === 0) {
+      throw new Error('Appointment not found or already processed');
+    }
+    
+    return result.rows[0];
+  }
+
+    /**
+   * Get pending appointments for medical staff review
+   */
+  async getPendingAppointments() {
+    const result = await query(`
+      SELECT 
+        a.appointment_id as "id",
+        a.user_id as "userId",
+        a.status,
+        a.date_requested as "dateRequested",
+        a.priority_level as "priorityLevel", 
+        a.symptoms,
+        u.name as "studentName",
+        u.email as "studentEmail"
+      FROM appointments a
+      JOIN users u ON a.user_id = u.user_id
+      WHERE a.status = 'pending'
+      ORDER BY a.priority_level DESC, a.date_requested ASC
+    `);
+    
+    return result.rows;
+  }
+
+    /**
+   * Find the medical staff member with the least number of assigned appointments
+   * If there's a tie, returns the first one in the list
+   */
+  async getLeastAssignedMedicalStaff() {
+    const result = await query(`
+      SELECT 
+        ms.staff_id,
+        ms.user_id,
+        u.name,
+        u.email,
+        COUNT(a.appointment_id) as appointment_count
+      FROM medical_staff ms
+      JOIN users u ON ms.user_id = u.user_id
+      LEFT JOIN appointments a ON ms.staff_id = a.medical_staff_id 
+        AND a.status IN ('pending', 'approved', 'scheduled')
+      WHERE u.status = 'active'
+      GROUP BY ms.staff_id, ms.user_id, u.name, u.email
+      ORDER BY appointment_count ASC, u.name ASC
+      LIMIT 1
+    `);
+    
+    if (result.rows.length === 0) {
+      throw new Error('No active medical staff available');
+    }
+    
+    return result.rows[0];
+  }
+
 }
 
 module.exports = new AppointmentService();

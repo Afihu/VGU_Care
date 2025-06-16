@@ -1,5 +1,7 @@
 const appointmentService = require('../services/appointmentService');
 const adminService = require('../services/adminService');
+const adviceService = require('../services/adviceService');
+
 
 /**
  * Appointment Controller with Role-Based Access Control
@@ -19,8 +21,20 @@ exports.getAppointments = async (req, res) => {
     } else if (userRole === 'admin') {
       // Admins see all appointments
       appointments = await adminService.getAllAppointments();    } else if (userRole === 'medical_staff') {
-      // Medical staff see appointments where they are assigned
-      appointments = await appointmentService.getAppointmentsByMedicalStaff(userId);
+      // Medical staff see appointments assigned to them + all pending appointments
+      const assignedAppointments = await appointmentService.getAppointmentsByMedicalStaff(userId);
+      const pendingAppointments = await appointmentService.getPendingAppointments();
+      
+      // Combine and deduplicate (in case a pending appointment is also assigned to this staff)
+      const appointmentMap = new Map();
+      
+      // Add assigned appointments
+      assignedAppointments.forEach(apt => appointmentMap.set(apt.id, apt));
+      
+      // Add pending appointments (will overwrite if duplicate, but that's fine)
+      pendingAppointments.forEach(apt => appointmentMap.set(apt.id, apt));
+      
+      appointments = Array.from(appointmentMap.values());
     }
     
     res.json({ 
@@ -124,8 +138,7 @@ exports.getAppointmentById = async (req, res) => {
 };
 
 // Update appointment with role-based permissions
-exports.updateAppointment = async (req, res) => {
-  try {
+exports.updateAppointment = async (req, res) => {  try {
     const appointmentId = req.params.appointmentId;
     const updates = req.body;
     const userRole = req.appointmentAccess.role;
@@ -133,84 +146,84 @@ exports.updateAppointment = async (req, res) => {
     
     console.log('[DEBUG] updateAppointment - appointmentId:', appointmentId);
     console.log('[DEBUG] updateAppointment - request body:', updates);
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(appointmentId)) {
+      return res.status(400).json({ 
+        error: 'Invalid appointment ID format',
+        appointmentId: appointmentId 
+      });
+    }
+
+    // Get the appointment first to check permissions
+    const appointment = await appointmentService.getAppointmentById(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    // Permission checks based on role
+    let canUpdate = false;
     let updatedAppointment;
-    
     if (userRole === 'admin') {
-      // Admin can update any appointment via admin service
-      updatedAppointment = await adminService.updateAppointment(appointmentId, updates);
+      canUpdate = true;
     } else if (userRole === 'student') {
       // Students can only update their own appointments
-      // First check ownership
-      const appointment = await appointmentService.getAppointmentById(appointmentId);
-      
-      if (!appointment) {
-        return res.status(404).json({ error: 'Appointment not found' });
-      }
-      
-      if (appointment.userId !== userId) {
-        return res.status(403).json({ 
-          error: 'You can only update your own appointments' 
-        });
-      }
-      
-      // Students have limited update permissions
-      const allowedFields = ['symptoms', 'status', 'priorityLevel', 'dateScheduled'];
-      const studentUpdates = {};
-      
-      for (const field of allowedFields) {
-        if (updates[field] !== undefined) {
-          studentUpdates[field] = updates[field];
-        }
-      }
-      
-      if (Object.keys(studentUpdates).length === 0) {
-        return res.status(400).json({ 
-          error: 'No valid fields provided for update. Allowed: symptoms, status, priorityLevel, dateScheduled' 
-        });
-      }
-      
-      updatedAppointment = await appointmentService.updateAppointment(appointmentId, studentUpdates);    } else if (userRole === 'medical_staff') {
-      // Medical staff can update appointments where they are assigned
-      const appointment = await appointmentService.getAppointmentById(appointmentId);
-      
-      if (!appointment) {
-        return res.status(404).json({ error: 'Appointment not found' });
-      }
-      
+      canUpdate = appointment.userId === userId;    } else if (userRole === 'medical_staff') {
+      // Medical staff can update appointments assigned to them OR pending appointments
       const isAssigned = await appointmentService.isMedicalStaffAssigned(appointmentId, userId);
-      if (!isAssigned) {
-        return res.status(403).json({ 
-          error: 'You can only update appointments where you are assigned' 
-        });
-      }
+      const isPending = appointment.status === 'pending';
+      canUpdate = isAssigned || isPending;
+    }
+
+    if (!canUpdate) {
+      return res.status(403).json({ 
+        error: 'You do not have permission to update this appointment' 
+      });
+    }    // ROLE-BASED STATUS VALIDATION
+    if (updates.status) {
+      const newStatus = updates.status.toLowerCase();
       
-      // Medical staff have different update permissions than students
-      const allowedFields = ['status', 'dateScheduled', 'symptoms']; // Medical staff can complete appointments
-      const medicalStaffUpdates = {};
-      
-      for (const field of allowedFields) {
-        if (updates[field] !== undefined) {
-          medicalStaffUpdates[field] = updates[field];
+      if (userRole === 'student') {
+        // Students can only schedule or cancel their appointments
+        if (!['scheduled', 'cancelled'].includes(newStatus)) {
+          return res.status(403).json({
+            error: 'Students can only schedule or cancel appointments',
+            allowedStatuses: ['scheduled', 'cancelled']
+          });
+        }
+      } else if (userRole === 'medical_staff') {
+        // Medical staff can approve, reject, schedule, or complete appointments
+        if (!['approved', 'rejected', 'scheduled', 'completed'].includes(newStatus)) {
+          return res.status(403).json({
+            error: 'Medical staff can approve, reject, schedule, or complete appointments',
+            allowedStatuses: ['approved', 'rejected', 'scheduled', 'completed']
+          });
         }
       }
-      
-      if (Object.keys(medicalStaffUpdates).length === 0) {
-        return res.status(400).json({ 
-          error: 'No valid fields provided for update. Allowed: status, dateScheduled, symptoms' 
-        });
-      }
-      
-      updatedAppointment = await appointmentService.updateAppointment(appointmentId, medicalStaffUpdates);
+      // Admin can set any status (no additional restrictions)
     }
+
+    // Validate general updates
+    if (updates.status && !['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'].includes(updates.status)) {
+      return res.status(400).json({ 
+        error: 'Invalid status value',
+        validStatuses: ['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled']
+      });
+    }// Update the appointment
+    const result = await appointmentService.updateAppointment(appointmentId, updates);
     
     res.json({ 
+      success: true,
       message: 'Appointment updated successfully',
-      appointment: updatedAppointment,
-      updatedBy: userRole 
+      appointment: result 
     });
   } catch (error) {
     console.error('Update appointment error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message || 'Failed to update appointment',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -227,6 +240,123 @@ exports.deleteAppointment = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete appointment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Get pending appointments for medical staff review
+ */
+exports.getPendingAppointments = async (req, res) => {
+  try {
+    const userRole = req.user.role;
+    
+    if (userRole !== 'medical_staff') {
+      return res.status(403).json({ 
+        error: 'Only medical staff can view pending appointments' 
+      });
+    }
+    
+    const appointments = await appointmentService.getPendingAppointments();
+    
+    res.json({ 
+      appointments,
+      count: appointments.length,
+      message: 'Pending appointments retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Get pending appointments error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Approve appointment - Medical staff only
+ * Implements "Approve / Reject Appointment" use case
+ */
+exports.approveAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { dateScheduled, advice } = req.body; // Optional advice message
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    
+    if (userRole !== 'medical_staff') {
+      return res.status(403).json({ 
+        error: 'Only medical staff can approve appointments' 
+      });
+    }
+    
+    // Approve the appointment
+    const appointment = await appointmentService.approveAppointment(
+      appointmentId, 
+      userId, 
+      dateScheduled
+    );
+    
+    let sentAdvice = null;
+    
+    // Send temporary advice if provided
+    if (advice && advice.trim()) {
+      sentAdvice = await adviceService.sendAdviceForAppointment(
+        appointmentId,
+        advice.trim(),
+        userId
+      );
+    }
+    
+    res.json({ 
+      message: 'Appointment approved successfully',
+      appointment,
+      advice: sentAdvice
+    });
+  } catch (error) {
+    console.error('Approve appointment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Reject appointment - Medical staff only
+ */
+exports.rejectAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { reason, advice } = req.body; // Optional rejection reason and advice
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    
+    if (userRole !== 'medical_staff') {
+      return res.status(403).json({ 
+        error: 'Only medical staff can reject appointments' 
+      });
+    }
+    
+    // Reject the appointment
+    const appointment = await appointmentService.rejectAppointment(
+      appointmentId,
+      userId,
+      reason
+    );
+    
+    let sentAdvice = null;
+    
+    // Send temporary advice if provided (e.g., alternative care suggestions)
+    if (advice && advice.trim()) {
+      sentAdvice = await adviceService.sendAdviceForAppointment(
+        appointmentId,
+        advice.trim(),
+        userId
+      );
+    }
+    
+    res.json({ 
+      message: 'Appointment rejected successfully',
+      appointment,
+      advice: sentAdvice
+    });
+  } catch (error) {
+    console.error('Reject appointment error:', error);
     res.status(500).json({ error: error.message });
   }
 };

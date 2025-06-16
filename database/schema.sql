@@ -165,7 +165,7 @@ CREATE TABLE health_documents (
 -- Mood Entry table
 CREATE TABLE mood_entries (
     entry_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    student_id UUID NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
     mood VARCHAR(20) CHECK (mood IN ('happy', 'sad', 'neutral', 'anxious', 'stressed')) NOT NULL,
     entry_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     notes TEXT NULL
@@ -268,3 +268,18 @@ SELECT s.student_id, 'happy', 'Test mood entry from schema.sql'
 FROM students s
 JOIN users u ON s.user_id = u.user_id
 WHERE u.email = 'student1@vgu.edu.vn';
+
+-- Update the appointments table status to include approval workflow
+ALTER TABLE appointments DROP CONSTRAINT IF EXISTS appointments_status_check;
+ALTER TABLE appointments ADD CONSTRAINT appointments_status_check 
+CHECK (status IN ('pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'));
+
+-- Set default to 'pending' instead of 'scheduled'
+ALTER TABLE appointments ALTER COLUMN status SET DEFAULT 'pending';
+
+-- Add created_by_staff_id to temporary_advice for medical staff tracking
+ALTER TABLE temporary_advice ADD COLUMN created_by_staff_id UUID REFERENCES medical_staff(staff_id) ON DELETE CASCADE;
+
+-- Add these columns to the existing abuse_reports table
+ALTER TABLE abuse_reports ADD COLUMN IF NOT EXISTS appointment_id UUID REFERENCES appointments(appointment_id) ON DELETE SET NULL;
+ALTER TABLE abuse_reports ADD COLUMN IF NOT EXISTS report_type VARCHAR(50) DEFAULT 'system_abuse' CHECK (report_type IN ('system_abuse', 'false_urgency', 'inappropriate_behavior', 'other'));
