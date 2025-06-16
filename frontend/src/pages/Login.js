@@ -93,7 +93,7 @@ function Login() {
             margin: '50px auto', 
             border: '1px solid #ccc', 
             borderRadius: '8px', 
-            boxShadow: '2px 2px 5px 0 rgba(0, 0, 0, 0.5)',
+            boxShadow: '10px 10px 200px 30px rgba(0, 0, 0, 0.3)',
             backgroundColor: 'white'
           }}
         >

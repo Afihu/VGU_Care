@@ -39,7 +39,7 @@
   max-height: 100%;
   width: 120%;
 }
-.Logout-button {
+.logout-button {
   position: absolute; /* Removes from normal flow, positions relative to .parent-container */
   bottom: 10px;       /* 10 pixels from the bottom edge of .parent-container */
   left: 10px;
