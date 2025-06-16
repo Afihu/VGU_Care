@@ -56,7 +56,7 @@ function PasswordRetrieve() {
                         margin: '50px auto', 
                         border: '1px solid #ccc', 
                         borderRadius: '8px', 
-                        boxShadow: '2px 2px 5px 0 rgba(0, 0, 0, 0.5)',
+                        boxShadow: '10px 10px 200px 30px rgba(0, 0, 0, 0.3)',
                         backgroundColor: 'white'
                     }}
                 >
@@ -104,7 +104,7 @@ function PasswordRetrieve() {
                             style={{ 
                                 width: '100%', 
                                 padding: '12px', 
-                                backgroundColor: isLoading ? '#ccc' : '#26da02',
+                                background: isLoading ? '#ccc' : 'linear-gradient(90deg,rgba(59, 159, 85, 1) 24%, rgba(3, 107, 46, 1) 72%)',
                                 color: 'white',
                                 border: 'none',
                                 fontSize: '16px',
