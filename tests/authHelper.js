@@ -50,68 +50,6 @@ class AuthHelper {
     return this.users[userType];
   }
 
-  /**
-   * Test login functionality
-   */
-  async testLogin(credentials, shouldSucceed = true) {
-    const response = await makeRequest(`${API_BASE_URL}/api/login`, 'POST', credentials);
-    
-    if (shouldSucceed) {
-      if (response.status !== 200) {
-        throw new Error(`Login should succeed but got status ${response.status}`);
-      }
-      if (!response.body.token) {
-        throw new Error('Login response missing token');
-      }
-      if (!response.body.user) {
-        throw new Error('Login response missing user data');
-      }
-    } else {
-      if (response.status === 200) {
-        throw new Error('Login should fail but succeeded');
-      }
-    }
-    
-    return response;
-  }
-
-  /**
-   * Test signup functionality
-   */
-  async testSignup(userData, shouldSucceed = true) {
-    const response = await makeRequest(`${API_BASE_URL}/api/signup`, 'POST', userData);
-    
-    if (shouldSucceed) {
-      if (response.status !== 201 && response.status !== 200) {
-        throw new Error(`Signup should succeed but got status ${response.status}`);
-      }
-    } else {
-      if (response.status === 201 || response.status === 200) {
-        throw new Error('Signup should fail but succeeded');
-      }
-    }
-    
-    return response;
-  }
-  /**
-   * Test token validation
-   */
-  async testTokenValidation(token, shouldBeValid = true) {
-    const headers = { Authorization: `Bearer ${token}` };
-    const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, headers);
-    
-    if (shouldBeValid) {
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('Token should be valid but got unauthorized response');
-      }
-    } else {
-      if (response.status !== 401 && response.status !== 403) {
-        throw new Error('Token should be invalid but got authorized response');
-      }
-    }
-    
-    return response;
-  }
 
   /**
    * Clean up test data (if needed)

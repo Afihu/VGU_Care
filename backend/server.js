@@ -3,12 +3,34 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+console.log('🚀 Starting VGU Care Server...');
+console.log('📊 Environment:', process.env.NODE_ENV || 'development');
+console.log('🗄️  Database URL:', process.env.DATABASE_URL ? 'Configured' : 'Not configured');
+
 // Import query first (before using it)
 const { query } = require('./config/database');
 
-// Middleware
+// Middleware 
 app.use(express.json());
 app.use(cors());
+
+// Request logging middleware 
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
+  next();
+});
+
+// Add database connection test on startup
+const testDatabaseConnection = async () => {
+  try {
+    await query('SELECT 1');
+    console.log('✅ Database connection successful');
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+  }
+};
+
+testDatabaseConnection();
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -96,7 +118,7 @@ try {
 }
 
 // Start server
-const PORT = process.env.PORT || 5001;  // Changed fallback from 5001 to 5001
+const PORT = process.env.PORT || 5001; 
 app.listen(PORT, () => {
   console.log(`VGU Care Server running on port ${PORT}`);
 });

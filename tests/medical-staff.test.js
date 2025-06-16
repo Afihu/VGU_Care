@@ -4,36 +4,29 @@
  * Consolidated from medical-staff-tests.js and medical-staff-comprehensive.test.js
  */
 
-const { SimpleTest, makeRequest, authenticate, ApiTestUtils, API_BASE_URL } = require('./testFramework');
+const { SimpleTest, makeRequest, ApiTestUtils, API_BASE_URL } = require('./testFramework');
+const AuthHelper = require('./authHelper');
 
 async function runMedicalStaffTests() {
   const test = new SimpleTest('🏥 Medical Staff Comprehensive Test Suite');
-  let medicalStaffToken, studentToken;
+  const authHelper = new AuthHelper();
 
   console.log(`🌐 Using API URL: ${API_BASE_URL}`);
 
   // Setup: Authenticate users
   test.describe('🔐 Authentication Setup', function() {
-    test.it('should authenticate medical staff user', async function() {
-      const auth = await authenticate('medicalStaff');
-      medicalStaffToken = auth.token;
-      test.assertExists(medicalStaffToken, 'Medical staff token should exist');
-      console.log('✅ Medical staff authentication successful');
-    });
-
-    test.it('should authenticate student user', async function() {
-      const auth = await authenticate('student');
-      studentToken = auth.token;
-      test.assertExists(studentToken, 'Student token should exist');
-      console.log('✅ Student authentication successful');
+    test.it('should authenticate all users', async function() {
+      await authHelper.authenticateAllUsers();
+      test.assertExists(authHelper.getToken('medicalStaff'), 'Medical staff token should exist');
+      test.assertExists(authHelper.getToken('student'), 'Student token should exist');
+      console.log('✅ All users authenticated successfully');
     });
   });
 
   // Medical Staff Profile Management
   test.describe('👨‍⚕️ Medical Staff Profile Management', function() {
-    test.it('should get medical staff profile', async function() {
-      const response = await ApiTestUtils.testAuthenticatedRequest(
-        medicalStaffToken,
+    test.it('should get medical staff profile', async function() {      const response = await ApiTestUtils.testAuthenticatedRequest(
+        authHelper.getToken('medicalStaff'),
         '/api/medical-staff/profile',
         'GET',
         null,
@@ -56,7 +49,7 @@ async function runMedicalStaffTests() {
       };
 
       const response = await ApiTestUtils.testAuthenticatedRequest(
-        medicalStaffToken,
+        authHelper.getToken('medicalStaff'),
         '/api/medical-staff/profile',
         'PATCH',
         updateData,
@@ -77,7 +70,7 @@ async function runMedicalStaffTests() {
       };
 
       await ApiTestUtils.testAuthenticatedRequest(
-        medicalStaffToken,
+        authHelper.getToken('medicalStaff'),
         '/api/medical-staff/profile',
         'PATCH',
         revertData,
@@ -91,7 +84,7 @@ async function runMedicalStaffTests() {
   test.describe('👥 Student Data Access', function() {
     test.it('should get all student profiles', async function() {
       const response = await ApiTestUtils.testAuthenticatedRequest(
-        medicalStaffToken,
+        authHelper.getToken('medicalStaff'),
         '/api/medical-staff/students',
         'GET',
         null,
@@ -112,7 +105,7 @@ async function runMedicalStaffTests() {
     test.it('should get specific student profile', async function() {
       // First get all students to get a valid student ID
       const studentsResponse = await ApiTestUtils.testAuthenticatedRequest(
-        medicalStaffToken,
+        authHelper.getToken('medicalStaff'),
         '/api/medical-staff/students',
         'GET',
         null,
@@ -123,7 +116,7 @@ async function runMedicalStaffTests() {
       const studentId = studentsResponse.body.students[0].id;
 
       const response = await ApiTestUtils.testAuthenticatedRequest(
-        medicalStaffToken,
+        authHelper.getToken('medicalStaff'),
         `/api/medical-staff/students/${studentId}`,
         'GET',
         null,
@@ -142,7 +135,7 @@ async function runMedicalStaffTests() {
   test.describe('📅 Appointment Management', function() {
     test.it('should view assigned appointments', async function() {
       const response = await ApiTestUtils.testAuthenticatedRequest(
-        medicalStaffToken,
+        authHelper.getToken('medicalStaff'),
         '/api/appointments',
         'GET',
         null,
@@ -160,7 +153,7 @@ async function runMedicalStaffTests() {
       };
 
       const response = await ApiTestUtils.testAuthenticatedRequest(
-        medicalStaffToken,
+        authHelper.getToken('medicalStaff'),
         '/api/appointments',
         'POST',
         appointmentData,
@@ -177,7 +170,7 @@ async function runMedicalStaffTests() {
     test.it('should access mood tracker entries', async function() {
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          medicalStaffToken,
+          authHelper.getToken('medicalStaff'),
           '/api/mood',
           'GET',
           null,
@@ -196,7 +189,7 @@ async function runMedicalStaffTests() {
     test.it('should access abuse reports', async function() {
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          medicalStaffToken,
+          authHelper.getToken('medicalStaff'),
           '/api/reports',
           'GET',
           null,
@@ -215,7 +208,7 @@ async function runMedicalStaffTests() {
     test.it('should access advice routes', async function() {
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          medicalStaffToken,
+          authHelper.getToken('medicalStaff'),
           '/api/advice',
           'GET',
           null,
@@ -242,7 +235,7 @@ async function runMedicalStaffTests() {
     test.it('should reject student access to medical staff endpoints', async function() {
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          studentToken,
+          authHelper.getToken('student'),
           '/api/medical-staff/profile',
           'GET',
           null,
@@ -280,7 +273,7 @@ async function runMedicalStaffTests() {
     test.it('should deny access to admin routes', async function() {
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          medicalStaffToken,
+          authHelper.getToken('medicalStaff'),
           '/api/admin/users',
           'GET',
           null,
@@ -299,7 +292,7 @@ async function runMedicalStaffTests() {
     test.it('should deny access to admin appointment management', async function() {
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          medicalStaffToken,
+          authHelper.getToken('medicalStaff'),
           '/api/admin/appointments',
           'GET',
           null,
@@ -321,7 +314,7 @@ async function runMedicalStaffTests() {
     test.it('should reject empty name update', async function() {
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          medicalStaffToken,
+          authHelper.getToken('medicalStaff'),
           '/api/medical-staff/profile',
           'PATCH',
           { name: '' },
@@ -340,7 +333,7 @@ async function runMedicalStaffTests() {
     test.it('should reject invalid gender', async function() {
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          medicalStaffToken,
+          authHelper.getToken('medicalStaff'),
           '/api/medical-staff/profile',
           'PATCH',
           { gender: 'invalid' },
@@ -359,7 +352,7 @@ async function runMedicalStaffTests() {
     test.it('should reject invalid age', async function() {
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          medicalStaffToken,
+          authHelper.getToken('medicalStaff'),
           '/api/medical-staff/profile',
           'PATCH',
           { age: -5 },
@@ -380,7 +373,7 @@ async function runMedicalStaffTests() {
       
       try {
         await ApiTestUtils.testAuthenticatedRequest(
-          medicalStaffToken,
+          authHelper.getToken('medicalStaff'),
           `/api/medical-staff/students/${fakeStudentId}`,
           'GET',
           null,

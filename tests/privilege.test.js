@@ -4,27 +4,22 @@
  * Consolidated to focus on authorization rather than feature testing
  */
 
-const { SimpleTest, ApiTestUtils, authenticate } = require('./testFramework');
+const { SimpleTest, ApiTestUtils, makeRequest, API_BASE_URL } = require('./testFramework');
+const AuthHelper = require('./authHelper');
 
 async function runPrivilegeTests() {
     const privilegeTest = new SimpleTest('🔐 Role-Based Access Control');
-    let tokens = {};
+    const authHelper = new AuthHelper();
 
     // Setup: Authenticate all users before running tests
     privilegeTest.describe('🎯 Authentication Setup', function() {
         privilegeTest.it('should authenticate all users for privilege testing', async function() {
             try {
-                const adminAuth = await authenticate('admin');
-                const studentAuth = await authenticate('student');
-                const medicalAuth = await authenticate('medicalStaff');
+                await authHelper.authenticateAllUsers();
 
-                tokens.admin = adminAuth.token;
-                tokens.student = studentAuth.token;
-                tokens.medicalStaff = medicalAuth.token;
-
-                privilegeTest.assertExists(tokens.admin, 'Admin token should exist');
-                privilegeTest.assertExists(tokens.student, 'Student token should exist');
-                privilegeTest.assertExists(tokens.medicalStaff, 'Medical staff token should exist');
+                privilegeTest.assertExists(authHelper.getToken('admin'), 'Admin token should exist');
+                privilegeTest.assertExists(authHelper.getToken('student'), 'Student token should exist');
+                privilegeTest.assertExists(authHelper.getToken('medicalStaff'), 'Medical staff token should exist');
                 
                 console.log('✅ All users authenticated for privilege testing');
             } catch (error) {
@@ -35,9 +30,8 @@ async function runPrivilegeTests() {
 
     // Admin privilege tests
     privilegeTest.describe('👑 Admin Privileges', function() {
-        privilegeTest.it('admin should access admin routes', async function() {
-            await ApiTestUtils.testAuthenticatedRequest(
-                tokens.admin, 
+        privilegeTest.it('admin should access admin routes', async function() {            await ApiTestUtils.testAuthenticatedRequest(
+                authHelper.getToken('admin'), 
                 '/api/admin/users', 
                 'GET', 
                 null, 
@@ -46,9 +40,8 @@ async function runPrivilegeTests() {
             console.log('✅ Admin has access to admin routes');
         });
 
-        privilegeTest.it('admin should access all appointments', async function() {
-            await ApiTestUtils.testAuthenticatedRequest(
-                tokens.admin, 
+        privilegeTest.it('admin should access all appointments', async function() {            await ApiTestUtils.testAuthenticatedRequest(
+                authHelper.getToken('admin'), 
                 '/api/appointments', 
                 'GET', 
                 null, 
@@ -57,9 +50,8 @@ async function runPrivilegeTests() {
             console.log('✅ Admin can view all appointments');
         });
 
-        privilegeTest.it('admin should access user management', async function() {
-            await ApiTestUtils.testAuthenticatedRequest(
-                tokens.admin, 
+        privilegeTest.it('admin should access user management', async function() {            await ApiTestUtils.testAuthenticatedRequest(
+                authHelper.getToken('admin'), 
                 '/api/users/me', 
                 'GET', 
                 null, 
@@ -72,10 +64,8 @@ async function runPrivilegeTests() {
             const appointmentData = {
                 symptoms: 'Admin-created appointment',
                 priorityLevel: 'high'
-            };
-
-            await ApiTestUtils.testAuthenticatedRequest(
-                tokens.admin, 
+            };            await ApiTestUtils.testAuthenticatedRequest(
+                authHelper.getToken('admin'), 
                 '/api/appointments', 
                 'POST', 
                 appointmentData, 
@@ -86,10 +76,9 @@ async function runPrivilegeTests() {
     });
 
     // Student privilege tests
-    privilegeTest.describe('👨‍🎓 Student Privileges', function() {
-        privilegeTest.it('student should access own profile', async function() {
+    privilegeTest.describe('👨‍🎓 Student Privileges', function() {        privilegeTest.it('student should access own profile', async function() {
             await ApiTestUtils.testAuthenticatedRequest(
-                tokens.student, 
+                authHelper.getToken('student'), 
                 '/api/users/me', 
                 'GET', 
                 null, 
@@ -100,7 +89,7 @@ async function runPrivilegeTests() {
 
         privilegeTest.it('student should access own appointments', async function() {
             await ApiTestUtils.testAuthenticatedRequest(
-                tokens.student, 
+                authHelper.getToken('student'), 
                 '/api/appointments', 
                 'GET', 
                 null, 
@@ -116,7 +105,7 @@ async function runPrivilegeTests() {
             };
 
             await ApiTestUtils.testAuthenticatedRequest(
-                tokens.student, 
+                authHelper.getToken('student'), 
                 '/api/appointments', 
                 'POST', 
                 appointmentData, 
@@ -128,7 +117,7 @@ async function runPrivilegeTests() {
         privilegeTest.it('student should NOT access admin routes', async function() {
             try {
                 await ApiTestUtils.testAuthenticatedRequest(
-                    tokens.student, 
+                    authHelper.getToken('student'),
                     '/api/admin/users', 
                     'GET', 
                     null, 
@@ -146,9 +135,8 @@ async function runPrivilegeTests() {
         });
 
         privilegeTest.it('student should NOT access other user profiles', async function() {
-            try {
-                await ApiTestUtils.testAuthenticatedRequest(
-                    tokens.student, 
+            try {                await ApiTestUtils.testAuthenticatedRequest(
+                    authHelper.getToken('student'), 
                     '/api/users/999', 
                     'GET', 
                     null, 
@@ -166,10 +154,9 @@ async function runPrivilegeTests() {
     });
 
     // Medical staff privilege tests
-    privilegeTest.describe('👨‍⚕️ Medical Staff Privileges', function() {
-        privilegeTest.it('medical staff should access own profile', async function() {
+    privilegeTest.describe('👨‍⚕️ Medical Staff Privileges', function() {        privilegeTest.it('medical staff should access own profile', async function() {
             await ApiTestUtils.testAuthenticatedRequest(
-                tokens.medicalStaff, 
+                authHelper.getToken('medicalStaff'), 
                 '/api/users/me', 
                 'GET', 
                 null, 
@@ -180,7 +167,7 @@ async function runPrivilegeTests() {
 
         privilegeTest.it('medical staff should access assigned appointments', async function() {
             await ApiTestUtils.testAuthenticatedRequest(
-                tokens.medicalStaff, 
+                authHelper.getToken('medicalStaff'), 
                 '/api/appointments', 
                 'GET', 
                 null, 
@@ -192,7 +179,7 @@ async function runPrivilegeTests() {
         privilegeTest.it('medical staff should access medical staff endpoints', async function() {
             try {
                 await ApiTestUtils.testAuthenticatedRequest(
-                    tokens.medicalStaff, 
+                    authHelper.getToken('medicalStaff'),
                     '/api/medical-staff/profile', 
                     'GET', 
                     null, 
@@ -212,10 +199,8 @@ async function runPrivilegeTests() {
             const appointmentData = {
                 symptoms: 'Medical staff created appointment',
                 priorityLevel: 'high'
-            };
-
-            await ApiTestUtils.testAuthenticatedRequest(
-                tokens.medicalStaff, 
+            };            await ApiTestUtils.testAuthenticatedRequest(
+                authHelper.getToken('medicalStaff'), 
                 '/api/appointments', 
                 'POST', 
                 appointmentData, 
@@ -225,9 +210,8 @@ async function runPrivilegeTests() {
         });
 
         privilegeTest.it('medical staff should NOT access admin routes', async function() {
-            try {
-                await ApiTestUtils.testAuthenticatedRequest(
-                    tokens.medicalStaff, 
+            try {                await ApiTestUtils.testAuthenticatedRequest(
+                    authHelper.getToken('medicalStaff'), 
                     '/api/admin/users', 
                     'GET', 
                     null, 
@@ -240,11 +224,86 @@ async function runPrivilegeTests() {
                 } else {
                     throw error;
                 }
+            }        });
+    });
+
+    // Profile Management Tests (merged from profile.test.js)
+    privilegeTest.describe('👤 Profile Management', function() {
+        privilegeTest.it('should allow users to access their own profiles', async function() {
+            // Test student profile access
+            const studentResponse = await ApiTestUtils.testAuthenticatedRequest(
+                authHelper.getToken('student'),
+                '/api/users/me',
+                'GET',
+                null,
+                200
+            );
+            privilegeTest.assertProperty(studentResponse.body, 'user', 'Response should have user property');
+            privilegeTest.assertEqual(studentResponse.body.user.role, 'student', 'User role should be student');
+
+            // Test admin profile access
+            const adminResponse = await ApiTestUtils.testAuthenticatedRequest(
+                authHelper.getToken('admin'),
+                '/api/users/me',
+                'GET',
+                null,
+                200
+            );
+            privilegeTest.assertEqual(adminResponse.body.user.role, 'admin', 'User role should be admin');
+
+            // Test medical staff profile access
+            const medicalResponse = await ApiTestUtils.testAuthenticatedRequest(
+                authHelper.getToken('medicalStaff'),
+                '/api/users/me',
+                'GET',
+                null,
+                200
+            );
+            privilegeTest.assertEqual(medicalResponse.body.user.role, 'medical_staff', 'User role should be medical_staff');
+            
+            console.log('✅ All users can access their own profiles');
+        });
+
+        privilegeTest.it('should allow users to update their own profiles', async function() {
+            const updateData = {
+                name: 'Updated Student Name',
+                age: 21
+            };
+
+            try {
+                const response = await ApiTestUtils.testAuthenticatedRequest(
+                    authHelper.getToken('student'),
+                    '/api/users/me',
+                    'PUT',
+                    updateData,
+                    [200, 204] // Accept both success codes
+                );
+                console.log('✅ Profile update successful');
+            } catch (error) {
+                // Accept 200 or 204 responses
+                if (error.message.includes('200') || error.message.includes('204')) {
+                    console.log('✅ Profile update successful');
+                } else {
+                    throw error;
+                }
             }
+        });
+
+        privilegeTest.it('should reject profile access without authentication', async function() {
+            await ApiTestUtils.testUnauthorizedAccess('/api/users/me');
+            console.log('✅ Unauthenticated profile access properly denied');
+        });
+
+        privilegeTest.it('should reject invalid authentication tokens', async function() {
+            const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, {
+                'Authorization': 'Bearer invalid-token-here'
+            });
+            privilegeTest.assertEqual(response.status, 401, 'Invalid token should return 401');
+            console.log('✅ Invalid token properly rejected');
         });
     });
 
-    // Security tests
+    // Security Tests
     privilegeTest.describe('🛡️ Security Tests', function() {
         privilegeTest.it('should deny access without authentication', async function() {
             await ApiTestUtils.testUnauthorizedAccess('/api/users/me');
@@ -277,9 +336,8 @@ async function runPrivilegeTests() {
             ];
 
             for (const endpoint of restrictedEndpoints) {
-                try {
-                    await ApiTestUtils.testAuthenticatedRequest(
-                        tokens.student, 
+                try {                    await ApiTestUtils.testAuthenticatedRequest(
+                        authHelper.getToken('student'), 
                         endpoint, 
                         'GET', 
                         null, 

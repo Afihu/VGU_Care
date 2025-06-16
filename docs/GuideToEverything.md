@@ -9,6 +9,7 @@
 - [Testing with Docker](#testing-with-docker)
 - [Performance Optimization](#performance-optimization)
 - [Troubleshooting](#troubleshooting)
+- [Nuclear Options](#nuclear-options)
 - [Quick Reference](#quick-reference)
 
 ## What is Docker?
@@ -39,22 +40,19 @@ cd VGU_Care
 
 ### Start Everything
 ```bash
-# Start the application without pgAdmin
+# Start the application WITHOUT pgAdmin (recommended for local pgAdmin users)
 docker-compose up --build
 
-# OR start with pgAdmin (recommended for database management)
+# OR start WITH pgAdmin (if you want Docker-based pgAdmin)
 docker-compose --profile tools up --build
-
-# For subsequent runs, you can use:
-docker-compose up
 ```
 *First time takes 2-3 minutes to download everything*
 
 ### Access the Application
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5001
-- **Database**: localhost:5433 (from host) or postgres:5432 (from containers)
-- **PgAdmin**: http://localhost:8080 (if started with --profile tools)
+- **Database**: localhost:5433 (connect your local pgAdmin here) or postgres:5432 (from containers)
+- **PgAdmin**: http://localhost:8080 (only if started with --profile tools)
 
 ### Stop the Application
 ```bash
@@ -302,6 +300,72 @@ docker-compose down --volumes --remove-orphans
 docker system prune -f
 docker volume prune -f
 docker-compose up --build
+```
+
+## Nuclear Options
+⚠️ **WARNING: This will destroy ALL data and completely reset the system!**
+
+Use this when:
+- Multiple services are corrupted
+- Database is completely broken
+- Container network issues persist
+- Tests are failing due to environment corruption
+- You want to start completely fresh
+
+### Nuclear Cleanup Steps:
+
+```bash
+# 1. Stop ALL containers (not just VGU Care)
+docker stop $(docker ps -q) 2>/dev/null || true
+
+# 2. Remove ALL VGU Care containers
+docker-compose down --remove-orphans
+docker-compose rm -f -v
+
+# 3. Remove ALL VGU Care images
+docker rmi $(docker images "vgu_care*" -q) 2>/dev/null || true
+docker rmi $(docker images "vgu-care*" -q) 2>/dev/null || true
+
+# 4. Remove ALL VGU Care volumes (⚠️ THIS DELETES ALL DATA!)
+docker volume rm vgu_care_db_data 2>/dev/null || true
+docker volume rm vgu_care_uploads 2>/dev/null || true
+docker volume rm $(docker volume ls | grep vgu_care | awk '{print $2}') 2>/dev/null || true
+
+# 5. Remove ALL VGU Care networks
+docker network rm $(docker network ls | grep vgu_care | awk '{print $1}') 2>/dev/null || true
+
+# 6. Clean up dangling resources
+docker system prune -af --volumes
+
+# 7. Clean up build cache
+docker builder prune -af
+
+# 8. Verify cleanup
+echo "=== Cleanup Verification ==="
+echo "Containers:"
+docker ps -a | grep vgu || echo "No VGU containers found ✓"
+echo "Images:"
+docker images | grep vgu || echo "No VGU images found ✓"
+echo "Volumes:"
+docker volume ls | grep vgu || echo "No VGU volumes found ✓"
+echo "Networks:"
+docker network ls | grep vgu || echo "No VGU networks found ✓"
+
+# 9. Rebuild everything from scratch
+echo "=== Rebuilding System ==="
+docker-compose build --no-cache
+docker-compose up -d
+
+# 10. Wait for services and run health check
+echo "=== Waiting for services ==="
+sleep 30
+docker-compose ps
+```
+
+### One-Line Nuclear Command:
+```bash
+# ⚠️ NUCLEAR OPTION - Use with extreme caution!
+docker stop $(docker ps -q) 2>/dev/null; docker-compose down --remove-orphans; docker-compose rm -f -v; docker rmi $(docker images "vgu_care*" -q) 2>/dev/null; docker volume rm $(docker volume ls | grep vgu_care | awk '{print $2}') 2>/dev/null; docker system prune -af --volumes; docker-compose build --no-cache; docker-compose up -d
 ```
 
 ## Quick Reference
