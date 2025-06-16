@@ -21,7 +21,7 @@ export default function TrackMood() {
     const [entries, setEntries] = useState([
         {
             mood: "Happy",
-            note: "Got high grade in stats. Yayyyyyyyyyyyyyyyyyyyyyyyy",
+            note: "Got high grade in stats. Yayyyyyyyyyyyyy",
             date: "6/12/2025",
             time: "09:36:16 PM"
         },
