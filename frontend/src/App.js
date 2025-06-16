@@ -6,7 +6,7 @@ import Login from './pages/Login';
 import Header from './components/Header';
 import Home from './pages/Home';
 import RequestAppointment from './pages/RequestAppointment';
-import AppointmentUserView from './pages/AppointmentUserView';
+import AppointmentView from './pages/AppointmentView';
 import TrackMood from './pages/TrackMood';
 import PasswordRetrieve from './pages/PasswordRetrieve';
 
@@ -27,7 +27,7 @@ function App() {
           {/* All routes below are protected. If you want any route to be protected, just add the tag<ProtectedRoute> </ProtectedRoute>*/}
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/request-appointment" element={<ProtectedRoute><RequestAppointment /></ProtectedRoute>} />
-          <Route path="/appointment-user-view" element={<ProtectedRoute><AppointmentUserView /></ProtectedRoute>} />
+          <Route path="/appointment-user-view" element={<ProtectedRoute><AppointmentView /></ProtectedRoute>} />
           <Route path="/track-mood" element={<ProtectedRoute><TrackMood /></ProtectedRoute>} />
         </Routes>
 

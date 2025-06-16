@@ -1,0 +1,97 @@
+.request-appointment-container {
+    padding: 40px;
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 1000px;
+}
+
+.request-appointment-title {
+    text-align: center;
+    margin-top: 5px;
+    padding: 10px;
+    font-size: 30px;
+}
+
+.request-appointment-flex {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: row;
+    padding: 30px;
+}
+
+.request-appointment-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    width: 800px;
+}
+
+.appointment-datetime {
+    width: 100%;
+    padding: 20px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-top: 10px;
+}
+
+.appointment-textarea {
+    width: 100%;
+    padding: 30px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.request-appointment-buttons {
+    display: flex;
+    margin-top: 20px;
+}
+
+.submit-button {
+    padding: 12px 24px;
+    background-color: #32CD32;
+    color: black;
+    border: none;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cancel-button {
+    padding: 12px 24px;
+    background-color: #9b59b6;
+    color: white;
+    border: none;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.priority-options {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+/*-----for MoodEntryList.js-----*/
+.entry-table{
+    width: 100%;
+    margin-left: 100px
+}
+
+.entry-card{
+    width: 80%;
+    padding: 20px;
+    background-color: #62b3ed;
+    border-radius: 15px;
+    margin-top: 20px;
+    border-color: #ffffff;
+    color: #ffffff;
+}

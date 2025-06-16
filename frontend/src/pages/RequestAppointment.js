@@ -23,15 +23,15 @@ export default function RequestAppointment() {
   ]);
 
   return (
-    <div style={{ padding: '40px', margin: '20px auto',border: '1px solid #ddd', borderRadius: '8px', width: '80%', maxWidth: '1000px' }}>
-      <h2 style={{ textAlign: 'center', marginTop: '5px', padding: '10px', fontSize: '30px'}}>Request an Appointment</h2>
-      <div style={{display: 'flex', alignItems: 'flex-start', flexDirection: 'row', padding: '30px' }}>
+    <div className="request-appointment-container">
+      <h2 className="request-appointment-title">Request an Appointment</h2>
+      <div className="request-appointment-flex">
 
-        <div style={{display: 'flex', alignItems: 'flex-start', flexDirection: 'column', padding: '20px', width: '800px'}}>
+        <div className="request-appointment-form">
           {/* Priority Level */}
-          <div className="mb-4">
+          <div>
             <label className="block text-gray-700 font-medium mb-2"> <b>Select Priority Level </b></label>
-            <div className="flex gap-12, mb-8">
+            <div className="priority-options">
               {['Low', 'Medium', 'High'].map((level) => (
                 <label key={level} className="flex items-center gap-1 mt-8">
                   <input
@@ -54,15 +54,7 @@ export default function RequestAppointment() {
               required
               type="text"
               placeholder="DD/MM/YYYY, HH:MM AM/PM"
-              style={{ 
-                width: '100%', 
-                padding: '20px', 
-                fontSize: '16px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box',
-                marginTop: '10px'
-              }}
+              className="appointment-datetime"
             />
           </div>
 
@@ -73,14 +65,7 @@ export default function RequestAppointment() {
               required
               type="text"
               placeholder="Describe your sysmptoms here..."
-              style={{ 
-                width: '100%',
-                padding: '30px', 
-                fontSize: '16px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box',
-              }}
+              className="appointment-textarea"
             />
           </div>
 
@@ -90,14 +75,7 @@ export default function RequestAppointment() {
             <input
               type="text"
               /*placeholder="Describe your sysmptoms here..."*/
-              style={{ 
-                width: '100%',
-                padding: '30px', 
-                fontSize: '16px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box',
-              }}
+              className="appointment-textarea"
             />
           </div>
         </div>
@@ -107,18 +85,10 @@ export default function RequestAppointment() {
       </div>
       
       {/* Buttons */}
-      <div className="mb-4" style={{ display: 'flex' }} >
+      <div className="request-appointment-buttons">
         <button
-          type="button"
-          style={{ 
-            padding: '12px 24px',
-            backgroundColor: '#32CD32', // lime green
-            color: 'black',
-            border: 'none',
-            fontSize: '16px',
-            borderRadius: '4px',
-            cursor: 'pointer'
-           }}
+          type="button" 
+          className="submit-button"
         >
           Submit Request
         </button>
@@ -126,16 +96,7 @@ export default function RequestAppointment() {
         <button 
           onClick={() => navigate('/home')}
           type="button"
-          style={{ 
-            padding: '12px 24px',
-            backgroundColor: '#9b59b6', // purple
-            color: 'white',
-            border: 'none',
-            fontSize: '16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            marginLeft: 'auto'
-          }}
+          className="cancel-button"
         >
           Cancel
         </button>

@@ -1,0 +1,73 @@
+.appointment-user-view {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  
+  .appointment-title-box {
+    padding: 18px 36px;
+    background-color: #fcf803;
+    color: black;
+    font-size: 20px;
+    border-radius: 15px;
+    border: 2px solid #fcf803;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 30px;
+    width: fit-content;
+    margin-left: 50px;
+  }
+  
+  .appointment-content {
+    display: flex;
+    align-items: flex-start;
+  }
+  
+  .appointment-status-buttons {
+    display: flex;
+    gap: 100px;
+    flex-wrap: wrap;
+  }
+  
+  .appointment-button {
+    padding: 18px 28px;
+    color: black;
+    font-size: 12px;
+    border-radius: 15px;
+    border: 2px solid;
+    text-align: center;
+    display: inline-block;
+    margin-left: 50px;
+  }
+  
+  .button-all {
+    background-color: #03befc;
+    border-color: #03befc;
+  }
+  
+  .button-approved {
+    background-color: #b4fac1;
+    border-color: #b4fac1;
+    margin-left: 0;
+  }
+  
+  .button-pending {
+    background-color: #bdbfbe;
+    border-color: #bdbfbe;
+    margin-left: 0;
+  }
+  
+  .button-rejected {
+    background-color: #fc9a9a;
+    border-color: #fc9a9a;
+    margin-left: 0;
+  }
+  
+  .appointment-image {
+    width: 360px;
+    height: 500px;
+    object-fit: cover;
+    margin-left: 250px;
+  }
+  

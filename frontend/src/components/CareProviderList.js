@@ -1,11 +1,11 @@
 // components/CareProviderList.js
 import React from 'react';
-import '../css/TrackMood.css'; // Reuses entry-card styles
+import '../css/RequestAppointment.css';
 
 export default function CareProviderList({ providers }) {
     return (
         <div className="entry-table">
-            <h2>Available Care Providers</h2>
+            <label> <b>Available Care Providers</b> </label>
             {providers.length === 0 ? (
                 <p>No care providers available at the moment.</p>
             ) : (
