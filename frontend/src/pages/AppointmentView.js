@@ -2,9 +2,9 @@ import React from 'react';
 import greens from '../assets/images/Healthy_Greens.jpg';
 import '../css/AppointmentView.css';
 
-export default function AppointmentUserView() {
+export default function AppointmentView() {
   return (
-    <div className="appointment-user-view">
+    <div className="appointment-view">
       {/* Title Box */}
       <div className="appointment-title-box">
         MY APPOINTMENTS

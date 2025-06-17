@@ -81,7 +81,7 @@ function Home(){
                     </button>
                 </div>
 
-                <div class='element-flex-container' onClick={() => navigate('/appointment-user-view')}>
+                <div class='element-flex-container' onClick={() => navigate('/appointment-view')}>
                     <button class='view-appointment-label'>View Appointments</button>
                     <button class='Button'>
                         <span class='view-appointment-icon'></span>

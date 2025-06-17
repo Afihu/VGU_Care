@@ -27,7 +27,7 @@ function App() {
           {/* All routes below are protected. If you want any route to be protected, just add the tag<ProtectedRoute> </ProtectedRoute>*/}
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/request-appointment" element={<ProtectedRoute><RequestAppointment /></ProtectedRoute>} />
-          <Route path="/appointment-user-view" element={<ProtectedRoute><AppointmentView /></ProtectedRoute>} />
+          <Route path="/appointment-view" element={<ProtectedRoute><AppointmentView /></ProtectedRoute>} />
           <Route path="/track-mood" element={<ProtectedRoute><TrackMood /></ProtectedRoute>} />
         </Routes>
 
