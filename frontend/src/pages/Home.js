@@ -48,7 +48,7 @@ function Home(){
 
                     <button
                         style={{
-                            background: 'linear-gradient(90deg,rgba(81, 92, 94, 1) 0%, rgba(179, 169, 155, 1) 100%)',                            
+                            background: 'linear-gradient(90deg,rgba(227, 104, 16, 1) 24%, rgba(194, 66, 66, 1) 72%)',                            
                             borderRadius: '10px',
                             fontFamily: 'Consolas',
                             fontSize: '1.2em'
@@ -74,7 +74,7 @@ function Home(){
             >
             </Modal>
             <div class='flex-container'>
-                <div class='element-flex-ontainer' onClick={() => navigate('/request-appointment')}>
+                <div class='element-flex-container' onClick={() => navigate('/request-appointment')}>
                     <button class='req-appoint-label'>Request Appointment</button>
                     <button class='Button'>
                         <span class='request-appointment-icon'></span>
