@@ -29,10 +29,16 @@
     gap: 100px;
     flex-wrap: wrap;
   }
+
+  .appointment-status-buttons:hover .Button {
+    background-color: #F0F0F0; 
+    transform: translateY(-2px); /*  slight lift effect */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* add shadow */
+  }
   
   .appointment-button {
     padding: 18px 28px;
-    color: black;
+    color: rgb(255, 255, 255);
     font-size: 12px;
     border-radius: 15px;
     border: 2px solid;
@@ -42,25 +48,25 @@
   }
   
   .button-all {
-    background-color: #03befc;
+    background: linear-gradient(90deg,rgba(7, 250, 205, 1) 0%, rgba(17, 156, 237, 1) 50%, rgba(0, 60, 255, 1) 100%);
     border-color: #03befc;
   }
   
   .button-approved {
-    background-color: #b4fac1;
+    background: linear-gradient(0deg,rgba(34, 193, 195, 1) 0%, rgba(253, 187, 45, 1) 100%);
     border-color: #b4fac1;
     margin-left: 0;
   }
   
   .button-pending {
-    background-color: #bdbfbe;
+    background: linear-gradient(90deg,rgba(154, 158, 147, 1) 0%, rgba(82, 97, 86, 1) 38%, rgba(12, 9, 13, 1) 100%);
     border-color: #bdbfbe;
     margin-left: 0;
   }
   
   .button-rejected {
-    background-color: #fc9a9a;
-    border-color: #fc9a9a;
+    background: linear-gradient(180deg,rgba(131, 58, 180, 1) 0%, rgba(253, 29, 29, 1) 50%, rgba(252, 176, 69, 1) 100%);
+    border-color: #f93b3b;
     margin-left: 0;
   }
   
