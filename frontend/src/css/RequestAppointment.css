@@ -51,11 +51,18 @@
 .request-appointment-buttons {
     display: flex;
     margin-top: 20px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.request-appointment-buttons:hover .Button {
+    background-color: #F0F0F0; 
+    transform: translateY(-2px); /*  slight lift effect */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* add shadow */
 }
 
 .submit-button {
     padding: 12px 24px;
-    background-color: #32CD32;
+    background: linear-gradient(90deg,rgba(66, 235, 40, 1) 0%, rgba(37, 230, 159, 1) 50%, rgba(177, 237, 12, 1) 100%);
     color: black;
     border: none;
     font-size: 16px;
@@ -65,7 +72,7 @@
 
 .cancel-button {
     padding: 12px 24px;
-    background-color: #9b59b6;
+    background: linear-gradient(90deg,rgba(15, 20, 115, 1) 0%, rgba(175, 29, 242, 1) 50%, rgba(201, 101, 193, 1) 100%);
     color: white;
     border: none;
     font-size: 16px;
