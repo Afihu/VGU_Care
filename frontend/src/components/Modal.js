@@ -15,7 +15,7 @@ const Modal = ({isOpen, onClose, children, title}) => {
           </button>
         </div>
         <div className="modal-body">
-          {/* put custom content here */}
+          {children}
         </div>
       </div>
     </div>

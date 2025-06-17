@@ -37,6 +37,7 @@
 
 .modal-title {
   margin: 0;
+  font-family: Consolas;
   font-size: 1.5em;
   color: #333;
 }
@@ -64,7 +65,7 @@
 @keyframes modalFadeIn {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(0, 0) scale(0.5);
   }
   to {
     opacity: 1;

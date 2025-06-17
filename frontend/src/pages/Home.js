@@ -12,6 +12,7 @@ function Home(){
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [title, setTitle] = useState('');
+    const [children, setChildren] = useState('');
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
@@ -19,6 +20,43 @@ function Home(){
 
     const handleOpenModal = () => {
         setIsModalOpen(true);
+        setChildren(
+            <div>
+                <div>
+                    <p
+                        style={{
+                            fontFamily: 'Consolas',
+                            fontSize: '1em'
+                        }}
+                    >Do you want to log out?</p>
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: '20px'
+                    }}
+                >
+                    <button
+                        style={{
+                            background: 'linear-gradient(90deg,rgba(59, 159, 85, 1) 24%, rgba(3, 107, 46, 1) 72%)',
+                            borderRadius: '10px',
+                            fontFamily: 'Consolas',
+                            fontSize: '1.2em'
+                        }}
+                    >Logout</button>
+
+                    <button
+                        style={{
+                            background: 'linear-gradient(90deg,rgba(81, 92, 94, 1) 0%, rgba(179, 169, 155, 1) 100%)',                            
+                            borderRadius: '10px',
+                            fontFamily: 'Consolas',
+                            fontSize: '1.2em'
+                        }}
+                    >Cancel</button>
+                </div>
+            </div>
+        )
     }
 
     const openLogoutModal = () => {
@@ -32,6 +70,7 @@ function Home(){
                 isOpen = {isModalOpen}
                 onClose = {handleCloseModal}
                 title = {title}
+                children={children}
             >
             </Modal>
             <div class='flex-container'>
