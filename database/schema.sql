@@ -197,6 +197,23 @@ CREATE TABLE medical_documents (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Notifications table for in-app notification system
+CREATE TABLE IF NOT EXISTS notifications (
+    notification_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    appointment_id UUID REFERENCES appointments(appointment_id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL CHECK (type IN ('appointment_assigned', 'appointment_approved', 'appointment_rejected', 'appointment_scheduled', 'appointment_completed', 'general')),
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP NULL
+);
+
+-- Create index for better query performance
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
+
 -- Dummy Data (10 users: 7 students, 2 medical staff, 1 admin)
 
 -- Insert Users

@@ -1,5 +1,6 @@
 const { query } = require("../config/database");
 const BaseService = require("./baseService");
+const notificationService = require("./notificationService");
 
 class AppointmentService extends BaseService {
   async getAppointmentsByUserId(userId) {
@@ -88,11 +89,35 @@ class AppointmentService extends BaseService {
           symptoms
       `;
       values = [userId, symptoms, priorityLevel, dateScheduled];
+    }    const result = await query(queryText, values);
+    const appointment = result.rows[0];
+    console.log(`[DEBUG] Appointment created:`, appointment);
+
+    // Send notification to medical staff if assigned
+    if (assignedStaffId) {
+      try {
+        // Get student name for notification
+        const studentResult = await query('SELECT name FROM users WHERE user_id = $1', [userId]);
+        const studentName = studentResult.rows[0]?.name || 'Student';
+        
+        // Get medical staff user_id for notification
+        const staffResult = await query('SELECT user_id FROM medical_staff WHERE staff_id = $1', [assignedStaffId]);
+        if (staffResult.rows.length > 0) {
+          const medicalStaffUserId = staffResult.rows[0].user_id;
+          await notificationService.notifyMedicalStaffAssignment(
+            medicalStaffUserId, 
+            appointment.id, 
+            studentName, 
+            symptoms
+          );
+        }
+      } catch (notificationError) {
+        console.log(`[DEBUG] Failed to send assignment notification: ${notificationError.message}`);
+        // Continue without failing the appointment creation
+      }
     }
 
-    const result = await query(queryText, values);
-    console.log(`[DEBUG] Appointment created:`, result.rows[0]);
-    return result.rows[0];
+    return appointment;
   }
 
     async updateAppointment(appointmentId, updateData) {
@@ -303,14 +328,32 @@ class AppointmentService extends BaseService {
         date_requested as "dateRequested",
         date_scheduled as "dateScheduled",
         priority_level as "priorityLevel",
-        symptoms
-    `, [staffId, dateScheduled, appointmentId]);
+        symptoms    `, [staffId, dateScheduled, appointmentId]);
     
     if (result.rows.length === 0) {
       throw new Error('Appointment not found or already processed');
     }
     
-    return result.rows[0];
+    const appointment = result.rows[0];
+
+    // Send notification to student about approval
+    try {
+      // Get medical staff name for notification
+      const staffNameResult = await query('SELECT name FROM users u JOIN medical_staff ms ON u.user_id = ms.user_id WHERE ms.user_id = $1', [medicalStaffUserId]);
+      const medicalStaffName = staffNameResult.rows[0]?.name || 'Medical Staff';
+      
+      await notificationService.notifyStudentAppointmentApproved(
+        appointment.userId, 
+        appointment.id, 
+        medicalStaffName, 
+        appointment.dateScheduled
+      );
+    } catch (notificationError) {
+      console.log(`[DEBUG] Failed to send approval notification: ${notificationError.message}`);
+      // Continue without failing the approval
+    }
+    
+    return appointment;
   }
 
     /**
@@ -339,14 +382,32 @@ class AppointmentService extends BaseService {
         status,
         date_requested as "dateRequested", 
         priority_level as "priorityLevel",
-        symptoms
-    `, [staffId, appointmentId]);
+        symptoms    `, [staffId, appointmentId]);
     
     if (result.rows.length === 0) {
       throw new Error('Appointment not found or already processed');
     }
     
-    return result.rows[0];
+    const appointment = result.rows[0];
+
+    // Send notification to student about rejection
+    try {
+      // Get medical staff name for notification
+      const staffNameResult = await query('SELECT name FROM users u JOIN medical_staff ms ON u.user_id = ms.user_id WHERE ms.user_id = $1', [medicalStaffUserId]);
+      const medicalStaffName = staffNameResult.rows[0]?.name || 'Medical Staff';
+      
+      await notificationService.notifyStudentAppointmentRejected(
+        appointment.userId, 
+        appointment.id, 
+        medicalStaffName, 
+        reason
+      );
+    } catch (notificationError) {
+      console.log(`[DEBUG] Failed to send rejection notification: ${notificationError.message}`);
+      // Continue without failing the rejection
+    }
+    
+    return appointment;
   }
 
     /**

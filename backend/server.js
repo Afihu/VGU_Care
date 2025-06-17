@@ -117,6 +117,13 @@ try {
   console.error('❌ adviceRoutes failed:', error.message);
 }
 
+try {
+  app.use('/api/notifications', require('./routes/notificationRoutes'));
+  console.log('✅ notificationRoutes loaded');
+} catch (error) {
+  console.error('❌ notificationRoutes failed:', error.message);
+}
+
 // Admin abuse report route
 try {
   app.use('/api/reports', require('./routes/reportRoutes'));
