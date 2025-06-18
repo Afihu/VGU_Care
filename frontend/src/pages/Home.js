@@ -14,6 +14,19 @@ function Home(){
     const [title, setTitle] = useState('');
     const [children, setChildren] = useState('');
 
+    const handleLogout = () => {
+        const userInfo = localStorage.getItem('user');
+        try {
+            const parsed = JSON.parse(userInfo);
+            if (parsed && parsed.email) {
+                localStorage.removeItem('user'); //remove user info still left in the browser storage
+                navigate('/login');
+            }
+        } catch (e) {
+            console.warn("Invalid JSON in localStorage:", e);
+        }
+    }
+
     const handleCloseModal = () => {
         setIsModalOpen(false);
     }
@@ -44,6 +57,7 @@ function Home(){
                             fontFamily: 'Consolas',
                             fontSize: '1.2em'
                         }}
+                        onClick={() => handleLogout()}
                     >Logout</button>
 
                     <button
@@ -53,6 +67,7 @@ function Home(){
                             fontFamily: 'Consolas',
                             fontSize: '1.2em'
                         }}
+                        onClick={() => handleCloseModal()}
                     >Cancel</button>
                 </div>
             </div>
