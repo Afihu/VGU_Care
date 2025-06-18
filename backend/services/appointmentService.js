@@ -2,8 +2,7 @@ const { query } = require("../config/database");
 const BaseService = require("./baseService");
 const notificationService = require("./notificationService");
 
-class AppointmentService extends BaseService {
-  async getAppointmentsByUserId(userId) {
+class AppointmentService extends BaseService {  async getAppointmentsByUserId(userId) {
     const result = await query(
       `
       SELECT 
@@ -12,6 +11,7 @@ class AppointmentService extends BaseService {
         a.status,
         a.date_requested as "dateRequested",
         a.date_scheduled as "dateScheduled",
+        a.time_scheduled as "timeScheduled",
         a.priority_level as "priorityLevel",
         a.symptoms,
         EXISTS(SELECT 1 FROM temporary_advice ta WHERE ta.appointment_id = a.appointment_id) as "hasAdvice"
@@ -24,7 +24,6 @@ class AppointmentService extends BaseService {
 
     return result.rows;
   }
-
   async getAppointmentById(appointmentId) {
     const result = await query(
       `
@@ -34,6 +33,7 @@ class AppointmentService extends BaseService {
         a.status,
         a.date_requested as "dateRequested",
         a.date_scheduled as "dateScheduled",
+        a.time_scheduled as "timeScheduled",
         a.priority_level as "priorityLevel",
         a.symptoms
       FROM appointments a
@@ -44,8 +44,17 @@ class AppointmentService extends BaseService {
   
     return result.rows[0] || null;
   }
-  async createAppointment(userId, symptoms, priorityLevel, medicalStaffId = null) {
-    const dateScheduled = '2025-06-25 10:47:49.334376'; // Set the desired date_scheduled value
+  async createAppointment(userId, symptoms, priorityLevel, medicalStaffId = null, dateScheduled = null, timeScheduled = null) {
+    // If date and time are provided, validate the time slot
+    if (dateScheduled && timeScheduled) {
+      const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
+      if (!isAvailable) {
+        throw new Error('Selected time slot is not available');
+      }
+    } else {
+      // Use default scheduling if no specific time provided
+      dateScheduled = '2025-06-25 10:47:49.334376';
+    }
 
     // If no medical staff is specified, automatically assign to the least busy one
     let assignedStaffId = medicalStaffId;
@@ -58,12 +67,25 @@ class AppointmentService extends BaseService {
         console.log(`[DEBUG] Could not auto-assign medical staff: ${error.message}`);
         // Continue without assignment if no medical staff available
       }
-    }
-
-    let queryText, values;
+    }    let queryText, values;
     if (assignedStaffId) {
       queryText = `
-        INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, medical_staff_id)
+        INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, time_scheduled, medical_staff_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING 
+          appointment_id as "id",
+          user_id as "userId",
+          status,
+          date_requested as "dateRequested",
+          date_scheduled as "dateScheduled",
+          time_scheduled as "timeScheduled",
+          priority_level as "priorityLevel",
+          symptoms
+      `;
+      values = [userId, symptoms, priorityLevel, dateScheduled, timeScheduled, assignedStaffId];
+    } else {
+      queryText = `
+        INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, time_scheduled)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING 
           appointment_id as "id",
@@ -71,25 +93,12 @@ class AppointmentService extends BaseService {
           status,
           date_requested as "dateRequested",
           date_scheduled as "dateScheduled",
+          time_scheduled as "timeScheduled",
           priority_level as "priorityLevel",
           symptoms
       `;
-      values = [userId, symptoms, priorityLevel, dateScheduled, assignedStaffId];
-    } else {
-      queryText = `
-        INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled)
-        VALUES ($1, $2, $3, $4)
-        RETURNING 
-          appointment_id as "id",
-          user_id as "userId",
-          status,
-          date_requested as "dateRequested",
-          date_scheduled as "dateScheduled",
-          priority_level as "priorityLevel",
-          symptoms
-      `;
-      values = [userId, symptoms, priorityLevel, dateScheduled];
-    }    const result = await query(queryText, values);
+      values = [userId, symptoms, priorityLevel, dateScheduled, timeScheduled];
+    }const result = await query(queryText, values);
     const appointment = result.rows[0];
     console.log(`[DEBUG] Appointment created:`, appointment);
 
@@ -118,12 +127,18 @@ class AppointmentService extends BaseService {
     }
 
     return appointment;
-  }
-
-    async updateAppointment(appointmentId, updateData) {
-    const { symptoms, status, priorityLevel, dateScheduled } = updateData;
+  }    async updateAppointment(appointmentId, updateData) {
+    const { symptoms, status, priorityLevel, dateScheduled, timeScheduled } = updateData;
 
     console.log('[DEBUG] updateAppointment - Received updateData:', JSON.stringify(updateData, null, 2));
+
+    // If updating time, validate time slot availability
+    if (dateScheduled && timeScheduled) {
+      const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
+      if (!isAvailable) {
+        throw new Error('Selected time slot is not available');
+      }
+    }
 
     // Build update query dynamically
     const updates = [];
@@ -171,6 +186,12 @@ class AppointmentService extends BaseService {
       paramCount++;
     }
 
+    if (timeScheduled !== undefined) {
+      updates.push(`time_scheduled = $${paramCount}`);
+      values.push(timeScheduled);
+      paramCount++;
+    }
+
     if (updates.length === 0) {
       throw new Error("No valid fields to update");
     }
@@ -187,6 +208,7 @@ class AppointmentService extends BaseService {
         status,
         date_requested as "dateRequested",
         date_scheduled as "dateScheduled",
+        time_scheduled as "timeScheduled",
         priority_level as "priorityLevel",
         symptoms
     `;
@@ -202,7 +224,6 @@ class AppointmentService extends BaseService {
     console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(result.rows[0], null, 2));
     return result.rows[0];
   }
-
   async getAppointmentsByMedicalStaff(medicalStaffUserId) {
     // Get medical staff's staff_id from user_id
     const staffResult = await query(
@@ -224,6 +245,7 @@ class AppointmentService extends BaseService {
         a.status,
         a.date_requested as "dateRequested",
         a.date_scheduled as "dateScheduled",
+        a.time_scheduled as "timeScheduled",
         a.priority_level as "priorityLevel",
         a.symptoms,
         u.name as "studentName",
@@ -239,8 +261,7 @@ class AppointmentService extends BaseService {
 
     return result.rows;
   }
-
-  async createAppointmentByMedicalStaff(medicalStaffUserId, symptoms, priorityLevel, studentUserId = null) {
+  async createAppointmentByMedicalStaff(medicalStaffUserId, symptoms, priorityLevel, studentUserId = null, dateScheduled = null, timeScheduled = null) {
     // Get medical staff's staff_id from user_id
     const staffResult = await query(
       'SELECT staff_id FROM medical_staff WHERE user_id = $1',
@@ -253,24 +274,32 @@ class AppointmentService extends BaseService {
     
     const staffId = staffResult.rows[0].staff_id;
     
-    // If no student specified, this would need to be handled in frontend
-    // For now, medical staff can create appointments and assign them later
-    const dateScheduled = '2025-06-25 10:47:49.334376'; // Default scheduled time
+    // If date and time are provided, validate the time slot
+    if (dateScheduled && timeScheduled) {
+      const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
+      if (!isAvailable) {
+        throw new Error('Selected time slot is not available');
+      }
+    } else {
+      // Use default scheduling if no specific time provided
+      dateScheduled = '2025-06-25 10:47:49.334376';
+    }
     
     const result = await query(
       `
-      INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, medical_staff_id)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, time_scheduled, medical_staff_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING 
         appointment_id as "id",
         user_id as "userId",
         status,
         date_requested as "dateRequested",
         date_scheduled as "dateScheduled",
+        time_scheduled as "timeScheduled",
         priority_level as "priorityLevel",
         symptoms
       `,
-      [studentUserId || medicalStaffUserId, symptoms, priorityLevel, dateScheduled, staffId]
+      [studentUserId || medicalStaffUserId, symptoms, priorityLevel, dateScheduled, timeScheduled, staffId]
     );
 
     console.log(`[DEBUG] Medical staff appointment created:`, result.rows[0]);
@@ -296,13 +325,11 @@ class AppointmentService extends BaseService {
     );
     
     return result.rows.length > 0;
-  }
-
-    /**
+  }  /**
    * Approve appointment - Medical staff only
    * Implements "Approve / Reject Appointment" use case
    */
-  async approveAppointment(appointmentId, medicalStaffUserId, dateScheduled = null) {
+  async approveAppointment(appointmentId, medicalStaffUserId, dateScheduled = null, timeScheduled = null) {
     // Get medical staff's staff_id
     const staffResult = await query(
       'SELECT staff_id FROM medical_staff WHERE user_id = $1',
@@ -315,20 +342,30 @@ class AppointmentService extends BaseService {
     
     const staffId = staffResult.rows[0].staff_id;
     
+    // If date and time are provided, validate the time slot
+    if (dateScheduled && timeScheduled) {
+      const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
+      if (!isAvailable) {
+        throw new Error('Selected time slot is not available');
+      }
+    }
+    
     const result = await query(`
       UPDATE appointments 
       SET status = 'approved', 
           medical_staff_id = $1,
-          date_scheduled = COALESCE($2, CURRENT_TIMESTAMP + INTERVAL '1 week')
-      WHERE appointment_id = $3 AND status = 'pending'
+          date_scheduled = COALESCE($2, CURRENT_TIMESTAMP + INTERVAL '1 week'),
+          time_scheduled = $3
+      WHERE appointment_id = $4 AND status = 'pending'
       RETURNING 
         appointment_id as "id",
         user_id as "userId", 
         status,
         date_requested as "dateRequested",
         date_scheduled as "dateScheduled",
+        time_scheduled as "timeScheduled",
         priority_level as "priorityLevel",
-        symptoms    `, [staffId, dateScheduled, appointmentId]);
+        symptoms    `, [staffId, dateScheduled, timeScheduled, appointmentId]);
     
     if (result.rows.length === 0) {
       throw new Error('Appointment not found or already processed');
@@ -354,9 +391,7 @@ class AppointmentService extends BaseService {
     }
     
     return appointment;
-  }
-
-    /**
+  }    /**
    * Reject appointment - Medical staff only
    */
   async rejectAppointment(appointmentId, medicalStaffUserId, reason = null) {
@@ -380,7 +415,9 @@ class AppointmentService extends BaseService {
         appointment_id as "id",
         user_id as "userId",
         status,
-        date_requested as "dateRequested", 
+        date_requested as "dateRequested",
+        date_scheduled as "dateScheduled",
+        time_scheduled as "timeScheduled", 
         priority_level as "priorityLevel",
         symptoms    `, [staffId, appointmentId]);
     
@@ -408,9 +445,7 @@ class AppointmentService extends BaseService {
     }
     
     return appointment;
-  }
-
-    /**
+  }    /**
    * Get pending appointments for medical staff review
    */
   async getPendingAppointments() {
@@ -420,6 +455,8 @@ class AppointmentService extends BaseService {
         a.user_id as "userId",
         a.status,
         a.date_requested as "dateRequested",
+        a.date_scheduled as "dateScheduled",
+        a.time_scheduled as "timeScheduled",
         a.priority_level as "priorityLevel", 
         a.symptoms,
         u.name as "studentName",
@@ -460,6 +497,70 @@ class AppointmentService extends BaseService {
     }
     
     return result.rows[0];
+  }
+
+  /**
+   * Get available time slots for a specific date
+   * Returns time slots that are not already booked for the given date
+   */
+  async getAvailableTimeSlots(date) {
+    const inputDate = new Date(date);
+    const dayOfWeek = inputDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+    
+    // No slots available on weekends
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return [];
+    }
+
+    // Convert JavaScript day (0-6) to our database format (1-5 for Mon-Fri)
+    const dbDayOfWeek = dayOfWeek;
+
+    const result = await query(`
+      SELECT 
+        ts.start_time, 
+        ts.end_time,
+        TO_CHAR(ts.start_time, 'HH24:MI') as "startTimeFormatted",
+        TO_CHAR(ts.end_time, 'HH24:MI') as "endTimeFormatted"
+      FROM time_slots ts
+      WHERE ts.day_of_week = $1
+      AND NOT EXISTS (
+        SELECT 1 FROM appointments a 
+        WHERE DATE(a.date_scheduled) = $2 
+        AND a.time_scheduled = ts.start_time
+        AND a.status NOT IN ('cancelled', 'rejected')
+      )
+      ORDER BY ts.start_time
+    `, [dbDayOfWeek, date]);
+
+    return result.rows;
+  }
+
+  /**
+   * Check if a specific time slot is available for booking
+   */
+  async isTimeSlotAvailable(date, timeScheduled) {
+    const inputDate = new Date(date);
+    const dayOfWeek = inputDate.getDay();
+    
+    // Check if the time slot exists for this day of week
+    const slotExistsResult = await query(`
+      SELECT 1 FROM time_slots 
+      WHERE day_of_week = $1 AND start_time = $2
+    `, [dayOfWeek, timeScheduled]);
+
+    if (slotExistsResult.rows.length === 0) {
+      return false; // Time slot doesn't exist for this day
+    }
+
+    // Check if the time slot is available (not booked)
+    const result = await query(`
+      SELECT 1 FROM appointments 
+      WHERE DATE(date_scheduled) = $1 
+      AND time_scheduled = $2
+      AND status NOT IN ('cancelled', 'rejected')
+    `, [date, timeScheduled]);
+
+    return result.rows.length === 0; // Available if no conflicting appointments
   }
 
 }

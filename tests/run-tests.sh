@@ -25,6 +25,10 @@ echo "📅 Running Appointment Management Tests..."
 docker-compose --profile test run --rm test node tests/appointment.test.js
 
 echo ""
+echo "🕐 Running Time Slots Tests..."
+docker-compose --profile test run --rm test node tests/time-slots.test.js
+
+echo ""
 echo "🏥 Running Medical Staff Tests..."
 docker-compose --profile test run --rm test node tests/medical-staff.test.js
 

@@ -146,11 +146,10 @@ class AdminService extends BaseService {
 
   /**
    * Get all appointments across the system
-   */
-  async getAllAppointments() {
+   */  async getAllAppointments() {
     const result = await query(`
       SELECT 
-        a.appointment_id, a.status, a.date_requested, a.date_scheduled,
+        a.appointment_id, a.status, a.date_requested, a.date_scheduled, a.time_scheduled,
         a.priority_level, a.symptoms,
         u.user_id, u.name, u.email, u.role
       FROM appointments a
@@ -167,6 +166,7 @@ class AdminService extends BaseService {
       status: row.status,
       dateRequested: row.date_requested,
       dateScheduled: row.date_scheduled,
+      timeScheduled: row.time_scheduled,
       priorityLevel: row.priority_level,
       symptoms: row.symptoms
     }));

@@ -51,7 +51,7 @@ exports.getAppointments = async (req, res) => {
 // Create appointment with role-based validation
 exports.createAppointment = async (req, res) => {
   try {
-    const { symptoms, priorityLevel, medical_staff_id } = req.body; // Student API format
+    const { symptoms, priorityLevel, medical_staff_id, dateScheduled, timeScheduled } = req.body; // Updated API format
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
     
@@ -61,21 +61,26 @@ exports.createAppointment = async (req, res) => {
         error: 'Symptoms and priority level are required' 
       });
     }
+
+    // If time is specified, date must also be specified
+    if (timeScheduled && !dateScheduled) {
+      return res.status(400).json({ 
+        error: 'Date must be specified when time is provided' 
+      });
+    }
     
     let appointment;
-    // Ensure there are NO references to appointmentId in this function
-    // (Removed all debug logs or code referencing appointmentId here)
     
     if (userRole === 'student') {
       // Students create appointments for themselves
-      appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel, medical_staff_id);
+      appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel, medical_staff_id, dateScheduled, timeScheduled);
     } else if (userRole === 'admin') {
       // Admin can create appointments for students via different route (/api/admin/appointments/users/:userId)
       return res.status(400).json({ 
         error: 'Admins should use /api/admin/appointments/users/:userId endpoint' 
       });    } else if (userRole === 'medical_staff') {
       // Medical staff can create appointments for students with their assignment
-      appointment = await appointmentService.createAppointmentByMedicalStaff(userId, symptoms, priorityLevel);
+      appointment = await appointmentService.createAppointmentByMedicalStaff(userId, symptoms, priorityLevel, null, dateScheduled, timeScheduled);
     }
     
     res.status(201).json({ 
@@ -357,6 +362,30 @@ exports.rejectAppointment = async (req, res) => {
     });
   } catch (error) {
     console.error('Reject appointment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Get available time slots for a specific date
+ */
+exports.getAvailableTimeSlots = async (req, res) => {
+  try {
+    const { date } = req.params;
+    
+    if (!date) {
+      return res.status(400).json({ error: 'Date parameter is required' });
+    }
+
+    const timeSlots = await appointmentService.getAvailableTimeSlots(date);
+    
+    res.json({ 
+      date,
+      availableTimeSlots: timeSlots,
+      message: `Found ${timeSlots.length} available time slots for ${date}`
+    });
+  } catch (error) {
+    console.error('Get available time slots error:', error);
     res.status(500).json({ error: error.message });
   }
 };

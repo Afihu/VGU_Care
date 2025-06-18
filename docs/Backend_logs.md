@@ -389,7 +389,7 @@ PostgreSQL database with full user, appointment, and role management.
   priorityLevel: "low" | "medium" | "high",
   symptoms: "string",
   dateScheduled: "2024-12-15T10:00:00Z"
-}
+
 
 // Update appointment
 PATCH /api/admin/appointments/:appointmentId

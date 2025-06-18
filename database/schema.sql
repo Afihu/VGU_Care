@@ -140,6 +140,7 @@ CREATE TABLE appointments (
     status VARCHAR(20) CHECK (status IN ('scheduled', 'completed', 'cancelled')) NOT NULL DEFAULT 'scheduled',
     date_requested TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     date_scheduled TIMESTAMP NULL,
+    time_scheduled TIME,
     priority_level VARCHAR(10) CHECK (priority_level IN ('low', 'medium', 'high')) NOT NULL,
     symptoms TEXT NOT NULL
 );
@@ -178,7 +179,9 @@ CREATE TABLE abuse_reports (
     student_id UUID REFERENCES students(student_id) ON DELETE SET NULL,
     report_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     description TEXT NOT NULL,
-    status VARCHAR(20) CHECK (status IN ('open', 'investigating', 'resolved')) NOT NULL DEFAULT 'open'
+    status VARCHAR(20) CHECK (status IN ('open', 'investigating', 'resolved')) NOT NULL DEFAULT 'open',
+    appointment_id UUID REFERENCES appointments(appointment_id) ON DELETE SET NULL,
+    report_type VARCHAR(50) DEFAULT 'system_abuse' CHECK (report_type IN ('system_abuse', 'false_urgency', 'inappropriate_behavior', 'other'))
 );
 
 -- Medical Documents table
@@ -300,3 +303,31 @@ ALTER TABLE temporary_advice ADD COLUMN created_by_staff_id UUID REFERENCES medi
 -- Add these columns to the existing abuse_reports table
 ALTER TABLE abuse_reports ADD COLUMN IF NOT EXISTS appointment_id UUID REFERENCES appointments(appointment_id) ON DELETE SET NULL;
 ALTER TABLE abuse_reports ADD COLUMN IF NOT EXISTS report_type VARCHAR(50) DEFAULT 'system_abuse' CHECK (report_type IN ('system_abuse', 'false_urgency', 'inappropriate_behavior', 'other'));
+
+-- Add time_scheduled column to appointments table for time slot functionality
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS time_scheduled TIME;
+
+-- Create time_slots table to manage available appointment slots
+CREATE TABLE IF NOT EXISTS time_slots (
+    slot_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    day_of_week INTEGER NOT NULL CHECK (day_of_week >= 1 AND day_of_week <= 5), -- 1=Monday, 5=Friday
+    UNIQUE(start_time, day_of_week)
+);
+
+-- Populate time_slots with 20-minute slots from 9am to 4pm (Monday to Friday)
+-- This creates 21 slots per day (7 hours * 3 slots per hour)
+INSERT INTO time_slots (start_time, end_time, day_of_week)
+SELECT 
+    (TIME '09:00:00' + (interval '20 minutes' * slot_number)) as start_time,
+    (TIME '09:00:00' + (interval '20 minutes' * (slot_number + 1))) as end_time,
+    day_num
+FROM 
+    generate_series(0, 20) as slot_number, -- 21 slots = 7 hours
+    generate_series(1, 5) as day_num -- Monday to Friday
+ON CONFLICT (start_time, day_of_week) DO NOTHING;
+
+-- Create indexes for better performance on time slot queries
+CREATE INDEX IF NOT EXISTS idx_appointments_date_time ON appointments(date_scheduled, time_scheduled);
+CREATE INDEX IF NOT EXISTS idx_time_slots_day_time ON time_slots(day_of_week, start_time);

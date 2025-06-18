@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAppointments, createAppointment, getAppointmentById, updateAppointment, deleteAppointment, getPendingAppointments, approveAppointment, rejectAppointment } = require('../controllers/appointmentController');
+const { getAppointments, createAppointment, getAppointmentById, updateAppointment, deleteAppointment, getPendingAppointments, approveAppointment, rejectAppointment, getAvailableTimeSlots } = require('../controllers/appointmentController');
 const authMiddleware = require('../middleware/auth');
 const { requireAppointmentAccess } = require('../middleware/roleMiddleware');
 
@@ -19,6 +19,9 @@ router.get('/', requireAppointmentAccess, getAppointments);
 
 // Get pending appointments for medical staff review
 router.get('/pending', requireAppointmentAccess, getPendingAppointments);
+
+// Get available time slots for a specific date
+router.get('/time-slots/:date', requireAppointmentAccess, getAvailableTimeSlots);
 
 // Create appointment - students can book their own, medical staff and admin can book for anyone
 router.post('/', requireAppointmentAccess, createAppointment);

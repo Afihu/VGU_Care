@@ -56,42 +56,197 @@
 ## 📅 Appointment Management APIs
 
 ### Get Appointments (Role-Based)
-- **GET** `/appointments`
-- **Auth**: Bearer Token (All Roles)
-- **Response**: `{ appointments: [...] }`
-- **Access**: 
-  - Students: Own appointments only
-  - Medical Staff: Assigned and pending appointments
-  - Admin: All appointments
-- **Status**: ✅ **Implemented & Tested**
+**GET** `/api/appointments`
+```javascript
+// Example Response:
+{
+  "appointments": [
+    {
+      "id": "uuid",
+      "userId": "uuid", 
+      "status": "pending",
+      "dateRequested": "2025-06-19T10:30:00Z",
+      "dateScheduled": "2025-06-20T00:00:00Z",
+      "timeScheduled": "09:00:00",
+      "priorityLevel": "medium",
+      "symptoms": "Headache and fever",
+      "hasAdvice": false
+    }
+  ],
+  "userRole": "student",
+  "accessLevel": "filtered"
+}
+```
+**Auth**: Bearer Token (All Roles)  
+**Access**: 
+- Students: Own appointments only
+- Medical Staff: Assigned and pending appointments  
+- Admin: All appointments  
+**Status**: ✅ **Implemented & Tested**
+
+### Get Available Time Slots
+**GET** `/api/appointments/time-slots/:date`
+```javascript
+// Example Response:
+{
+  "date": "2025-06-20",
+  "availableTimeSlots": [
+    {
+      "start_time": "09:00:00",
+      "end_time": "09:20:00", 
+      "startTimeFormatted": "09:00",
+      "endTimeFormatted": "09:20"
+    },
+    {
+      "start_time": "09:20:00",
+      "end_time": "09:40:00",
+      "startTimeFormatted": "09:20", 
+      "endTimeFormatted": "09:40"
+    },
+    {
+      "start_time": "10:00:00",
+      "end_time": "10:20:00",
+      "startTimeFormatted": "10:00",
+      "endTimeFormatted": "10:20"
+    }
+  ],
+  "message": "Found 15 available time slots for 2025-06-20"
+}
+```
+**Auth**: Bearer Token (All Roles)  
+**Business Rules**:
+- Monday-Friday only (weekends return empty array)
+- 20-minute time slots from 9:00 AM to 4:00 PM
+- Excludes already booked slots for the specified date
+- Does not show slots for cancelled/rejected appointments  
+**Status**: ✅ **Implemented & Tested**
 
 ### Create Appointment
-- **POST** `/appointments`
-- **Auth**: Bearer Token
-- **Body**: `{ symptoms: "string", priorityLevel: "low|medium|high" }`
-- **Response**: `{ appointment_id, ... }`
-- **Access**:
-  - Students: Create for themselves (auto-assigned to least busy medical staff)
-  - Medical Staff: Create with self-assignment
-- **Status**: ✅ **Implemented & Tested**
-- **Feature**: **Auto-Assignment** - Appointments automatically assigned to medical staff with fewest appointments
+**POST** `/api/appointments`
+```javascript
+// Request Body:
+{
+  "symptoms": "Headache and fever",
+  "priorityLevel": "medium",           // "low" | "medium" | "high"
+  "dateScheduled": "2025-06-20",       // Optional: specific date
+  "timeScheduled": "09:00:00"          // Optional: specific time (requires dateScheduled)
+}
+
+// Example Response:
+{
+  "message": "Appointment created successfully",
+  "appointment": {
+    "id": "uuid",
+    "userId": "uuid",
+    "status": "pending", 
+    "dateRequested": "2025-06-19T10:30:00Z",
+    "dateScheduled": "2025-06-20T00:00:00Z",
+    "timeScheduled": "09:00:00",
+    "priorityLevel": "medium",
+    "symptoms": "Headache and fever"
+  }
+}
+```
+**Auth**: Bearer Token  
+**Access**:
+- Students: Create for themselves (auto-assigned to least busy medical staff)
+- Medical Staff: Create with self-assignment  
+**Features**: 
+- **Time Slot Validation** - Prevents double-booking of time slots
+- **Auto-Assignment** - Appointments automatically assigned to medical staff with fewest appointments  
+**Status**: ✅ **Implemented & Tested**
+
+### Integration Flow
+```javascript
+// 1. User selects a date → Get available time slots
+const getAvailableSlots = async (date) => {
+  const response = await fetch(`/api/appointments/time-slots/${date}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  return response.json();
+};
+
+// 2. Display available slots → User selects preferred time
+// Frontend shows dropdown/buttons with available time slots
+
+// 3. Create appointment with selected time slot
+const createAppointment = async (appointmentData) => {
+  const response = await fetch('/api/appointments', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      symptoms: appointmentData.symptoms,
+      priorityLevel: appointmentData.priorityLevel,
+      dateScheduled: appointmentData.selectedDate,    // "2025-06-20"
+      timeScheduled: appointmentData.selectedTime     // "09:00:00"
+    })
+  });
+};
+
+// 4. System validates availability and creates appointment
+// If time slot is taken, returns error: "Selected time slot is not available"
+```
 
 ### Get Specific Appointment
-- **GET** `/appointments/:appointmentId`
-- **Auth**: Bearer Token (Ownership/Assignment required)
-- **Status**: ✅ **Implemented & Tested**
+**GET** `/api/appointments/:appointmentId`
+```javascript
+// Example Response:
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "status": "pending",
+  "dateRequested": "2025-06-19T10:30:00Z", 
+  "dateScheduled": "2025-06-20T00:00:00Z",
+  "timeScheduled": "09:00:00",
+  "priorityLevel": "medium",
+  "symptoms": "Headache and fever"
+}
+```
+**Auth**: Bearer Token (Ownership/Assignment required)  
+**Status**: ✅ **Implemented & Tested**
 
 ### Update Appointment
-- **PATCH** `/appointments/:appointmentId`
-- **Auth**: Bearer Token (Ownership/Assignment required)
-- **Body**: `{ symptoms?, status?, priorityLevel?, dateScheduled? }`
-- **Permission**: Medical staff can update any pending appointment
-- **Status**: ✅ **Implemented & Tested**
+**PATCH** `/api/appointments/:appointmentId`
+```javascript
+// Request Body:
+{
+  "symptoms": "Updated symptoms",      // Optional
+  "status": "approved",               // Optional: "pending" | "approved" | "rejected" | "scheduled" | "completed" | "cancelled"
+  "priorityLevel": "high",            // Optional: "low" | "medium" | "high"
+  "dateScheduled": "2025-06-21",      // Optional: new date
+  "timeScheduled": "10:00:00"         // Optional: new time (validates availability)
+}
+
+// Example Response:
+{
+  "id": "uuid",
+  "userId": "uuid", 
+  "status": "approved",
+  "dateRequested": "2025-06-19T10:30:00Z",
+  "dateScheduled": "2025-06-21T00:00:00Z",
+  "timeScheduled": "10:00:00",
+  "priorityLevel": "high",
+  "symptoms": "Updated symptoms"
+}
+```
+**Auth**: Bearer Token (Ownership/Assignment required)  
+**Permission**: Medical staff can update any pending appointment  
+**Features**: **Time Slot Validation** - Prevents moving to unavailable time slots  
+**Status**: ✅ **Implemented & Tested**
 
 ### Delete Appointment
-- **DELETE** `/appointments/:appointmentId`
-- **Auth**: Bearer Token (Ownership/Assignment required)
-- **Status**: ✅ **Implemented**
+**DELETE** `/api/appointments/:appointmentId`
+```javascript
+// Example Response:
+{
+  "message": "Appointment deleted successfully"
+}
+```
+**Auth**: Bearer Token (Ownership/Assignment required)  
+**Status**: ✅ **Implemented**
 
 ---
 
@@ -278,7 +433,7 @@ Content-Type: "application/json" // For POST/PATCH requests
 ### ✅ Fully Implemented & Tested
 - Authentication (Login/Signup)
 - User Profile Management
-- Appointment Management (Role-based with auto-assignment)
+- **Appointment Management (Role-based with auto-assignment & time slot booking)**
 - Medical Staff System
 - Mood Tracker System
 - Temporary Advice System
@@ -301,6 +456,7 @@ Content-Type: "application/json" // For POST/PATCH requests
 5. All passwords are hashed with bcrypt (12 salt rounds)
 6. **Auto-Assignment**: New appointments automatically assigned to least busy medical staff
 7. **Enhanced Permissions**: Medical staff can update any pending appointment
-8. Test users are available in development environment
-9. **All Core Tests Passing**: 100% test success rate achieved
+8. **Time Slot System**: 20-minute appointment slots (9AM-4PM, Mon-Fri) with conflict prevention
+9. Test users are available in development environment
+10. **All Core Tests Passing**: 100% test success rate achieved
 
