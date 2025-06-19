@@ -117,7 +117,7 @@ function Login() {
                 required
                 disabled={isLoading}
                 style={{ 
-                  width: '100%', 
+                  width: '100%',
                   padding: '12px', 
                   fontSize: '16px',
                   border: '1px solid #ccc',
@@ -218,27 +218,6 @@ function Login() {
                 {message}
               </div>
             )}
-
-            <p 
-                style={{ 
-                  fontSize: "14px", 
-                  color: "#4fa7ff", 
-                  fontFamily: "Consolas",
-                  margin: '7px 0px 0px'
-                }}
-
-              > Don't have an account? {' '}
-                <span
-                  // onClick={() => navigateTo()}
-                  style={{
-                    color: 'blue',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Signup
-                </span>
-              </p>
-
           </form>
         </div>
       </div>
