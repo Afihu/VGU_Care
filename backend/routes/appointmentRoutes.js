@@ -20,7 +20,7 @@ router.get('/', requireAppointmentAccess, getAppointments);
 // Get pending appointments for medical staff review
 router.get('/pending', requireAppointmentAccess, getPendingAppointments);
 
-// Get available time slots for a specific date
+// Get available time slots for a specific date (must come before /:appointmentId)
 router.get('/time-slots/:date', requireAppointmentAccess, getAvailableTimeSlots);
 
 // Create appointment - students can book their own, medical staff and admin can book for anyone

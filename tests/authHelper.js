@@ -10,19 +10,20 @@ class AuthHelper {
     this.tokens = {};
     this.users = {};
     this.staffIds = {};
-  }
-  /**
+  }  /**
    * Authenticate all test users and cache tokens
    */
   async authenticateAllUsers() {
     const userTypes = ['admin', 'student', 'medicalStaff'];
     
+    console.log('[DEBUG] Starting authentication for all users...');
     for (const userType of userTypes) {
       try {
         const auth = await authenticate(userType);
         this.tokens[userType] = auth.token;
         this.users[userType] = auth.user;
         console.log(`✅ Authenticated ${userType}: ${auth.user.email}`);
+        console.log(`[DEBUG] Stored token for ${userType}:`, auth.token ? 'Token present' : 'No token');
         
         // Fetch staff_id for medical staff
         if (userType === 'medicalStaff') {
@@ -34,6 +35,7 @@ class AuthHelper {
         throw error;
       }
     }
+    console.log('[DEBUG] Authentication complete. Final tokens object:', Object.keys(this.tokens));
   }
   /**
    * Fetch staff_id for the authenticated medical staff user
@@ -67,12 +69,13 @@ class AuthHelper {
     console.warn('[WARNING] Could not fetch staff_id for medical staff, proceeding without it');
     return null; // Return null instead of throwing error
   }
-
   /**
    * Get token for a specific user type
    */
   getToken(userType) {
+    console.log(`[DEBUG] Getting token for ${userType}, available tokens:`, Object.keys(this.tokens));
     if (!this.tokens[userType]) {
+      console.log(`[DEBUG] No token found for ${userType}, tokens object:`, this.tokens);
       throw new Error(`No token available for user type: ${userType}`);
     }
     return this.tokens[userType];

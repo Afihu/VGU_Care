@@ -94,3 +94,31 @@ exports.updateMoodEntry = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Delete a mood entry (student can only delete their own)
+exports.deleteMoodEntry = async (req, res) => {
+  try {
+    const userRole = req.appointmentAccess.role;
+    const userId = req.appointmentAccess.userId;
+    
+    if (userRole !== 'student') {
+      return res.status(403).json({ error: 'Only students can delete mood entries' });
+    }
+    
+    const entryId = req.params.entryId;
+    
+    const deleted = await moodEntryService.deleteMoodEntry(entryId, userId);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Mood entry not found or access denied' });
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'Mood entry deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Delete mood entry error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};

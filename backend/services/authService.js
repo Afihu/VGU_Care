@@ -93,23 +93,35 @@ class AuthService {
       client.release();
     }
   }
-
   async _createRoleSpecificRecord(client, userId, role, roleSpecificData = {}) {
     switch (role) {
       case 'student':
-        const { intakeYear = new Date().getFullYear(), major = 'Undeclared' } = roleSpecificData;
+        const { 
+          intakeYear = new Date().getFullYear(), 
+          major = 'Undeclared',
+          housingLocation = 'off_campus'
+        } = roleSpecificData;
         await client.query(`
-          INSERT INTO students (user_id, intake_year, major)
-          VALUES ($1, $2, $3)
-        `, [userId, intakeYear, major]);
+          INSERT INTO students (user_id, intake_year, major, housing_location)
+          VALUES ($1, $2, $3, $4)
+        `, [userId, intakeYear, major, housingLocation]);
         break;
 
       case 'medical_staff':
-        const { specialty = 'General Medicine' } = roleSpecificData;
+        const { 
+          specialty = 'General Medicine',
+          shiftSchedule = {
+            "monday": ["09:00-17:00"],
+            "tuesday": ["09:00-17:00"],
+            "wednesday": ["09:00-17:00"],
+            "thursday": ["09:00-17:00"],
+            "friday": ["09:00-17:00"]
+          }
+        } = roleSpecificData;
         await client.query(`
-          INSERT INTO medical_staff (user_id, specialty)
-          VALUES ($1, $2)
-        `, [userId, specialty]);
+          INSERT INTO medical_staff (user_id, specialty, shift_schedule)
+          VALUES ($1, $2, $3)
+        `, [userId, specialty, JSON.stringify(shiftSchedule)]);
         break;
 
       case 'admin':

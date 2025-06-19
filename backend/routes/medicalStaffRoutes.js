@@ -15,9 +15,13 @@ const {
   sendAdvice 
 } = require('../controllers/adviceController');
 const authMiddleware = require('../middleware/auth');
+const { requireRole } = require('../middleware/roleMiddleware');
 
 // All medical staff routes require authentication
 router.use(authMiddleware);
+
+// Require medical staff or admin role for all routes
+router.use(requireRole('medical_staff', 'admin'));
 
 // Medical staff profile management
 router.get('/profile', getProfile);

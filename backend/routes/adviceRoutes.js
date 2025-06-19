@@ -4,7 +4,9 @@ const authMiddleware = require('../middleware/auth');
 const {
   sendAdvice,
   getAdviceForStudent,
-  getAdviceBySentByStaff
+  getAdviceBySentByStaff,
+  getAdviceByAppointmentId,
+  updateAdvice
 } = require('../controllers/adviceController');
 const { sendAdviceForAppointment } = require('../services/adviceService');
 
@@ -19,6 +21,12 @@ router.use(authMiddleware);
 
 // Send advice for specific appointment - medical staff only
 router.post('/appointments/:appointmentId', sendAdvice);
+
+// Get advice for specific appointment
+router.get('/appointments/:appointmentId', getAdviceByAppointmentId);
+
+// Update advice for specific appointment - medical staff only
+router.put('/appointments/:appointmentId', updateAdvice);
 
 // Get advice for current student
 router.get('/student', getAdviceForStudent);

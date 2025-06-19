@@ -14,6 +14,10 @@ router.get('/', moodEntryController.getMoodEntries);
 
 // Update a mood entry (student can only update their own)
 router.patch('/:entryId', moodEntryController.updateMoodEntry);
+router.put('/:entryId', moodEntryController.updateMoodEntry);
+
+// Delete a mood entry (student can only delete their own)
+router.delete('/:entryId', moodEntryController.deleteMoodEntry);
 
 // Medical staff: Get all mood entries for a specific student (if they have an appointment with them)
 router.get('/student/:studentUserId', moodEntryController.getMoodEntriesForStudent);

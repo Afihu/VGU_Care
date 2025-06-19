@@ -2,6 +2,115 @@
 
 # Backend Development Logs
 
+## Profile Expansion System - Completed ✅ *(June 19, 2025)*
+
+### Summary
+Major enhancement to user profiles supporting housing location for students and shift schedules for medical staff. Includes improved auto-assignment for appointments based on staff availability.
+
+### Implemented Features
+- **Student Housing Location**: Track where students live (dorm_1, dorm_2, off_campus)
+- **Medical Staff Shift Schedules**: Flexible JSON-based weekly schedule management
+- **Enhanced Auto-Assignment**: Appointment assignment considers staff working hours
+- **Comprehensive Validation**: Robust input validation with proper error handling
+- **Database Migration**: Seamless schema updates with backward compatibility
+
+### Testing Status
+- **Profile Expansion Tests**: All 14 test cases passing ✅
+- **Integration Tests**: Backend services tested with Docker Compose ✅
+- **API Validation**: All endpoints properly tested and documented ✅
+- **Error Handling**: Comprehensive validation error responses implemented ✅
+
+### Database Schema Changes
+```sql
+-- Students table enhancement
+ALTER TABLE students ADD COLUMN housing_location VARCHAR(20) 
+CHECK (housing_location IN ('dorm_1', 'dorm_2', 'off_campus')) 
+DEFAULT 'off_campus';
+
+-- Medical staff table enhancement  
+ALTER TABLE medical_staff ADD COLUMN shift_schedule JSONB DEFAULT '{}'::jsonb;
+```
+
+### API Enhancements
+```javascript
+// Enhanced Profile Response (Students)
+GET /api/users/me
+Response: {
+  user: {
+    id, name, email, role: "student",
+    intakeYear, major, 
+    housingLocation: "dorm_1|dorm_2|off_campus"
+  }
+}
+
+// Enhanced Profile Response (Medical Staff)
+GET /api/users/me  
+Response: {
+  user: {
+    id, name, email, role: "medical_staff",
+    specialty,
+    shiftSchedule: {
+      "monday": ["09:00-17:00"],
+      "tuesday": ["09:00-17:00", "18:00-22:00"],
+      "wednesday": ["09:00-17:00"]
+    }
+  }
+}
+
+// Profile Update with New Fields
+PATCH /api/users/profile
+Body: {
+  roleSpecificData: {
+    // Students:
+    housingLocation: "dorm_1",
+    
+    // Medical Staff:
+    shiftSchedule: {
+      "monday": ["08:00-16:00"],
+      "friday": ["08:00-16:00", "18:00-22:00"]
+    }
+  }
+}
+```
+
+### Service Layer Updates
+- **UserService**: Enhanced `getUserById()` and profile update methods
+- **ProfileService**: New validation for housing location and shift schedules  
+- **MedicalStaffService**: Added availability checking methods
+- **AppointmentService**: Improved auto-assignment with shift awareness
+- **AuthService**: Registration supports new profile fields
+
+### Testing Infrastructure
+- **Comprehensive Test Suite**: 14 test cases covering all new functionality
+- **Validation Testing**: Error handling for invalid housing locations and shift formats
+- **Integration Testing**: End-to-end profile management workflows
+- **Database Reset Scripts**: Clean migration testing procedures
+
+### Files Created/Modified
+- `database/update-profile-schema.js` - Schema migration script
+- `tests/profile-expansion.test.js` - Comprehensive test suite
+- `setup-profile-expansion.js` - Automated setup script
+- Enhanced services: UserService, ProfileService, MedicalStaffService, AppointmentService
+- Updated error handling in UserController
+
+### Validation Rules
+- **Housing Location**: Must be one of `dorm_1`, `dorm_2`, `off_campus`
+- **Shift Schedule**: Time format must be `HH:MM-HH:MM`
+- **Time Logic**: Start time must be before end time
+- **Error Responses**: Proper 400 status codes for validation errors
+
+### Implementation Complete
+✅ **Database Schema**: Updated with new fields and constraints  
+✅ **Backend Services**: All logic implemented and tested  
+✅ **API Endpoints**: Properly documented and validated  
+✅ **Testing Suite**: 14/14 tests passing successfully  
+✅ **Documentation**: Complete API docs and ERD diagram  
+✅ **Migration Scripts**: Automated setup and reset procedures
+
+**System Status**: Profile expansion system is fully operational and ready for production use.
+
+---
+
 ## Core Authentication System - Completed ✅
 
 ### Summary

@@ -1,98 +1,3 @@
--- Based on our ERD diagram, the following is the detailed rundown of the diagram:
---              Entity-Relationship Diagram (ERD) for VGU Care Database
--- Entities:
--- 1. Users:
---    - user_id (UUID, Primary Key)
---    - name (VARCHAR, Not Null)
---    - gender (VARCHAR, Not Null)
---    - age (INT, Not Null)
---    - role (ENUM: 'student', 'medical_staff', 'admin', Not Null)
---    - email (VARCHAR, Unique, Not Null) 
---    - password_hash (VARCHAR, Not Null)
---    - status (ENUM: 'active', 'inactive', 'banned', Not Null)
---    - points (INT, Not Null) <-- This is intended to track user points for behavioral incentives
-
--- A User HAS MANY Appointments.
-
--- 2. Appointments:
---    - appointment_id (UUID, Primary key) 
---    - user_id (UUID, Foreign Key referencing Users)
---    - status (ENUM: 'scheduled', 'completed', 'cancelled', Not Null)
---    - date_requested (TIMESTAMP, Not Null)
---    - date_scheduled (TIMESTAMP, Null)
---    - priorty_level (ENUM: 'low', 'medium', 'high', Not Null)
---    - symptoms (TEXT, Not Null)
-
--- An Appointment MIGHT HAVE a TemporaryAdvice
-
--- 3. TemporaryAdvice:
---    - advice_id (UUID, Primary Key)
---    - appointment_id (UUID, Foreign Key referencing Appointments)
---    - message (TEXT, Not Null)
---    - date_sent (TIMESTAMP, Not Null)
-
--- A User IS A student OR a Medical Staff OR an Admin. 
-
--- 4. Student:
---    - student_id (UUID, Primary Key)
---    - user_id (UUID, Foreign Key referencing Users)
---    - intake_year (INT, Not Null)
---    - major (VARCHAR, Not Null)
-
--- A Student can SUBMIT many HealthDocuments.
-
--- 5. HealthDocument:
---    - document_id (UUID, Primary Key)
---    - student_id (UUID, Foreign Key referencing Student)
---    - document_type (ENUM: 'medical_report', 'vaccination_record', 'health_certificate', Not Null)
---    - symptoms_description (TEXT, Not Null)
---    - date_submitted (TIMESTAMP, Not Null)
---    - other_details (TEXT, Null)
-
--- A Students can SUBMIT many MoodEntrys. <-- MoodEntry is a record of the student's mood and well-being. Aimed to help with mental health tracking.
-
--- 6. MoodEntry:
---    - entry_id (UUID, Primary Key)
---    - student_id (UUID, Foreign Key referencing Student)
---    - mood (ENUM: 'happy', 'sad', 'neutral', 'anxious', 'stressed', Not Null)
---    - entry_date (TIMESTAMP, Not Null)
---    - notes (TEXT, Null)
-
--- A MedicalStaff can ACCESS Students' HealthDocuments and MoodEntrys.
-
--- 7. MedicalStaff:
---    - staff_id (UUID, Primary Key)
---    - user_id (UUID, Foreign Key referencing Users)
---    - specialty (VARCHAR, Not Null)
-
--- A MedicalStaff can CREATE many AbuseReports. <-- AbuseReport is a report of any abuse or misconduct on the web app observed by the medical staff.
-
--- 8. AbuseReport:
---    - report_id (UUID, Primary Key)
---    - staff_id (UUID, Foreign Key referencing MedicalStaff)
---    - student_id (UUID, Not NULL) <-- To links the report to a student 
---    - report_date (TIMESTAMP, Not Null)
---    - description (TEXT, Not Null)
---    - status (ENUM: 'open', 'investigating', 'resolved', Not Null)
-
--- 9. Admin:
---    - admin_id (UUID, Primary Key)
---    - user_id (UUID, Foreign Key referencing Users)
-
--- 10. MedicalDocuments:
---    - id (SERIAL, Primary Key)
---    - student_id (INTEGER, Foreign Key referencing Users)
---    - uploaded_by_id (INTEGER, Foreign Key referencing Users)
---    - appointment_id (INTEGER, Foreign Key referencing Appointments, Null)
---    - filename (VARCHAR(255), Not Null)
---    - original_name (VARCHAR(255), Not Null)
---    - file_type (VARCHAR(100), Not Null)
---    - file_size (INTEGER, Not Null)
---    - file_path (VARCHAR(500), Not Null) -- Local path or cloud URL
---    - document_type (VARCHAR(50), Default 'other')
---    - created_at (TIMESTAMP, Default CURRENT_TIMESTAMP)
---    - updated_at (TIMESTAMP, Default CURRENT_TIMESTAMP)
-
 -- VGU Care Database Schema - Complete Implementation
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -116,14 +21,16 @@ CREATE TABLE students (
     student_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     intake_year INT NOT NULL,
-    major VARCHAR(100) NOT NULL
+    major VARCHAR(100) NOT NULL,
+    housing_location VARCHAR(20) CHECK (housing_location IN ('dorm_1', 'dorm_2', 'off_campus')) DEFAULT 'off_campus'
 );
 
 -- Medical Staff table
 CREATE TABLE medical_staff (
     staff_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    specialty VARCHAR(100) NOT NULL
+    specialty VARCHAR(100) NOT NULL,
+    shift_schedule JSONB DEFAULT '{}'::jsonb  -- Store schedule as JSON: {"monday": ["09:00-17:00"], "tuesday": ["09:00-17:00"], ...}
 );
 
 -- Admin table
@@ -238,7 +145,7 @@ INSERT INTO users (name, gender, age, role, email, password_hash, status, points
 ('Admin User', 'other', 30, 'admin', 'admin@vgu.edu.vn', '$2b$12$BL51RqLPDeyQa0ekO31HwegbWltt1/NeomeoHHoVqBdkoVLXyIhey', 'active', 0);
 
 -- Insert Students (get user_ids for students)
-INSERT INTO students (user_id, intake_year, major)
+INSERT INTO students (user_id, intake_year, major, housing_location)
 SELECT u.user_id, 
        CASE 
            WHEN u.email = 'student1@vgu.edu.vn' THEN 2023
@@ -257,16 +164,29 @@ SELECT u.user_id,
            WHEN u.email = 'student5@vgu.edu.vn' THEN 'International Relations'
            WHEN u.email = 'student6@vgu.edu.vn' THEN 'Economics'
            WHEN u.email = 'student7@vgu.edu.vn' THEN 'Psychology'
-       END as major
+       END as major,
+       CASE 
+           WHEN u.email = 'student1@vgu.edu.vn' THEN 'dorm_1'
+           WHEN u.email = 'student2@vgu.edu.vn' THEN 'dorm_2'
+           WHEN u.email = 'student3@vgu.edu.vn' THEN 'dorm_1'
+           WHEN u.email = 'student4@vgu.edu.vn' THEN 'off_campus'
+           WHEN u.email = 'student5@vgu.edu.vn' THEN 'dorm_2'
+           WHEN u.email = 'student6@vgu.edu.vn' THEN 'off_campus'
+           WHEN u.email = 'student7@vgu.edu.vn' THEN 'dorm_1'
+       END as housing_location
 FROM users u WHERE u.role = 'student';
 
 -- Insert Medical Staff
-INSERT INTO medical_staff (user_id, specialty)
+INSERT INTO medical_staff (user_id, specialty, shift_schedule)
 SELECT u.user_id,
        CASE 
            WHEN u.email = 'doctor1@vgu.edu.vn' THEN 'General Medicine'
            WHEN u.email = 'doctor2@vgu.edu.vn' THEN 'Psychology'
-       END as specialty
+       END as specialty,
+       CASE 
+           WHEN u.email = 'doctor1@vgu.edu.vn' THEN '{"monday": ["09:00-17:00"], "tuesday": ["09:00-17:00"], "wednesday": ["09:00-17:00"], "thursday": ["09:00-17:00"], "friday": ["09:00-17:00"]}'::jsonb
+           WHEN u.email = 'doctor2@vgu.edu.vn' THEN '{"monday": ["10:00-18:00"], "tuesday": ["10:00-18:00"], "wednesday": ["10:00-18:00"], "thursday": ["10:00-18:00"], "friday": ["10:00-18:00"]}'::jsonb
+       END as shift_schedule
 FROM users u WHERE u.role = 'medical_staff';
 
 -- Insert Admin
@@ -331,3 +251,15 @@ ON CONFLICT (start_time, day_of_week) DO NOTHING;
 -- Create indexes for better performance on time slot queries
 CREATE INDEX IF NOT EXISTS idx_appointments_date_time ON appointments(date_scheduled, time_scheduled);
 CREATE INDEX IF NOT EXISTS idx_time_slots_day_time ON time_slots(day_of_week, start_time);
+
+-- Add new fields for profile expansion
+-- Add housing_location to students table
+ALTER TABLE students ADD COLUMN IF NOT EXISTS housing_location VARCHAR(20) CHECK (housing_location IN ('dorm_1', 'dorm_2', 'off_campus')) DEFAULT 'off_campus';
+
+-- Add shift_schedule to medical_staff table
+ALTER TABLE medical_staff ADD COLUMN IF NOT EXISTS shift_schedule JSONB DEFAULT '{}'::jsonb;
+
+-- Update existing data with default values for new fields
+UPDATE students SET housing_location = 'off_campus' WHERE housing_location IS NULL;
+
+UPDATE medical_staff SET shift_schedule = '{"monday": ["09:00-17:00"], "tuesday": ["09:00-17:00"], "wednesday": ["09:00-17:00"], "thursday": ["09:00-17:00"], "friday": ["09:00-17:00"]}'::jsonb WHERE shift_schedule IS NULL OR shift_schedule = '{}'::jsonb;

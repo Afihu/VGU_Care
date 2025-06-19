@@ -378,10 +378,10 @@ exports.getAvailableTimeSlots = async (req, res) => {
     }
 
     const timeSlots = await appointmentService.getAvailableTimeSlots(date);
-    
-    res.json({ 
+      res.json({ 
       date,
-      availableTimeSlots: timeSlots,
+      timeSlots: timeSlots,  // Changed from availableTimeSlots to timeSlots
+      availableTimeSlots: timeSlots,  // Keep both for backward compatibility
       message: `Found ${timeSlots.length} available time slots for ${date}`
     });
   } catch (error) {

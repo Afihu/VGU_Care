@@ -200,6 +200,10 @@ class SimpleTest {
     }
   }
 
+  fail(message = 'Test failed') {
+    throw new Error(message);
+  }
+
   // Assertion helpers
   assert(condition, message = 'Assertion failed') {
     if (!condition) {

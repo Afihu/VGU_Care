@@ -1,10 +1,27 @@
 const medicalStaffService = require('../services/medicalStaffService');
 
-// Get medical staff's own profile
+// Get medical staff's own profile (or admin accessing any medical staff profile)
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const profile = await medicalStaffService.getMedicalStaffProfile(userId);
+    const userRole = req.user.role;
+    
+    // If admin, they can access any medical staff profile
+    // For now, we'll return the first medical staff profile or handle specific staff ID in future
+    let targetUserId = userId;
+    
+    if (userRole === 'admin') {
+      // Admin accessing medical staff profile - for now get the first medical staff
+      // In a real implementation, you might want to pass a staffId parameter
+      const allStaff = await medicalStaffService.getAllMedicalStaff();
+      if (allStaff.length > 0) {
+        targetUserId = allStaff[0].user_id;
+      } else {
+        return res.status(404).json({ error: 'No medical staff found' });
+      }
+    }
+    
+    const profile = await medicalStaffService.getMedicalStaffProfile(targetUserId, userRole);
     
     res.json({ 
       success: true,

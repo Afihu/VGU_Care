@@ -98,6 +98,29 @@ class MoodEntryService {  async createMoodEntry(userId, mood, notes = null) {
     delete entry.student_id;
     return entry;
   }
+  
+  async deleteMoodEntry(entryId, userId) {
+    // First get the student_id from user_id
+    const studentResult = await query(
+      `SELECT student_id FROM students WHERE user_id = $1`,
+      [userId]
+    );
+    
+    if (studentResult.rows.length === 0) {
+      throw new Error('Student not found for user');
+    }
+    
+    const studentId = studentResult.rows[0].student_id;
+    
+    const result = await query(
+      `DELETE FROM mood_entries 
+       WHERE entry_id = $1 AND student_id = $2
+       RETURNING entry_id`,
+      [entryId, studentId]
+    );
+    
+    return result.rows.length > 0;
+  }
 
   // Check if a medical staff has an appointment with a student (by userId)
   async staffHasAppointmentWithStudent(staffUserId, studentUserId) {

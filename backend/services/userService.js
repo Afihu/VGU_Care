@@ -2,8 +2,7 @@ const bcrypt = require('bcrypt');
 const { query } = require('../config/database');
 const BaseService = require('./baseService');
 
-class UserService extends BaseService {
-  async getUserById(userId) {
+class UserService extends BaseService {  async getUserById(userId) {
     const result = await query(`
       SELECT 
         u.user_id   AS id,
@@ -18,7 +17,9 @@ class UserService extends BaseService {
         u.updated_at,
         s.intake_year,
         s.major,
+        s.housing_location,
         m.specialty,
+        m.shift_schedule,
         a.admin_id    AS is_admin
       FROM users u
       LEFT JOIN students s      ON u.user_id = s.user_id
@@ -49,9 +50,11 @@ class UserService extends BaseService {
     if (row.role === 'student') {
       user.intakeYear = row.intake_year;
       user.major = row.major;
+      user.housingLocation = row.housing_location;
     }
     if (row.role === 'medical_staff') {
       user.specialty = row.specialty;
+      user.shiftSchedule = row.shift_schedule;
     }
     if (row.role === 'admin') {
       user.isAdmin = !!row.is_admin;
@@ -137,9 +140,8 @@ class UserService extends BaseService {
       throw error;
     }
   }
-
   async updateStudentData(userId, studentData) {
-    const { intakeYear, major } = studentData;
+    const { intakeYear, major, housingLocation } = studentData;
     const updateFields = [];
     const updateValues = [];
     let paramCount = 1;
@@ -154,6 +156,11 @@ class UserService extends BaseService {
       updateValues.push(major);
       paramCount++;
     }
+    if (housingLocation !== undefined) {
+      updateFields.push(`housing_location = $${paramCount}`);
+      updateValues.push(housingLocation);
+      paramCount++;
+    }
 
     if (updateFields.length > 0) {
       updateValues.push(userId);
@@ -164,15 +171,30 @@ class UserService extends BaseService {
       `, updateValues);
     }
   }
-
   async updateMedicalStaffData(userId, medicalData) {
-    const { specialty } = medicalData;
+    const { specialty, shiftSchedule } = medicalData;
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 1;
+
     if (specialty !== undefined) {
+      updateFields.push(`specialty = $${paramCount}`);
+      updateValues.push(specialty);
+      paramCount++;
+    }
+    if (shiftSchedule !== undefined) {
+      updateFields.push(`shift_schedule = $${paramCount}`);
+      updateValues.push(JSON.stringify(shiftSchedule));
+      paramCount++;
+    }
+
+    if (updateFields.length > 0) {
+      updateValues.push(userId);
       await query(`
         UPDATE medical_staff 
-        SET specialty = $1
-        WHERE user_id = $2
-      `, [specialty, userId]);
+        SET ${updateFields.join(', ')}
+        WHERE user_id = $${paramCount}
+      `, updateValues);
     }
   }
 

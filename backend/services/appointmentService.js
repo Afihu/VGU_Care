@@ -43,8 +43,7 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     );
   
     return result.rows[0] || null;
-  }
-  async createAppointment(userId, symptoms, priorityLevel, medicalStaffId = null, dateScheduled = null, timeScheduled = null) {
+  }  async createAppointment(userId, symptoms, priorityLevel, medicalStaffId = null, dateScheduled = null, timeScheduled = null) {
     // If date and time are provided, validate the time slot
     if (dateScheduled && timeScheduled) {
       const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
@@ -52,22 +51,24 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
         throw new Error('Selected time slot is not available');
       }
     } else {
-      // Use default scheduling if no specific time provided
-      dateScheduled = '2025-06-25 10:47:49.334376';
-    }
-
-    // If no medical staff is specified, automatically assign to the least busy one
+      // Use default scheduling if no specific time provided - set to tomorrow at 10:00 AM
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(10, 0, 0, 0);
+      dateScheduled = tomorrow.toISOString().split('T')[0] + ' 10:00:00';
+      timeScheduled = '10:00:00';
+    }// If no medical staff is specified, automatically assign based on availability and shift schedule
     let assignedStaffId = medicalStaffId;
     if (!assignedStaffId) {
       try {
-        const leastAssignedStaff = await this.getLeastAssignedMedicalStaff();
+        const leastAssignedStaff = await this.getLeastAssignedMedicalStaff(dateScheduled, timeScheduled);
         assignedStaffId = leastAssignedStaff.staff_id;
         console.log(`[DEBUG] Auto-assigned appointment to medical staff: ${leastAssignedStaff.name} (${leastAssignedStaff.appointment_count} existing appointments)`);
       } catch (error) {
         console.log(`[DEBUG] Could not auto-assign medical staff: ${error.message}`);
         // Continue without assignment if no medical staff available
       }
-    }    let queryText, values;
+    }let queryText, values;
     if (assignedStaffId) {
       queryText = `
         INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, time_scheduled, medical_staff_id)
@@ -154,9 +155,7 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     if (status !== undefined) {
       console.log(`[DEBUG] updateAppointment - Received status for update: '${status}' (type: ${typeof status})`);
       const normalizedStatus = typeof status === 'string' ? status.trim().toLowerCase() : status;
-      console.log(`[DEBUG] updateAppointment - Normalized status: '${normalizedStatus}' (type: ${typeof normalizedStatus})`);
-
-      // REMOVE THE RESTRICTIVE VALIDATION - Let the controller handle role-based validation
+      console.log(`[DEBUG] updateAppointment - Normalized status: '${normalizedStatus}' (type: ${typeof normalizedStatus})`);      // REMOVE THE RESTRICTIVE VALIDATION - Let the controller handle role-based validation
       const validStatuses = ['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'];
       if (!validStatuses.includes(normalizedStatus)) {
         console.log(`[DEBUG] Invalid status update attempt. Status must be one of: ${validStatuses.join(', ')}. Received: '${normalizedStatus}'`);
@@ -273,16 +272,19 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     }
     
     const staffId = staffResult.rows[0].staff_id;
-    
-    // If date and time are provided, validate the time slot
+      // If date and time are provided, validate the time slot
     if (dateScheduled && timeScheduled) {
       const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
       if (!isAvailable) {
         throw new Error('Selected time slot is not available');
       }
     } else {
-      // Use default scheduling if no specific time provided
-      dateScheduled = '2025-06-25 10:47:49.334376';
+      // Use default scheduling if no specific time provided - set to tomorrow at 10:00 AM
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(10, 0, 0, 0);
+      dateScheduled = tomorrow.toISOString().split('T')[0] + ' 10:00:00';
+      timeScheduled = '10:00:00';
     }
     
     const result = await query(
@@ -498,12 +500,123 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     
     return result.rows[0];
   }
+  /**
+   * Get the least assigned medical staff member for auto-assignment
+   * Now considers shift schedules for better assignment
+   */
+  async getLeastAssignedMedicalStaff(preferredDate = null, preferredTime = null) {
+    let queryText;
+    let values = [];
+
+    if (preferredDate && preferredTime) {
+      // Get available staff based on shift schedule for the specific date/time
+      const inputDate = new Date(preferredDate);
+      const dayOfWeek = inputDate.getDay();
+      const dayName = this.getDayName(dayOfWeek);
+      
+      queryText = `
+        SELECT 
+          ms.staff_id,
+          u.user_id,
+          u.name,
+          ms.specialty,
+          ms.shift_schedule,
+          COUNT(a.appointment_id) as appointment_count
+        FROM medical_staff ms
+        INNER JOIN users u ON ms.user_id = u.user_id
+        LEFT JOIN appointments a ON ms.staff_id = a.medical_staff_id 
+          AND a.status NOT IN ('cancelled', 'rejected', 'completed')
+        WHERE u.status = 'active'
+        GROUP BY ms.staff_id, u.user_id, u.name, ms.specialty, ms.shift_schedule
+        ORDER BY appointment_count ASC, u.name ASC
+      `;
+    } else {
+      // General assignment without time consideration
+      queryText = `
+        SELECT 
+          ms.staff_id,
+          u.user_id,
+          u.name,
+          ms.specialty,
+          ms.shift_schedule,
+          COUNT(a.appointment_id) as appointment_count
+        FROM medical_staff ms
+        INNER JOIN users u ON ms.user_id = u.user_id
+        LEFT JOIN appointments a ON ms.staff_id = a.medical_staff_id 
+          AND a.status NOT IN ('cancelled', 'rejected', 'completed')
+        WHERE u.status = 'active'
+        GROUP BY ms.staff_id, u.user_id, u.name, ms.specialty, ms.shift_schedule
+        ORDER BY appointment_count ASC, u.name ASC
+      `;
+    }
+
+    const result = await query(queryText, values);
+    
+    if (result.rows.length === 0) {
+      throw new Error('No available medical staff found');
+    }
+
+    // If we have a preferred time, filter by availability
+    if (preferredDate && preferredTime) {
+      const availableStaff = result.rows.filter(staff => {
+        return this.isStaffAvailableAtTime(staff.shift_schedule, preferredDate, preferredTime);
+      });
+
+      if (availableStaff.length > 0) {
+        return availableStaff[0]; // Return the least assigned available staff
+      }
+    }
+
+    return result.rows[0]; // Return the least assigned staff overall
+  }
+
+  /**
+   * Check if a medical staff member is available at a specific date/time
+   */
+  isStaffAvailableAtTime(shiftSchedule, date, time) {
+    if (!shiftSchedule || typeof shiftSchedule !== 'object') {
+      return false;
+    }
+
+    const inputDate = new Date(date);
+    const dayOfWeek = inputDate.getDay();
+    const dayName = this.getDayName(dayOfWeek);
+
+    const dayShifts = shiftSchedule[dayName];
+    if (!dayShifts || !Array.isArray(dayShifts)) {
+      return false;
+    }
+
+    // Check if the requested time falls within any of the staff's shifts
+    for (const shift of dayShifts) {
+      if (this.isTimeInShift(time, shift)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Helper method to convert day number to day name
+   */
+  getDayName(dayOfWeek) {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days[dayOfWeek];
+  }
+
+  /**
+   * Helper method to check if a time slot is within a shift
+   */
+  isTimeInShift(timeSlot, shift) {
+    const [shiftStart, shiftEnd] = shift.split('-');
+    return timeSlot >= shiftStart && timeSlot <= shiftEnd;
+  }
 
   /**
    * Get available time slots for a specific date
    * Returns time slots that are not already booked for the given date
-   */
-  async getAvailableTimeSlots(date) {
+   */  async getAvailableTimeSlots(date) {
     const inputDate = new Date(date);
     const dayOfWeek = inputDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
     
@@ -513,8 +626,9 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     }
 
     // Convert JavaScript day (0-6) to our database format (1-5 for Mon-Fri)
-    const dbDayOfWeek = dayOfWeek;
-
+    // JavaScript: Sunday=0, Monday=1, Tuesday=2, Wednesday=3, Thursday=4, Friday=5, Saturday=6    // Database: Monday=1, Tuesday=2, Wednesday=3, Thursday=4, Friday=5
+    const dbDayOfWeek = dayOfWeek; // Monday=1 in JS maps to Monday=1 in DB
+    
     const result = await query(`
       SELECT 
         ts.start_time, 
@@ -532,7 +646,15 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       ORDER BY ts.start_time
     `, [dbDayOfWeek, date]);
 
-    return result.rows;
+    // Format the response to match test expectations
+    return result.rows.map(slot => ({
+      time: slot.startTimeFormatted,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      startTime: slot.startTimeFormatted,
+      endTime: slot.endTimeFormatted,
+      available: true
+    }));
   }
 
   /**

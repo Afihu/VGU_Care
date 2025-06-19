@@ -27,12 +27,14 @@ exports.updateProfile = async (req, res) => {
     res.json({ 
       message: 'Profile updated successfully',
       user: updatedProfile 
-    });
-  } catch (err) {
+    });  } catch (err) {
     console.error('Update profile error:', err);
     if (err.message === 'User not found') {
       res.status(404).json({ error: err.message });
-    } else if (err.message.includes('must be') || err.message.includes('required')) {
+    } else if (err.message.includes('must be') || 
+               err.message.includes('required') || 
+               err.message.includes('Invalid') ||
+               err.message.includes('invalid')) {
       res.status(400).json({ error: err.message });
     } else {
       res.status(500).json({ error: err.message });
