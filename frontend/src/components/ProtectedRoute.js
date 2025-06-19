@@ -14,7 +14,7 @@ const ProtectedRoute = ({ children }) => {
     console.warn("Invalid JSON in localStorage:", e);
   }
 
-  return <Navigate to="/auth" replace />; // Not logged in → redirect
+  return <Navigate to="/login" replace />; // Not logged in → redirect
 };
 
 export default ProtectedRoute;
