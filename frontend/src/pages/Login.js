@@ -54,7 +54,7 @@ function Login() {
       if (response.ok) {
         setMessage(`Login successful!`);
         console.log('Login successful:', data);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('session-info', JSON.stringify(data));
         navigateTo('/home');
       } else {
         setMessage(data.message || 'Login failed');

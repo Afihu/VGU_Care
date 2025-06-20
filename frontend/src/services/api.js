@@ -21,7 +21,16 @@ const api = {
         });
         
         return response; 
-    } 
+    }, 
+
+    userRoleRetrieveService : async(token) => {
+        try {
+            const savedUserData = JSON.parse(localStorage.getItem('session-info'));
+            if(savedUserData.token === token) return savedUserData.user.role;
+        } catch (error) {
+            console.warn("Invalid or unavailable JSON in storage");
+        }
+    }
 }
 
 export default api;

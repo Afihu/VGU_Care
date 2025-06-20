@@ -15,11 +15,11 @@ function Home(){
     const [children, setChildren] = useState('');
 
     const handleLogout = () => {
-        const userInfo = localStorage.getItem('user');
+        const userInfo = localStorage.getItem('session-info');
         try {
             const parsed = JSON.parse(userInfo);
-            if (parsed && parsed.email) {
-                localStorage.removeItem('user'); //remove user info still left in the browser storage
+            if (parsed && parsed.user.email) {
+                localStorage.removeItem('session-info'); //remove user info still left in the browser storage
                 navigate('/login');
             }
         } catch (e) {
