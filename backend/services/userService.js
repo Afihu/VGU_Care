@@ -1,63 +1,18 @@
 const bcrypt = require('bcrypt');
 const { query } = require('../config/database');
 const BaseService = require('./baseService');
+const UserQueryBuilder = require('../utils/userQueryBuilder');
 
 class UserService extends BaseService {
+
   async getUserById(userId) {
-    const result = await query(`
-      SELECT 
-        u.user_id   AS id,
-        u.name,
-        u.gender,
-        u.age,
-        u.role,
-        u.email,
-        u.status,
-        u.points,
-        u.created_at,
-        u.updated_at,
-        s.intake_year,
-        s.major,
-        m.specialty,
-        a.admin_id    AS is_admin
-      FROM users u
-      LEFT JOIN students s      ON u.user_id = s.user_id
-      LEFT JOIN medical_staff m ON u.user_id = m.user_id
-      LEFT JOIN admins a        ON u.user_id = a.user_id
-      WHERE u.user_id = $1
-    `, [userId]);
+    const result = await query(UserQueryBuilder.buildSingleUserQuery(), [userId]);
 
     if (result.rows.length === 0) {
       return null;
     }
 
-    const row = result.rows[0];
-    const user = {
-      id: row.id,
-      name: row.name,
-      gender: row.gender,
-      age: row.age,
-      role: row.role,
-      email: row.email,
-      status: row.status,
-      points: row.points,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
-    };
-
-    // Add role-specific data
-    if (row.role === 'student') {
-      user.intakeYear = row.intake_year;
-      user.major = row.major;
-    }
-    if (row.role === 'medical_staff') {
-      user.specialty = row.specialty;
-    }
-    if (row.role === 'admin') {
-      user.isAdmin = !!row.is_admin;
-    }
-
-    return user;
+    return UserQueryBuilder.transformUserRow(result.rows[0]);
   }
 
   async getUserByEmail(email) {
@@ -137,9 +92,8 @@ class UserService extends BaseService {
       throw error;
     }
   }
-
   async updateStudentData(userId, studentData) {
-    const { intakeYear, major } = studentData;
+    const { intakeYear, major, housingLocation } = studentData;
     const updateFields = [];
     const updateValues = [];
     let paramCount = 1;
@@ -154,6 +108,11 @@ class UserService extends BaseService {
       updateValues.push(major);
       paramCount++;
     }
+    if (housingLocation !== undefined) {
+      updateFields.push(`housing_location = $${paramCount}`);
+      updateValues.push(housingLocation);
+      paramCount++;
+    }
 
     if (updateFields.length > 0) {
       updateValues.push(userId);
@@ -164,15 +123,30 @@ class UserService extends BaseService {
       `, updateValues);
     }
   }
-
   async updateMedicalStaffData(userId, medicalData) {
-    const { specialty } = medicalData;
+    const { specialty, shiftSchedule } = medicalData;
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 1;
+
     if (specialty !== undefined) {
+      updateFields.push(`specialty = $${paramCount}`);
+      updateValues.push(specialty);
+      paramCount++;
+    }
+    if (shiftSchedule !== undefined) {
+      updateFields.push(`shift_schedule = $${paramCount}`);
+      updateValues.push(JSON.stringify(shiftSchedule));
+      paramCount++;
+    }
+
+    if (updateFields.length > 0) {
+      updateValues.push(userId);
       await query(`
         UPDATE medical_staff 
-        SET specialty = $1
-        WHERE user_id = $2
-      `, [specialty, userId]);
+        SET ${updateFields.join(', ')}
+        WHERE user_id = $${paramCount}
+      `, updateValues);
     }
   }
 

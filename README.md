@@ -17,15 +17,18 @@ The app aims to provide a platform for medical personnels and students to commun
    ```
 4. **Access the application:**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
+   - Backend API: http://localhost:5001
    - Database: localhost:5433 (through pgAdmin or any PostgreSQL client)
 
 *Please refer to the [Installation Guide](docs/Installation.md) for detailed setup instructions if you are having problems.*
 
 ## 📚 Documentation
 
-- **[Installation Guide](docs/Installation.md)** - Detailed setup instructions
-- **[Docker Guide](docs/Docker.md)** - Docker commands and troubleshooting
+- **[Complete Setup Guide](docs/GuideToEverything.md)** - Comprehensive guide with Docker, testing, and backend features
+- **[API Documentation](docs/API_Documentation.md)** - Detailed API endpoints and usage
+- **[Database Documentation](docs/Database.md)** - Database schema, migrations, and management
+- **[Test Refactoring Summary](docs/TEST_REFACTORING_SUMMARY.md)** - Information about the test suite structure
+- **[Backend Logs](docs/Backend_logs.md)** - Backend development and feature logs
 
 ## 🏗️ Architecture
 
@@ -50,7 +53,12 @@ VGU_Care/
 ├── backend/                 # Node.js backend API
 ├── database/               # Database scripts and migrations
 ├── docs/                   # Project documentation
-├── tests/                  # Test files
+├── tests/                  # Test files and helpers
+│   ├── *.test.js          # Main test files
+│   ├── run-tests.sh       # Test runner script
+│   ├── authHelper.js      # Authentication utilities
+│   ├── testFramework.js   # Custom test framework
+│   └── helpers/           # Modular test helpers
 └── README.md
 ```
 

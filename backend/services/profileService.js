@@ -78,7 +78,6 @@ class ProfileService extends BaseService {
       this._validateRoleSpecificData(roleSpecificData);
     }
   }
-
   _validateRoleSpecificData(roleSpecificData) {
     if (roleSpecificData.intakeYear !== undefined) {
       const currentYear = new Date().getFullYear();
@@ -94,9 +93,57 @@ class ProfileService extends BaseService {
       throw new Error('Major must be a non-empty string');
     }
 
+    if (roleSpecificData.housingLocation !== undefined && 
+        !['dorm_1', 'dorm_2', 'off_campus'].includes(roleSpecificData.housingLocation)) {
+      throw new Error('Housing location must be dorm_1, dorm_2, or off_campus');
+    }
+
     if (roleSpecificData.specialty !== undefined && 
         (typeof roleSpecificData.specialty !== 'string' || roleSpecificData.specialty.trim().length === 0)) {
       throw new Error('Specialty must be a non-empty string');
+    }
+
+    if (roleSpecificData.shiftSchedule !== undefined) {
+      this._validateShiftSchedule(roleSpecificData.shiftSchedule);
+    }
+  }
+
+  _validateShiftSchedule(shiftSchedule) {
+    if (typeof shiftSchedule !== 'object' || shiftSchedule === null) {
+      throw new Error('Shift schedule must be an object');
+    }
+
+    const validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+
+    for (const [day, shifts] of Object.entries(shiftSchedule)) {
+      if (!validDays.includes(day.toLowerCase())) {
+        throw new Error(`Invalid day: ${day}. Must be one of: ${validDays.join(', ')}`);
+      }
+
+      if (!Array.isArray(shifts)) {
+        throw new Error(`Shifts for ${day} must be an array`);
+      }
+
+      for (const shift of shifts) {
+        if (typeof shift !== 'string') {
+          throw new Error(`Each shift must be a string in format "HH:MM-HH:MM"`);
+        }
+
+        const [startTime, endTime] = shift.split('-');
+        if (!startTime || !endTime || !timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+          throw new Error(`Invalid shift format: ${shift}. Must be "HH:MM-HH:MM"`);
+        }
+
+        // Validate that start time is before end time
+        const [startHour, startMin] = startTime.split(':').map(Number);        const [endHour, endMin] = endTime.split(':').map(Number);
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+
+        if (startMinutes >= endMinutes) {
+          throw new Error(`Invalid shift: ${shift}. Start time must be before end time`);
+        }
+      }
     }
   }
 

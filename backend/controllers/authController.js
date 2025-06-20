@@ -8,13 +8,13 @@ const loginUser = async (req, res) => {
   try {
     // Use authService.authenticate instead of duplicating logic
     const authResult = await authService.authenticate(email, password);
-    
-    console.log('[LOGIN SUCCESS] Email:', email);
-    res.json({ 
+      console.log('[LOGIN SUCCESS] Email:', email);    res.json({ 
       message: 'Login successful', 
       user: { 
+        id: authResult.user.id,
         email: authResult.user.email, 
-        role: authResult.user.role 
+        role: authResult.user.role,
+        status: authResult.user.status
       },
       token: authResult.token 
     });

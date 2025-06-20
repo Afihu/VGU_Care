@@ -1,247 +1,158 @@
-const fetch = require('node-fetch').default;
+/**
+ * Backend Integration Test Suite
+ * Tests all current APIs, database connection, and backend infrastructure
+ */
 
-// Use environment variable for API URL, fallback to localhost for local testing
-const API_URL = process.env.API_URL || 'http://localhost:5001';
+const { SimpleTest, makeRequest, API_BASE_URL } = require('./testFramework');
+const TestHelper = require('./helpers/testHelper');
 
-console.log('🔗 Starting Backend Connection & Integration Test Suite\n');
-console.log(`🌐 Using API URL: ${API_URL}\n`);
+async function runBackendTests() {
+  const test = new SimpleTest('🌐 Backend Integration Test Suite');
+  const testHelper = new TestHelper();
 
-async function testDatabaseConnection() {
-  console.log('🗄️ Testing database connection...');
   try {
-    const res = await fetch(`${API_URL}/api/test-db`);
-    const data = await res.json();
-    
-    if (res.ok && data.status === 'success') {
-      console.log('✅ Database connection successful');
-      console.log(`   Database timestamp: ${data.timestamp}`);
-      console.log(`   Message: ${data.message}`);
-      return true;
-    } else {
-      console.error('❌ Database connection failed:', data);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Database connection error:', error.message);
-    return false;
-  }
-}
 
-async function testBackendHealth() {
-  console.log('🏥 Testing backend health endpoint...');
-  try {
-    const res = await fetch(`${API_URL}/api/health`);
-    const data = await res.json();
-    
-    if (res.ok) {
-      console.log('✅ Backend health check passed');
-      console.log(`   Message: ${data.message}`);
-      console.log(`   Database status: ${data.database}`);
-      console.log(`   Timestamp: ${data.timestamp}`);
-      return true;
-    } else {
-      console.error('❌ Backend health check failed:', res.status, data);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Backend health check error:', error.message);
-    return false;
-  }
-}
-
-async function testAuthenticationEndpoints() {
-  console.log('🔐 Testing authentication endpoints availability...');
-  
-  try {
-    const res = await fetch(`${API_URL}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'test@vgu.edu.vn', password: 'wrong' })
-    });
-    
-    if (res.status === 401 || res.status === 400) {
-      console.log('✅ Login endpoint is accessible (returned expected error)');
-      return true;
-    } else {
-      console.log(`ℹ️  Login endpoint returned unexpected status: ${res.status}`);
-      return true;
-    }
-  } catch (error) {
-    console.error('❌ Login endpoint not accessible:', error.message);
-    return false;
-  }
-}
-
-async function testUserEndpoints() {
-  console.log('👤 Testing user endpoints availability...');
-  
-  try {
-    const res = await fetch(`${API_URL}/api/users/me`);
-    
-    if (res.status === 401) {
-      console.log('✅ Protected user endpoint is accessible (returned 401 as expected)');
-      return true;
-    } else {
-      console.log(`ℹ️  User endpoint returned unexpected status: ${res.status}`);
-      return true;
-    }
-  } catch (error) {
-    console.error('❌ User endpoint not accessible:', error.message);
-    return false;
-  }
-}
-
-async function testCORSConfiguration() {
-  console.log('🌐 Testing CORS configuration...');
-  try {
-    const res = await fetch(`${API_URL}/api/health`, {
-      method: 'OPTIONS'
-    });
-    
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': res.headers.get('access-control-allow-origin'),
-      'Access-Control-Allow-Methods': res.headers.get('access-control-allow-methods'),
-      'Access-Control-Allow-Headers': res.headers.get('access-control-allow-headers')
-    };
-    
-    console.log('✅ CORS preflight request successful');
-    console.log('   CORS Headers:');
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      if (value) {
-        console.log(`     ${key}: ${value}`);
-      }
-    });
-    
-    return true;
-  } catch (error) {
-    console.error('❌ CORS configuration test failed:', error.message);
-    return false;
-  }
-}
-
-async function testFrontendBackendConnection() {
-  console.log('🔗 Testing frontend-backend connection readiness...');
-  
-  try {
-    const res = await fetch(`${API_URL}/api/health`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    });
-    
-    const contentType = res.headers.get('content-type');
-    
-    if (res.ok && contentType && contentType.includes('application/json')) {
-      console.log('✅ Backend can handle JSON requests from frontend');
-      console.log(`   Response Content-Type: ${contentType}`);
-      return true;
-    } else {
-      console.error('❌ Backend JSON handling issue');
-      console.error(`   Status: ${res.status}`);
-      console.error(`   Content-Type: ${contentType}`);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Frontend-backend connection test failed:', error.message);
-    return false;
-  }
-}
-
-async function testErrorHandling() {
-  console.log('🚨 Testing error handling...');
-  
-  try {
-    const res = await fetch(`${API_URL}/api/nonexistent-route`);
-    
-    console.log(`✅ Error handling test completed (Status: ${res.status})`);
-    
-    if (res.status === 404) {
-      console.log('   404 returned for invalid route (expected)');
-    } else {
-      console.log(`   Unexpected status for invalid route: ${res.status}`);
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('❌ Error handling test failed:', error.message);
-    return false;
-  }
-}
-
-async function testServerResponseTime() {
-  console.log('⏱️  Testing server response time...');
-  
-  const startTime = Date.now();
-  
-  try {
-    const res = await fetch(`${API_URL}/api/health`);
-    const endTime = Date.now();
-    const responseTime = endTime - startTime;
-    
-    if (res.ok) {
-      console.log(`✅ Server response time: ${responseTime}ms`);
+  test.describe('🏥 Infrastructure Tests', function() {
+    test.it('should respond to health check', async function() {
+      const response = await makeRequest(`${API_BASE_URL}/api/health`);
       
-      if (responseTime < 1000) {
-        console.log('   Response time is good (< 1 second)');
-      } else {
-        console.log('   Response time is slow (> 1 second)');
+      test.assertEqual(response.status, 200, 'Health check should return 200');
+      test.assertProperty(response.body, 'message', 'Health check should have message');
+      test.assertProperty(response.body, 'timestamp', 'Health check should have timestamp');
+      console.log('✅ Health check endpoint working');
+    });
+
+    test.it('should test database connection', async function() {
+      const response = await makeRequest(`${API_BASE_URL}/api/test-db`);
+      
+      test.assertEqual(response.status, 200, 'Database test should return 200');
+      test.assertProperty(response.body, 'message', 'Database test should have message');
+      console.log('✅ Database connection working');
+    });
+  });
+
+  test.describe('👥 User Management API', function() {
+    test.it('should authenticate all user types', async function() {
+      await testHelper.initialize();
+      
+      test.assertExists(testHelper.authHelper.getToken('admin'), 'Admin token should exist');
+      test.assertExists(testHelper.authHelper.getToken('student'), 'Student token should exist');
+      test.assertExists(testHelper.authHelper.getToken('medicalStaff'), 'Medical staff token should exist');
+      console.log('✅ All user types authenticated successfully');
+    });
+
+    test.it('should get user profile with admin token', async function() {
+      const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, {
+        'Authorization': `Bearer ${testHelper.authHelper.getToken('admin')}`
+      });
+      
+      test.assertEqual(response.status, 200, 'Profile request should return 200');
+      test.assertProperty(response.body, 'user', 'Response should have user property');
+      test.assertEqual(response.body.user.role, 'admin', 'User should be admin');
+      console.log('✅ Admin profile access working');
+    });
+
+    test.it('should get user profile with student token', async function() {
+      const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, {
+        'Authorization': `Bearer ${testHelper.authHelper.getToken('student')}`
+      });
+      
+      test.assertEqual(response.status, 200, 'Profile request should return 200');
+      test.assertProperty(response.body, 'user', 'Response should have user property');
+      test.assertEqual(response.body.user.role, 'student', 'User should be student');
+      console.log('✅ Student profile access working');
+    });
+
+    test.it('should get user profile with medical staff token', async function() {
+      const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, {
+        'Authorization': `Bearer ${testHelper.authHelper.getToken('medicalStaff')}`
+      });
+      
+      test.assertEqual(response.status, 200, 'Profile request should return 200');
+      test.assertProperty(response.body, 'user', 'Response should have user property');
+      test.assertEqual(response.body.user.role, 'medical_staff', 'User should be medical staff');
+      console.log('✅ Medical staff profile access working');
+    });
+  });
+
+  test.describe('🔧 API Endpoint Coverage', function() {    test.it('should test appointment endpoints', async function() {
+      // Test appointment creation
+      const response = await testHelper.appointmentHelper.createAppointment('student', {
+        symptoms: 'Backend integration test symptoms',
+        priorityLevel: 'medium'
+      });
+      
+      const appointment = response.body?.appointment;
+      test.assertExists(appointment?.id, 'Appointment should be created');
+      console.log('✅ Appointment API working');
+
+      // Cleanup
+      if (appointment?.id) {
+        await testHelper.appointmentHelper.deleteAppointment('student', appointment.id);
+      }
+    });
+
+    test.it('should test mood entry endpoints', async function() {
+      const moodEntry = await testHelper.moodHelper.createMoodEntry('student', {
+        mood: 'happy',
+        notes: 'Backend test mood'
+      });
+      
+      test.assertExists(moodEntry.id, 'Mood entry should be created');
+      console.log('✅ Mood entry API working');
+
+      // Cleanup
+      await testHelper.moodHelper.deleteMoodEntry('student', moodEntry.id);
+    });
+
+    test.it('should test medical staff endpoints', async function() {
+      const profile = await testHelper.medicalStaffHelper.getProfile();
+      
+      test.assertProperty(profile, 'name', 'Medical staff profile should exist');
+      console.log('✅ Medical staff API working');
+    });
+  });
+
+  test.describe('🚀 Performance Tests', function() {
+    test.it('should handle concurrent requests', async function() {
+      const requests = [];
+      
+      // Create multiple concurrent health check requests
+      for (let i = 0; i < 10; i++) {
+        requests.push(makeRequest(`${API_BASE_URL}/api/health`));
       }
       
-      return true;
-    } else {
-      console.error('❌ Server response test failed:', res.status);
-      return false;
-    }
+      const responses = await Promise.all(requests);
+      
+      test.assert(responses.every(r => r.status === 200), 'All concurrent requests should succeed');
+      console.log('✅ Backend handles concurrent requests correctly');
+    });
+
+    test.it('should respond within acceptable time limits', async function() {
+      const startTime = Date.now();
+      
+      await makeRequest(`${API_BASE_URL}/api/health`);
+        const responseTime = Date.now() - startTime;
+      test.assert(responseTime < 2000, `Response time should be under 2s, got ${responseTime}ms`);
+      console.log(`✅ Response time acceptable: ${responseTime}ms`);
+    });
+  });
+
+    // Run tests
+    await test.run();
+
   } catch (error) {
-    console.error('❌ Server response time test failed:', error.message);
-    return false;
+    console.error('\n💥 Backend tests failed:', error.message);
+    throw error;
+  } finally {
+    // Cleanup
+    await testHelper.cleanup();
   }
 }
 
-async function runConnectionTestSuite() {
-  console.log('🚀 Starting Backend Connection & Integration Tests\n');
-  
-  const testResults = [];
-  
-  // Core Infrastructure Tests
-  console.log('🏗️ === CORE INFRASTRUCTURE TESTS ===');
-  testResults.push(await testBackendHealth());
-  testResults.push(await testDatabaseConnection());
-  testResults.push(await testServerResponseTime());
-  
-  console.log('\n🔌 === ENDPOINT AVAILABILITY TESTS ===');
-  testResults.push(await testAuthenticationEndpoints());
-  testResults.push(await testUserEndpoints());
-  
-  console.log('\n🌍 === NETWORK & COMMUNICATION TESTS ===');
-  testResults.push(await testCORSConfiguration());
-  testResults.push(await testFrontendBackendConnection());
-  testResults.push(await testErrorHandling());
-  
-  console.log('\n📊 === TEST RESULTS SUMMARY ===');
-  
-  const passedTests = testResults.filter(result => result).length;
-  const totalTests = testResults.length;
-  
-  console.log(`Tests Passed: ${passedTests}/${totalTests}`);
-  console.log(`Success Rate: ${((passedTests/totalTests) * 100).toFixed(1)}%`);
-  
-  if (passedTests === totalTests) {
-    console.log('🎉 All connection tests passed! Backend is ready for frontend integration.');
-  } else {
-    console.log('⚠️  Some connection tests failed. Check the logs above for details.');
-  }
-  
-  console.log('\n✨ Backend Connection Test Suite Completed!');
-  
-  // Exit with appropriate code
-  process.exit(passedTests === totalTests ? 0 : 1);
+// Run tests if this file is executed directly
+if (require.main === module) {
+  runBackendTests();
 }
 
-// Run the test suite
-runConnectionTestSuite().catch(error => {
-  console.error('💥 Connection test suite failed:', error);
-  process.exit(1);
-});
+module.exports = runBackendTests;
