@@ -255,7 +255,6 @@ Complete admin management system with comprehensive CRUD operations for all reso
 - **User Management**: Full CRUD for students and medical staff
 - **Appointment Administration**: Create/update appointments for any user
 - **Mood Tracker Administration**: Full access to all mood entries
-- **Medical Documents Management**: Complete document lifecycle management
 - **Temporary Advice System**: Advisory management for appointments
 - **Abuse Reports Management**: Complete reporting and resolution system
 - **Role & Status Management**: User role and status administration
@@ -319,28 +318,6 @@ Body: { mood: "happy|sad|neutral|anxious|stressed", notes?: "string" }
 PATCH /api/admin/mood-entries/:entryId
 Headers: { Authorization: "Bearer <admin_token>" }
 Body: { mood?: "string", notes?: "string" }
-```
-
-#### Medical Documents Management APIs
-```javascript
-// Get All Medical Documents
-GET /api/admin/medical-documents
-Headers: { Authorization: "Bearer <admin_token>" }
-Response: { message, count, documents: [...] }
-
-// Create Document for User
-POST /api/admin/medical-documents/users/:userId
-Headers: { Authorization: "Bearer <admin_token>" }
-Body: { documentType: "medical_report|vaccination_record|health_certificate", symptomsDescription: "string" }
-
-// Update Document
-PATCH /api/admin/medical-documents/:documentId
-Headers: { Authorization: "Bearer <admin_token>" }
-Body: { documentType?: "string", symptomsDescription?: "string", otherDetails?: "string" }
-
-// Delete Document
-DELETE /api/admin/medical-documents/:documentId
-Headers: { Authorization: "Bearer <admin_token>" }
 ```
 
 #### Temporary Advice Management APIs

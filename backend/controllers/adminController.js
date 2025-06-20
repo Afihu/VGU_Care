@@ -1,4 +1,5 @@
 const adminService = require('../services/adminService');
+const ErrorHandler = require('../utils/errorHandler');
 
 /**
  * AdminController - Handles all admin-specific endpoints
@@ -14,14 +15,12 @@ const adminService = require('../services/adminService');
 exports.getAllStudents = async (req, res) => {
   try {
     const students = await adminService.getAllStudents();
-    res.json({ 
-      message: 'Students retrieved successfully',
+    ErrorHandler.handleSuccess(res, { 
       count: students.length,
       students 
-    });
+    }, 'Students retrieved successfully');
   } catch (err) {
-    console.error('Get all students error:', err);
-    res.status(500).json({ error: err.message });
+    ErrorHandler.handleControllerError(err, res, 'Get all students');
   }
 };
 
@@ -32,14 +31,12 @@ exports.getAllStudents = async (req, res) => {
 exports.getAllMedicalStaff = async (req, res) => {
   try {
     const medicalStaff = await adminService.getAllMedicalStaff();
-    res.json({ 
-      message: 'Medical staff retrieved successfully',
+    ErrorHandler.handleSuccess(res, { 
       count: medicalStaff.length,
       medicalStaff 
-    });
+    }, 'Medical staff retrieved successfully');
   } catch (err) {
-    console.error('Get all medical staff error:', err);
-    res.status(500).json({ error: err.message });
+    ErrorHandler.handleControllerError(err, res, 'Get all medical staff');
   }
 };
 
@@ -239,100 +236,6 @@ exports.updateMoodEntry = async (req, res) => {
     console.error('Update mood entry error:', err);
     if (err.message.includes('not found') || err.message.includes('No valid fields')) {
       res.status(400).json({ error: err.message });
-    } else {
-      res.status(500).json({ error: err.message });
-    }
-  }
-};
-
-// ==================== MEDICAL DOCUMENTS MANAGEMENT ====================
-
-/**
- * Get all medical documents
- * Admin privilege: View medical documents for all students
- */
-exports.getAllMedicalDocuments = async (req, res) => {
-  try {
-    const documents = await adminService.getAllMedicalDocuments();
-    res.json({ 
-      message: 'Medical documents retrieved successfully',
-      count: documents.length,
-      documents 
-    });
-  } catch (err) {
-    console.error('Get all medical documents error:', err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-/**
- * Create medical document for any student
- * Admin privilege: Create medical documents for all students
- */
-exports.createMedicalDocument = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const documentData = req.body;
-
-    if (!documentData.documentType || !documentData.symptomsDescription) {
-      return res.status(400).json({ 
-        error: 'Document type and symptoms description are required' 
-      });
-    }
-
-    const document = await adminService.createMedicalDocument(userId, documentData);
-    res.status(201).json({ 
-      message: 'Medical document created successfully',
-      document 
-    });
-  } catch (err) {
-    console.error('Create medical document error:', err);
-    if (err.message.includes('not found')) {
-      res.status(400).json({ error: err.message });
-    } else {
-      res.status(500).json({ error: err.message });
-    }
-  }
-};
-
-/**
- * Update any medical document
- * Admin privilege: Update medical documents for all students
- */
-exports.updateMedicalDocument = async (req, res) => {
-  try {
-    const { documentId } = req.params;
-    const documentData = req.body;
-
-    const document = await adminService.updateMedicalDocument(documentId, documentData);
-    res.json({ 
-      message: 'Medical document updated successfully',
-      document 
-    });
-  } catch (err) {
-    console.error('Update medical document error:', err);
-    if (err.message.includes('not found') || err.message.includes('No valid fields')) {
-      res.status(400).json({ error: err.message });
-    } else {
-      res.status(500).json({ error: err.message });
-    }
-  }
-};
-
-/**
- * Delete any medical document
- * Admin privilege: Delete medical documents for all students
- */
-exports.deleteMedicalDocument = async (req, res) => {
-  try {
-    const { documentId } = req.params;
-
-    const result = await adminService.deleteMedicalDocument(documentId);
-    res.json(result);
-  } catch (err) {
-    console.error('Delete medical document error:', err);
-    if (err.message.includes('not found')) {
-      res.status(404).json({ error: err.message });
     } else {
       res.status(500).json({ error: err.message });
     }

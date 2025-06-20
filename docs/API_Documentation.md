@@ -348,14 +348,6 @@ const createAppointment = async (appointmentData) => {
 - **Auth**: Bearer Token (Admin only)
 - **Status**: ✅ **Fully Implemented & Tested**
 
-### Medical Documents Management
-- **GET** `/admin/medical-documents` - Get all medical documents
-- **POST** `/admin/medical-documents/users/:userId` - Create document for user
-- **PATCH** `/admin/medical-documents/:documentId` - Update document
-- **DELETE** `/admin/medical-documents/:documentId` - Delete document
-- **Auth**: Bearer Token (Admin only)
-- **Status**: ✅ **Fully Implemented & Tested**
-
 ### Temporary Advice Management
 - **GET** `/admin/temporary-advice` - Get all advice
 - **POST** `/admin/temporary-advice/appointments/:appointmentId` - Create advice
@@ -503,21 +495,6 @@ const createAppointment = async (appointmentData) => {
 ```
 - **Auth**: Bearer Token (Ownership required)
 - **Status**: ✅ **Fully Implemented & Tested**
-
----
-
-## 📄 Document Management APIs
-
-> **Note**: Basic routes with placeholders
-
-### Student Documents
-- **GET** `/api/documents` - Get own documents
-- **POST** `/api/documents` - Upload document
-- **PATCH** `/api/documents/:id` - Update document
-- **GET** `/api/documents/:id/download` - Download document
-- **DELETE** `/api/documents/:id` - Delete document
-- **Auth**: Bearer Token (Student role)
-- **Status**: ✅ **Routes & Placeholders Implemented**
 
 ---
 

@@ -1,6 +1,7 @@
 const { query } = require('../config/database');
 const BaseService = require('./baseService');
 const userService = require('./userService');
+const UserQueryBuilder = require('../utils/userQueryBuilder');
 
 class MedicalStaffService extends BaseService {  // Get medical staff profile by user ID (admin can access any medical staff profile)
   async getMedicalStaffProfile(userId, requestingUserRole = null) {
@@ -53,86 +54,21 @@ class MedicalStaffService extends BaseService {  // Get medical staff profile by
       // Return updated profile
       return await userService.getUserById(userId);
     });
-  }
-  // Get all student profiles for medical staff to view
+  }  // Get all student profiles for medical staff to view
   async getAllStudentProfiles() {
-    const result = await query(`
-      SELECT 
-        u.user_id AS id,
-        u.name,
-        u.gender,
-        u.age,
-        u.email,
-        u.status,
-        u.points,
-        u.created_at,
-        u.updated_at,
-        s.intake_year,
-        s.major,
-        s.housing_location
-      FROM users u
-      INNER JOIN students s ON u.user_id = s.user_id
-      WHERE u.role = 'student'
-      ORDER BY u.name ASC
-    `);
-
-    return result.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      gender: row.gender,
-      age: row.age,
-      email: row.email,
-      status: row.status,
-      points: row.points,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      intakeYear: row.intake_year,
-      major: row.major,
-      housingLocation: row.housing_location,
-      role: 'student'
-    }));
+    const result = await query(UserQueryBuilder.buildStudentsOnlyQuery());
+    return UserQueryBuilder.transformUserRows(result.rows);
   }
+
   // Get specific student profile by ID
   async getStudentProfile(studentId) {
-    const result = await query(`
-      SELECT 
-        u.user_id AS id,
-        u.name,
-        u.gender,
-        u.age,
-        u.email,
-        u.status,
-        u.points,
-        u.created_at,
-        u.updated_at,
-        s.intake_year,
-        s.major,
-        s.housing_location
-      FROM users u
-      INNER JOIN students s ON u.user_id = s.user_id
-      WHERE u.user_id = $1 AND u.role = 'student'
-    `, [studentId]);
+    const result = await query(UserQueryBuilder.buildSingleUserQuery(), [studentId]);
 
-    if (result.rows.length === 0) {
+    if (result.rows.length === 0 || result.rows[0].role !== 'student') {
       throw new Error('Student not found');
     }
 
-    const row = result.rows[0];
-    return {
-      id: row.id,
-      name: row.name,
-      gender: row.gender,
-      age: row.age,
-      email: row.email,
-      status: row.status,
-      points: row.points,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      intakeYear: row.intake_year,
-      major: row.major,
-      housingLocation: row.housing_location,
-      role: 'student'
-    };
+    return UserQueryBuilder.transformUserRow(result.rows[0]);
   }
 
   // Validate if user is medical staff

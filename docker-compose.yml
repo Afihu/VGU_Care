@@ -9,13 +9,29 @@ services:
       POSTGRES_PASSWORD: vgu_password
       POSTGRES_HOST_AUTH_METHOD: md5 
       POSTGRES_INITDB_ARGS: "--auth-host=md5"
-      # Performance optimizations
-      POSTGRES_SHARED_BUFFERS: 64MB
-      POSTGRES_EFFECTIVE_CACHE_SIZE: 128MB
-      POSTGRES_MAINTENANCE_WORK_MEM: 16MB
+      # Performance optimizations - enhanced
+      POSTGRES_SHARED_BUFFERS: 128MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 256MB
+      POSTGRES_MAINTENANCE_WORK_MEM: 32MB
       POSTGRES_CHECKPOINT_COMPLETION_TARGET: 0.9
-      POSTGRES_WAL_BUFFERS: 16MB
+      POSTGRES_WAL_BUFFERS: 32MB
       POSTGRES_DEFAULT_STATISTICS_TARGET: 100
+      POSTGRES_RANDOM_PAGE_COST: 1.1
+      POSTGRES_EFFECTIVE_IO_CONCURRENCY: 200
+    command: |
+      postgres
+      -c shared_buffers=128MB
+      -c effective_cache_size=256MB
+      -c maintenance_work_mem=32MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=32MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c max_worker_processes=4
+      -c max_parallel_workers_per_gather=2
+      -c max_parallel_workers=4
+      -c max_parallel_maintenance_workers=2
       
     ports:
       - "5433:5432"
@@ -40,6 +56,7 @@ services:
     restart: unless-stopped
     networks:
       - vgu_network
+
   # Backend API - Optimized
   backend:
     build:
@@ -48,12 +65,15 @@ services:
       target: development
       # Build optimization
       cache_from:
+        - vgu_care_backend:latest
         - node:18-alpine
       args:
         BUILDKIT_INLINE_CACHE: 1
     container_name: vgu_care_api
     environment:
       - NODE_ENV=development
+      - NODE_OPTIONS=--max-old-space-size=1024
+      - UV_THREADPOOL_SIZE=4
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=vgu_care
@@ -68,13 +88,14 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      # Use bind mounts for development files only
-      - ./backend:/app/backend:delegated
-      - ./tests:/app/tests:delegated
+      # Use bind mounts for development files - cached for better performance
+      - ./backend:/app/backend:cached
+      - ./tests:/app/tests:cached
       - ./package.json:/app/package.json:ro
       # Use named volume for node_modules for better performance
       - backend_node_modules:/app/node_modules
       - backend_logs:/app/logs
+    command: ["npm", "run", "dev"] # Use nodemon for hot reloading
     deploy:
       resources:
         limits:
@@ -91,13 +112,15 @@ services:
       start_period: 20s
     restart: unless-stopped
     networks:
-      - vgu_network  
+      - vgu_network
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       # Build optimization
       cache_from:
+        - vgu_care_frontend:latest
         - node:18-alpine
       args:
         BUILDKIT_INLINE_CACHE: 1
@@ -106,8 +129,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Use bind mounts with delegated consistency
-      - ./frontend:/app:delegated
+      # Use bind mounts with cached consistency for better performance
+      - ./frontend:/app:cached
       # Use named volumes for node_modules
       - frontend_node_modules:/app/node_modules
       - frontend_build:/app/build

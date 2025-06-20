@@ -60,15 +60,7 @@ CREATE TABLE temporary_advice (
     date_sent TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Health Documents table
-CREATE TABLE health_documents (
-    document_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id UUID NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
-    document_type VARCHAR(30) CHECK (document_type IN ('medical_report', 'vaccination_record', 'health_certificate')) NOT NULL,
-    symptoms_description TEXT NOT NULL,
-    date_submitted TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    other_details TEXT NULL
-);
+
 
 -- Mood Entry table
 CREATE TABLE mood_entries (
@@ -91,21 +83,7 @@ CREATE TABLE abuse_reports (
     report_type VARCHAR(50) DEFAULT 'system_abuse' CHECK (report_type IN ('system_abuse', 'false_urgency', 'inappropriate_behavior', 'other'))
 );
 
--- Medical Documents table
-CREATE TABLE medical_documents (
-    document_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id UUID NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
-    uploaded_by_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    appointment_id UUID REFERENCES appointments(appointment_id) ON DELETE SET NULL,
-    filename VARCHAR(255) NOT NULL,
-    original_name VARCHAR(255) NOT NULL,
-    file_type VARCHAR(100) NOT NULL,
-    file_size INTEGER NOT NULL,
-    file_path VARCHAR(500) NOT NULL, -- Local path or cloud URL
-    document_type VARCHAR(50) DEFAULT 'other',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+
 
 -- Notifications table for in-app notification system
 CREATE TABLE IF NOT EXISTS notifications (

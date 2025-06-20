@@ -11,9 +11,7 @@ const { requireRole } = require('../middleware/roleMiddleware');
  * Admin Privileges:
  * - View all student profiles
  * - View all medical staff profiles  
- * - View/create/update appointments for all students
- * - View/create/update mood tracker entries for all students
- * - View/create/update/delete medical documents for all students
+ * - View/create/update appointments for all students * - View/create/update mood tracker entries for all students
  * - Create/update/delete temporary advice for all students
  * - View/create/update/delete system abuse reports for all users
  * - Manage user roles and permissions
@@ -94,34 +92,6 @@ router.post('/mood-entries/users/:userId', adminController.createMoodEntry);
  * Body: { mood?: string, notes?: string }
  */
 router.patch('/mood-entries/:entryId', adminController.updateMoodEntry);
-
-// ==================== MEDICAL DOCUMENTS MANAGEMENT ROUTES ====================
-
-/**
- * GET /api/admin/medical-documents
- * Admin privilege: View medical documents for all students
- */
-router.get('/medical-documents', adminController.getAllMedicalDocuments);
-
-/**
- * POST /api/admin/medical-documents/users/:userId
- * Admin privilege: Create medical documents for all students
- * Body: { documentType: 'medical_report'|'vaccination_record'|'health_certificate', symptomsDescription: string, otherDetails?: string }
- */
-router.post('/medical-documents/users/:userId', adminController.createMedicalDocument);
-
-/**
- * PATCH /api/admin/medical-documents/:documentId
- * Admin privilege: Update medical documents for all students
- * Body: { documentType?: string, symptomsDescription?: string, otherDetails?: string }
- */
-router.patch('/medical-documents/:documentId', adminController.updateMedicalDocument);
-
-/**
- * DELETE /api/admin/medical-documents/:documentId
- * Admin privilege: Delete medical documents for all students
- */
-router.delete('/medical-documents/:documentId', adminController.deleteMedicalDocument);
 
 // ==================== TEMPORARY ADVICE MANAGEMENT ROUTES ====================
 

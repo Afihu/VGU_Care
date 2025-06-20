@@ -59,22 +59,14 @@ Based on our ERD diagram, the following is the detailed rundown of the VGU Care 
 - **date_sent** (TIMESTAMP, Not Null)
 - **created_by_staff_id** (UUID, Foreign Key → Medical Staff)
 
-#### 8. Health Documents
-- **document_id** (UUID, Primary Key)
-- **student_id** (UUID, Foreign Key → Students)
-- **document_type** (ENUM: 'medical_report', 'vaccination_record', 'health_certificate')
-- **symptoms_description** (TEXT, Not Null)
-- **date_submitted** (TIMESTAMP, Not Null)
-- **other_details** (TEXT, Null)
-
-#### 9. Mood Entries
+#### 8. Mood Entries
 - **entry_id** (UUID, Primary Key)
 - **student_id** (UUID, Foreign Key → Students)
 - **mood** (ENUM: 'happy', 'sad', 'neutral', 'anxious', 'stressed')
 - **entry_date** (TIMESTAMP, Not Null)
 - **notes** (TEXT, Null)
 
-#### 10. Abuse Reports
+#### 9. Abuse Reports
 - **report_id** (UUID, Primary Key)
 - **staff_id** (UUID, Foreign Key → Medical Staff)
 - **student_id** (UUID, Foreign Key → Students)
@@ -84,7 +76,7 @@ Based on our ERD diagram, the following is the detailed rundown of the VGU Care 
 - **status** (ENUM: 'open', 'investigating', 'resolved')
 - **report_type** (ENUM: 'system_abuse', 'false_urgency', 'inappropriate_behavior', 'other')
 
-#### 11. Notifications
+#### 10. Notifications
 - **notification_id** (UUID, Primary Key)
 - **user_id** (UUID, Foreign Key → Users)
 - **appointment_id** (UUID, Foreign Key → Appointments)
@@ -149,7 +141,6 @@ ALTER TABLE medical_staff ADD COLUMN shift_schedule JSONB DEFAULT '{}'::jsonb;
 - **Medical Staff** → **Appointments** (1:Many, staff can handle multiple appointments)
 - **Appointments** → **Temporary Advice** (1:1, optional)
 - **Students** → **Mood Entries** (1:Many, mental health tracking)
-- **Students** → **Health Documents** (1:Many, medical history)
 - **Medical Staff** → **Abuse Reports** (1:Many, staff can file multiple reports)
 
 ### Enhanced Relationships (Profile Expansion)

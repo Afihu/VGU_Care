@@ -1,14 +1,13 @@
 const { query } = require('../config/database');
 const BaseService = require('./baseService');
+const UserQueryBuilder = require('../utils/userQueryBuilder');
 const bcrypt = require('bcrypt');
 
 /**
  * AdminService - Handles all admin-specific operations
  * This service provides admin users with elevated privileges to manage:
  * - All user profiles (students and medical staff)
- * - All appointments across the system
- * - All mood tracker entries
- * - All medical documents
+ * - All appointments across the system * - All mood tracker entries
  * - All temporary advice
  * - All abuse reports
  * - User roles and permissions
@@ -16,66 +15,20 @@ const bcrypt = require('bcrypt');
 class AdminService extends BaseService {
   
   // ==================== USER MANAGEMENT ====================
-  
-  /**
+    /**
    * Get all student profiles with their specific data
    */
   async getAllStudents() {
-    const result = await query(`
-      SELECT 
-        u.user_id, u.name, u.gender, u.age, u.email, u.status, u.points,
-        u.created_at, u.updated_at,
-        s.student_id, s.intake_year, s.major
-      FROM users u
-      JOIN students s ON u.user_id = s.user_id
-      WHERE u.role = 'student'
-      ORDER BY u.name
-    `);
-    
-    return result.rows.map(row => ({
-      id: row.user_id,
-      studentId: row.student_id,
-      name: row.name,
-      gender: row.gender,
-      age: row.age,
-      email: row.email,
-      status: row.status,
-      points: row.points,
-      intakeYear: row.intake_year,
-      major: row.major,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
-    }));
+    const result = await query(UserQueryBuilder.buildStudentsOnlyQuery());
+    return UserQueryBuilder.transformUserRows(result.rows);
   }
 
   /**
    * Get all medical staff profiles with their specific data
    */
   async getAllMedicalStaff() {
-    const result = await query(`
-      SELECT 
-        u.user_id, u.name, u.gender, u.age, u.email, u.status, u.points,
-        u.created_at, u.updated_at,
-        ms.staff_id, ms.specialty
-      FROM users u
-      JOIN medical_staff ms ON u.user_id = ms.user_id
-      WHERE u.role = 'medical_staff'
-      ORDER BY u.name
-    `);
-    
-    return result.rows.map(row => ({
-      id: row.user_id,
-      staffId: row.staff_id,
-      name: row.name,
-      gender: row.gender,
-      age: row.age,
-      email: row.email,
-      status: row.status,
-      points: row.points,
-      specialty: row.specialty,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
-    }));
+    const result = await query(UserQueryBuilder.buildMedicalStaffOnlyQuery());
+    return UserQueryBuilder.transformUserRows(result.rows);
   }
 
   /**
@@ -348,128 +301,6 @@ class AdminService extends BaseService {
 
     return result.rows[0];
   }
-
-  // ==================== MEDICAL DOCUMENTS MANAGEMENT ====================
-
-  /**
-   * Get all medical documents across the system
-   */
-  async getAllMedicalDocuments() {
-    const result = await query(`
-      SELECT 
-        hd.document_id, hd.document_type, hd.symptoms_description,
-        hd.date_submitted, hd.other_details,
-        s.student_id, u.user_id, u.name, u.email
-      FROM health_documents hd
-      JOIN students s ON hd.student_id = s.student_id
-      JOIN users u ON s.user_id = u.user_id
-      ORDER BY hd.date_submitted DESC
-    `);
-
-    return result.rows.map(row => ({
-      id: row.document_id,
-      studentId: row.student_id,
-      userId: row.user_id,
-      studentName: row.name,
-      studentEmail: row.email,
-      documentType: row.document_type,
-      symptomsDescription: row.symptoms_description,
-      dateSubmitted: row.date_submitted,
-      otherDetails: row.other_details
-    }));
-  }
-
-  /**
-   * Create medical document for any student - Admin privilege
-   */
-  async createMedicalDocument(userId, documentData) {
-    const { documentType, symptomsDescription, otherDetails } = documentData;
-    
-    // Get student_id from user_id
-    const studentResult = await query(
-      'SELECT student_id FROM students WHERE user_id = $1',
-      [userId]
-    );
-    
-    if (studentResult.rows.length === 0) {
-      throw new Error('Student not found');
-    }
-
-    const studentId = studentResult.rows[0].student_id;
-
-    const result = await query(`
-      INSERT INTO health_documents (student_id, document_type, symptoms_description, other_details)
-      VALUES ($1, $2, $3, $4)
-      RETURNING document_id, student_id, document_type, symptoms_description, date_submitted, other_details
-    `, [studentId, documentType, symptomsDescription, otherDetails]);
-
-    return result.rows[0];
-  }
-
-  /**
-   * Update any medical document - Admin privilege
-   */
-  async updateMedicalDocument(documentId, documentData) {
-    const { documentType, symptomsDescription, otherDetails } = documentData;
-    
-    let setClause = '';
-    const values = [];
-    let paramCounter = 1;
-
-    if (documentType !== undefined) {
-      setClause += `document_type = $${paramCounter}`;
-      values.push(documentType);
-      paramCounter++;
-    }
-    
-    if (symptomsDescription !== undefined) {
-      if (setClause) setClause += ', ';
-      setClause += `symptoms_description = $${paramCounter}`;
-      values.push(symptomsDescription);
-      paramCounter++;
-    }
-    
-    if (otherDetails !== undefined) {
-      if (setClause) setClause += ', ';
-      setClause += `other_details = $${paramCounter}`;
-      values.push(otherDetails);
-      paramCounter++;
-    }
-
-    if (!setClause) {
-      throw new Error('No valid fields to update');
-    }
-
-    values.push(documentId);
-    
-    const result = await query(
-      `UPDATE health_documents SET ${setClause} WHERE document_id = $${paramCounter} RETURNING *`,
-      values
-    );
-
-    if (result.rows.length === 0) {
-      throw new Error('Medical document not found');
-    }
-
-    return result.rows[0];
-  }
-
-  /**
-   * Delete medical document - Admin privilege
-   */
-  async deleteMedicalDocument(documentId) {
-    const result = await query(
-      'DELETE FROM health_documents WHERE document_id = $1 RETURNING document_id',
-      [documentId]
-    );
-
-    if (result.rows.length === 0) {
-      throw new Error('Medical document not found');
-    }
-
-    return { message: 'Medical document deleted successfully' };
-  }
-
   // ==================== TEMPORARY ADVICE MANAGEMENT ====================
 
   /**
