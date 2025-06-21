@@ -13,6 +13,7 @@ function Home(){
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [title, setTitle] = useState('');
     const [children, setChildren] = useState('');
+    const userInfo = localStorage.getItem('session-info');
 
     const handleLogout = () => {
         const userInfo = localStorage.getItem('session-info');
@@ -79,7 +80,7 @@ function Home(){
         setTitle('Logout of your account')
     }
 
-    return(    
+    return(     
         <div>
             <Modal
                 isOpen = {isModalOpen}
@@ -89,35 +90,36 @@ function Home(){
             >
             </Modal>
             <div class='flex-container'>
-                <div class='element-flex-container' onClick={() => navigate('/request-appointment')}>
-                    <button class='req-appoint-label'>Request Appointment</button>
-                    <button class='Button'>
-                        <span class='request-appointment-icon'></span>
-                    </button>
-                </div>
-
+                {/* {console.log( JSON.parse(userInfo).user.role)} Just in case */}
+                { 
+                    JSON.parse(userInfo).user.role.includes('student') ? (
+                        <div class='element-flex-container' onClick={() => navigate('/request-appointment')}>
+                        <button class='req-appoint-label'>Request Appointment</button>
+                        <button class='Button'>
+                            <span class='request-appointment-icon'></span>
+                        </button>
+                    </div>
+                    ) : null
+                }
+                
                 <div class='element-flex-container' onClick={() => navigate('/appointment-view')}>
                     <button class='view-appointment-label'>View Appointments</button>
                     <button class='Button'>
                         <span class='view-appointment-icon'></span>
                     </button>
-                </div>
+                </div> 
 
-                {/* Just in case
-                    <div class='element-flex-container' onClick={() => navigate('/document-upload')}>
-                    <button class='update-hdata-label'>Upload Health Data</button>
-                    <button class='Button'>
-                        <span class='update-hdata-icon'></span>
-                    </button>
-                </div> */}
-
-                <div class='element-flex-container' onClick={() => navigate('/track-mood')}>
-                    <button class='track-mood-label'>Track Mood</button>
-                    <button class='Button'>
-                        <span class='track-mood-icon'></span>
-                    </button>
-                </div>
-                {/* <p>everything gut</p>  */}
+                {
+                    (JSON.parse(userInfo).user.role.includes('student')) ? 
+                    (<div class='element-flex-container' onClick={() => navigate('/track-mood')}>
+                        <button class='track-mood-label'>Track Mood</button>
+                        <button class='Button'>
+                            <span class='track-mood-icon'></span>
+                        </button>
+                    </div> 
+                    ) : null
+                }
+                    
 
             </div>
 
@@ -133,3 +135,12 @@ function Home(){
     );
 }
  export default Home;
+
+
+ {/* Just in case
+    <div class='element-flex-container' onClick={() => navigate('/document-upload')}>
+    <button class='update-hdata-label'>Upload Health Data</button>
+    <button class='Button'>
+        <span class='update-hdata-icon'></span>
+    </button>k
+</div> */}
