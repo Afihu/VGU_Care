@@ -22,6 +22,45 @@ export default function RequestAppointment() {
     }
   ]);
 
+  const [priority, setPriority] = useState('');
+  const [datetime, setDatetime] = useState('');
+  const [symptoms, setSymptoms] = useState('');
+  //const [healthData, setHealthData] = useState('');
+
+  const handleSubmit = async () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+  
+    const appointmentData = {
+      user_id: user?.id, // assuming you stored this
+      priority,
+      datetime,
+      symptoms,
+      healthData
+    };
+  
+    try {
+      const response = await fetch('http://localhost:5000/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(appointmentData)
+      });
+  
+      const result = await response.json();
+  
+      if (response.ok) {
+        alert('Appointment request submitted!');
+        navigate('/home');
+      } else {
+        alert(result.message || 'Submission failed');
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('Error submitting appointment');
+    }
+  };
+  
   return (
     <div className="request-appointment-container">
       <h2 className="request-appointment-title">Request an Appointment</h2>
@@ -38,8 +77,8 @@ export default function RequestAppointment() {
                     type="radio"
                     name="priority"
                     value={level}
-                    /*checked={priority === level}*/
-                    /*onChange={(e) => setPriority(e.target.value)}*/
+                    checked={priority === level}
+                    onChange={(e) => setPriority(e.target.value)}
                   />
                   {level}
                 </label>
@@ -53,8 +92,10 @@ export default function RequestAppointment() {
             <input
               required
               type="text"
-              placeholder="DD/MM/YYYY, HH:MM AM/PM"
+              placeholder="YYYY/MM/DD, HH:MM:SS"
               className="appointment-datetime"
+              value={datetime}
+              onChange={(e) => setDatetime(e.target.value)}
             />
           </div>
 
@@ -66,17 +107,14 @@ export default function RequestAppointment() {
               type="text"
               placeholder="Describe your sysmptoms here..."
               className="appointment-textarea"
+              value={symptoms}
+              onChange={(e) => setSymptoms(e.target.value)}
             />
           </div>
 
           {/* Attach Health Data */}
-          <div className="mb-4">
-            <label><b>Attach Health Data (Optional)</b></label>
-            <input
-              type="text"
-              /*placeholder="Describe your sysmptoms here..."*/
-              className="appointment-textarea"
-            />
+          <div>
+            <label><b>Please bring the relevant health document to the appointment!</b></label>
           </div>
         </div>
 
@@ -89,6 +127,7 @@ export default function RequestAppointment() {
         <button
           type="button" 
           className="submit-button"
+          onClick={handleSubmit}
         >
           Submit Request
         </button>
