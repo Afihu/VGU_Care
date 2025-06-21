@@ -1,8 +1,24 @@
 import React from 'react';
 import greens from '../assets/images/Healthy_Greens.jpg';
 import '../css/AppointmentView.css';
+import api from '../services/api';
+import helpers from '../utils/helpers';
 
 export default function AppointmentView() {
+  const userInfo = localStorage.getItem('session-info');
+  const parsed = helpers.JSONparser(userInfo);
+  console.log("first");
+  
+
+  if(parsed != null){
+    const userToken = parsed.token;
+    const AppointmentsJSON = api.appointmentRetrieveService(userToken);
+    
+    const AppointmentParsed = helpers.JSONparser(AppointmentsJSON);
+    console.log(AppointmentParsed);
+    
+  } 
+
   return (
     <div className="appointment-view">
       {/* Title Box */}
