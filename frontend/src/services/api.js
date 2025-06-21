@@ -60,19 +60,16 @@ const api = {
     
     appointmentRetrieveService: async(token) => {
         const apiEndpoint = API_BASE_URL + '/appointments';
-        console.log(typeof token);
         
-        
-        //error lies here, will fix later
+        //error here, fix later
         var response = await fetch(apiEndpoint, {
             method: 'GET',
-            header: {
+            headers: {
 
-                'Content-Type' : 'application.json',
-                'Auth': `Bearer ${token}` 
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${token}` 
             }
         });
-        console.log(response);
         
         try {
            const result = handleApiError(response);

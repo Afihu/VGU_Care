@@ -5,19 +5,31 @@ import api from '../services/api';
 import helpers from '../utils/helpers';
 
 export default function AppointmentView() {
+
   const userInfo = localStorage.getItem('session-info');
   const parsed = helpers.JSONparser(userInfo);
-  console.log("first");
+  const userToken = parsed.token;
   
+  const handleAppointmentRetrieve = async (token) => {
+  
+    const response = await api.appointmentRetrieveService(token); 
+    const data = await response.json();
+    
+    return data;
+  }
 
-  if(parsed != null){
-    const userToken = parsed.token;
-    const AppointmentsJSON = api.appointmentRetrieveService(userToken);
+  async function testHandle() { //only used for testing 
+    console.trace("Call stack for testHandle()"); 
+    try {
+      const appointmentData = await handleAppointmentRetrieve(userToken);
+      console.log(appointmentData);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  testHandle();
     
-    const AppointmentParsed = helpers.JSONparser(AppointmentsJSON);
-    console.log(AppointmentParsed);
-    
-  } 
+  
 
   return (
     <div className="appointment-view">

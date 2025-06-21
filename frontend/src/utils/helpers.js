@@ -2,7 +2,6 @@ const helpers = {
     JSONparser : (JSONobject) => {
         var parsed;
         if(typeof JSONobject !== 'string' || !JSONobject.trim()){
-            console.log(JSONobject);
             console.error('Invalid JSON in local storage');
             return null;
         }
