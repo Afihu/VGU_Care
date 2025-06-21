@@ -269,9 +269,7 @@ async function runAuthTests() {
             authTest.assertEqual(response.body.user.role, 'medical_staff', 'Profile role should match');
             console.log('✅ Medical staff profile access successful');
         });
-    });
-
-    // Run all tests
+    });    // Run all tests
     await authTest.run();
 }
 

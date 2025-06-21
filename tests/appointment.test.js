@@ -5,6 +5,7 @@
 
 const { SimpleTest, makeRequest, API_BASE_URL } = require('./testFramework');
 const TestHelper = require('./helpers/testHelper');
+const DateUtils = require('./utils/dateUtils');
 
 async function runAppointmentTests() {
   const test = new SimpleTest('🏥 Appointment Management Test Suite');
@@ -190,9 +191,8 @@ async function runAppointmentTests() {
       });
     });
 
-    test.describe('Time Slot Management', function() {
-      test.it('should get available time slots', async function() {
-        const testDate = '2025-06-23'; // Monday
+    test.describe('Time Slot Management', function() {      test.it('should get available time slots', async function() {
+        const testDate = DateUtils.getNextWeekday(1); // Use dynamic date
         const result = await testHelper.appointment.testTimeSlotAvailability(testDate);
         
         test.assertTrue(result.validations.success, 'Should get time slots successfully');
@@ -203,7 +203,7 @@ async function runAppointmentTests() {
       });
 
       test.it('should create appointment with time slot', async function() {
-        const testDate = '2025-06-23';
+        const testDate = DateUtils.getNextWeekday(1); // Use dynamic date
         const timeSlotsResult = await testHelper.appointment.getAvailableTimeSlots(testDate);
         
         test.assertEqual(timeSlotsResult.status, 200, 'Should get time slots');

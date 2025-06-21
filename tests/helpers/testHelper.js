@@ -3,7 +3,7 @@
  * Provides easy access to all testing utilities
  */
 
-const AuthHelper = require('../authHelper');
+const AuthHelper = require('./authHelper');
 const ProfileHelper = require('./profileHelper');
 const AppointmentHelper = require('./appointmentHelper');
 const AccessControlHelper = require('./accessControlHelper');

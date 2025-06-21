@@ -4,6 +4,7 @@
  */
 
 const { makeRequest, API_BASE_URL } = require('../testFramework');
+const DateUtils = require('../utils/dateUtils');
 
 class NotificationHelper {
   constructor(testHelper) {
@@ -58,15 +59,16 @@ class NotificationHelper {
     
     return response;
   }
-
   /**
    * Create a test appointment to trigger notifications
    */
   async createAppointmentForNotificationTest() {
+    // Use dynamic date instead of hardcoded date
+    const testDate = DateUtils.getNextWeekday(2); // Use day after tomorrow
+    
     // Use the appointment helper to create an appointment
     const appointment = await this.testHelper.appointmentHelper.createAppointment('student', {
-      date: '2025-06-23',
-      time: '10:00',
+      dateScheduled: testDate,
       reason: 'Test appointment for notification'
     });
     

@@ -5,6 +5,7 @@
 
 const { SimpleTest, API_BASE_URL } = require('./testFramework');
 const TestHelper = require('./helpers/testHelper');
+const DateUtils = require('./utils/dateUtils');
 
 async function runNotificationTests() {
   const test = new SimpleTest('Notification System');
@@ -38,12 +39,11 @@ async function runNotificationTests() {
     });
   });
 
-  test.describe('Appointment Notification Workflow', function() {
-    test.it('should create appointment and trigger notifications', async function() {
-      // Create an appointment to trigger notifications
+  test.describe('Appointment Notification Workflow', function() {    test.it('should create appointment and trigger notifications', async function() {
+      // Create an appointment to trigger notifications - use dynamic date
+      const testDate = DateUtils.getNextWeekday(1);
       const appointment = await testHelper.appointmentHelper.createAppointment('student', {
-        date: '2025-06-23',
-        time: '10:00',
+        dateScheduled: testDate,
         reason: 'Test appointment for notification'
       });
       
@@ -111,28 +111,37 @@ async function runNotificationTests() {
       
       test.assertEqual(studentResponse.status, 200, 'Student should access own notifications');
       test.assertEqual(staffResponse.status, 200, 'Staff should access own notifications');
-      console.log('✅ User isolation maintained for notifications');
-    });
+      console.log('✅ User isolation maintained for notifications');    });
   });
 
-  // Cleanup
-  if (testNotificationIds.length > 0) {
-    await testHelper.notificationHelper.cleanupNotifications('medicalStaff', testNotificationIds);
-  }
-  
-  if (testAppointmentId) {
-    try {
-      await testHelper.appointmentHelper.deleteAppointment('student', testAppointmentId);
-    } catch (error) {
-      console.warn('Could not cleanup test appointment:', error.message);
+  try {
+    // Run tests
+    await test.run();
+  } catch (error) {
+    console.error('\n💥 Notification tests failed:', error.message);
+    throw error;
+  } finally {
+    // Cleanup after tests complete
+    if (testNotificationIds.length > 0) {
+      await testHelper.notificationHelper.cleanupNotifications('medicalStaff', testNotificationIds);
     }
-  }
+    
+    if (testAppointmentId) {
+      try {
+        await testHelper.appointmentHelper.deleteAppointment('student', testAppointmentId);
+      } catch (error) {
+        console.warn('Could not cleanup test appointment:', error.message);
+      }
+    }
 
-  await testHelper.cleanup();
-  
-  // Run tests
-  test.run();
+    await testHelper.cleanup();
+  }
 }
 
-module.exports = { runNotificationTests };
+// Run tests if this file is executed directly
+if (require.main === module) {
+  runNotificationTests().catch(console.error);
+}
+
+module.exports = runNotificationTests;
 

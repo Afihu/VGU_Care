@@ -3,7 +3,7 @@
  * Consolidates all authentication-related testing utilities
  */
 
-const { makeRequest, authenticate, API_BASE_URL, TEST_CREDENTIALS } = require('./testFramework');
+const { makeRequest, authenticate, API_BASE_URL, TEST_CREDENTIALS } = require('../testFramework');
 
 class AuthHelper {
   constructor() {

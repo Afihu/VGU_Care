@@ -5,6 +5,7 @@
 
 const { SimpleTest, makeRequest, API_BASE_URL } = require('./testFramework');
 const TestHelper = require('./helpers/testHelper');
+const DateUtils = require('./utils/dateUtils');
 
 async function runAdviceTests() {
   const test = new SimpleTest('💬 Advice Management Test Suite');
@@ -89,9 +90,10 @@ async function runAdviceTests() {
     });
 
     test.describe('Access Control for Advice', function() {      test.it('should prevent students from sending advice', async function() {
-        // Create appointment first - use Tuesday to avoid slot conflicts
+        // Create appointment first - use dynamic date
+        const testDate = DateUtils.getNextWeekday(2); // Use different day
         const createResult = await testHelper.appointment.createAppointment('student', {
-          dateScheduled: '2025-06-24', // Tuesday instead of Monday
+          dateScheduled: testDate,
           symptoms: 'Test for student advice prevention'
         });
         const appointmentId = createResult.body.appointment?.id || createResult.body.appointment_id;
@@ -125,9 +127,10 @@ async function runAdviceTests() {
     });
 
     test.describe('Advice Validation', function() {      test.it('should validate advice message content', async function() {
-        // Create appointment first - use Wednesday to avoid slot conflicts
+        // Create appointment first - use dynamic date
+        const testDate = DateUtils.getNextWeekday(3); // Use yet another different day
         const createResult = await testHelper.appointment.createAppointment('student', {
-          dateScheduled: '2025-06-25', // Wednesday instead of Monday
+          dateScheduled: testDate,
           symptoms: 'Test for advice validation'
         });
         const appointmentId = createResult.body.appointment?.id || createResult.body.appointment_id;
