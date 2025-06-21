@@ -1,8 +1,148 @@
 # VGU Care - API Documentation
 
 **Base URL**: `http://localhost:5001/api`  
-**Date**: June 20, 2025  
-**Status**: Production Ready ✅
+
+## 📚 Quick Reference for Frontend Developers
+
+### Essential API Endpoints (Copy-Paste Ready)
+
+```javascript
+// Base Configuration
+const API_BASE_URL = 'http://localhost:5001/api';
+
+// Get authentication token
+const getToken = () => {
+    const sessionInfo = localStorage.getItem('session-info');
+    return sessionInfo ? JSON.parse(sessionInfo).token : null;
+};
+
+// Generic API call
+const apiCall = async (endpoint, options = {}) => {
+    const token = getToken();
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+            ...options.headers,
+        },
+    });
+    
+    if (!response.ok) {
+        if (response.status === 401) {
+            localStorage.removeItem('session-info');
+            window.location.href = '/login';
+        }
+        throw new Error(`HTTP ${response.status}`);
+    }
+    return response;
+};
+```
+
+### Most Used API Calls
+
+```javascript
+// Authentication
+const login = async (email, password) => {
+    const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    const data = await response.json();
+    localStorage.setItem('session-info', JSON.stringify(data));
+    return data;
+};
+
+// Get user appointments
+const getAppointments = async () => {
+    const response = await apiCall('/appointments');
+    return response.json();
+};
+
+// Get available time slots
+const getTimeSlots = async (date) => {
+    const response = await apiCall(`/appointments/time-slots/${date}`);
+    return response.json();
+};
+
+// Create appointment
+const createAppointment = async (symptoms, priorityLevel, date, time) => {
+    const response = await apiCall('/appointments', {
+        method: 'POST',
+        body: JSON.stringify({
+            symptoms,
+            priorityLevel,
+            dateScheduled: date,
+            timeScheduled: time
+        })
+    });
+    return response.json();
+};
+
+// Get mood entries
+const getMoodEntries = async () => {
+    const response = await apiCall('/mood-entries');
+    return response.json();
+};
+
+// Create mood entry
+const createMoodEntry = async (mood, notes, intensity) => {
+    const response = await apiCall('/mood-entries', {
+        method: 'POST',
+        body: JSON.stringify({ mood, notes, intensity })
+    });
+    return response.json();
+};
+
+// Get notifications count
+const getNotificationCount = async () => {
+    const response = await apiCall('/notifications/count');
+    return response.json();
+};
+
+// Get user profile
+const getProfile = async () => {
+    const response = await apiCall('/users/me');
+    return response.json();
+};
+```
+
+### Error Handling Template
+
+```javascript
+const handleApiCall = async (apiFunction, ...args) => {
+    try {
+        return await apiFunction(...args);
+    } catch (error) {
+        console.error('API Error:', error);
+        
+        // Show user-friendly message
+        if (error.message.includes('401')) {
+            alert('Please log in again');
+        } else if (error.message.includes('403')) {
+            alert('You do not have permission for this action');
+        } else if (error.message.includes('404')) {
+            alert('Resource not found');
+        } else {
+            alert('Something went wrong. Please try again.');
+        }
+        
+        throw error;
+    }
+};
+
+// Usage:
+const loadAppointments = async () => {
+    try {
+        const appointments = await handleApiCall(getAppointments);
+        setAppointments(appointments.appointments);
+    } catch (error) {
+        // Error already handled by handleApiCall
+    }
+};
+```
+---
 
 ## 🔐 Authentication APIs
 
@@ -757,7 +897,405 @@ All core APIs are ready for frontend integration with:
 
 ---
 
-## 🚀 Frontend Development Recommendations
+## �️ Frontend API Integration Guide
+
+### Common Mistakes and How to Fix Them
+
+#### ❌ **Mistake 1: Invalid String Concatenation**
+```javascript
+// WRONG - This creates NaN
+const apiEndpoint = + 'http://localhost:5001/api/appointments';
+
+// CORRECT
+const apiEndpoint = 'http://localhost:5001/api/appointments';
+// OR with base URL
+const API_BASE_URL = 'http://localhost:5001/api';
+const apiEndpoint = API_BASE_URL + '/appointments';
+```
+
+#### ❌ **Mistake 2: Wrong Port Number**
+```javascript
+// WRONG - Documentation specifies port 5001
+const url = 'http://localhost:5000/api/appointments';
+
+// CORRECT
+const url = 'http://localhost:5001/api/appointments';
+```
+
+#### ❌ **Mistake 3: Headers Configuration Errors**
+```javascript
+// WRONG - Multiple issues
+header: {  // Should be "headers" (plural)
+    'Content-Type': 'application.json',  // Wrong MIME type
+    'Auth': 'Bearer ${token}'  // Wrong header name + template literal issue
+}
+
+// CORRECT
+headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`  // Use backticks for template literals
+}
+```
+
+#### ❌ **Mistake 4: Missing Token Management**
+```javascript
+// WRONG - Hardcoded or missing token
+const token = 'some-token';
+
+// CORRECT - Get token from localStorage
+const getToken = () => {
+    const sessionInfo = localStorage.getItem('session-info');
+    if (sessionInfo) {
+        try {
+            const parsed = JSON.parse(sessionInfo);
+            return parsed.token;
+        } catch (error) {
+            console.warn('Invalid session info');
+            return null;
+        }
+    }
+    return null;
+};
+```
+
+#### ❌ **Mistake 5: No Error Handling**
+```javascript
+// WRONG - No error handling
+const response = await fetch(url);
+const data = await response.json();
+
+// CORRECT - Proper error handling
+const response = await fetch(url);
+if (!response.ok) {
+    if (response.status === 401) {
+        localStorage.removeItem('session-info');
+        window.location.href = '/login';
+        return;
+    }
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+}
+const data = await response.json();
+```
+
+### ✅ **Complete Working Examples**
+
+#### **1. Get Appointments (Corrected)**
+```javascript
+const fetchAppointments = async () => {
+    try {
+        // Get token from localStorage
+        const sessionInfo = localStorage.getItem('session-info');
+        if (!sessionInfo) {
+            throw new Error('No authentication token found');
+        }
+        
+        const { token } = JSON.parse(sessionInfo);
+        
+        const response = await fetch('http://localhost:5001/api/appointments', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('session-info');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Appointments:', data.appointments);
+        console.log('User role:', data.userRole);
+        console.log('Access level:', data.accessLevel);
+        
+        return data.appointments;
+        
+    } catch (error) {
+        console.error('Error fetching appointments:', error);
+        throw error;
+    }
+};
+```
+
+#### **2. Create Appointment with Time Slot Validation**
+```javascript
+const createAppointment = async (appointmentData) => {
+    try {
+        const token = getToken();
+        if (!token) throw new Error('No authentication token');
+
+        // First, check available time slots
+        const slotsResponse = await fetch(
+            `http://localhost:5001/api/appointments/time-slots/${appointmentData.date}`,
+            {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }
+        );
+
+        if (!slotsResponse.ok) {
+            throw new Error('Failed to fetch available time slots');
+        }
+
+        const slotsData = await slotsResponse.json();
+        
+        if (slotsData.availableTimeSlots.length === 0) {
+            throw new Error('No available time slots for the selected date');
+        }
+
+        // Create the appointment
+        const response = await fetch('http://localhost:5001/api/appointments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                symptoms: appointmentData.symptoms,
+                priorityLevel: appointmentData.priorityLevel,
+                dateScheduled: appointmentData.date,
+                timeScheduled: appointmentData.selectedTime
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to create appointment');
+        }
+
+        const data = await response.json();
+        return data.appointment;
+
+    } catch (error) {
+        console.error('Error creating appointment:', error);
+        throw error;
+    }
+};
+```
+
+#### **3. Generic API Call Helper Function**
+```javascript
+const apiCall = async (endpoint, options = {}) => {
+    const token = getToken();
+    const baseURL = 'http://localhost:5001/api';
+    
+    const config = {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+            ...options.headers,
+        },
+    };
+
+    try {
+        const response = await fetch(`${baseURL}${endpoint}`, config);
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('session-info');
+                window.location.href = '/login';
+                throw new Error('Authentication required');
+            }
+            
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+        
+        return response;
+    } catch (error) {
+        console.error(`API call failed: ${endpoint}`, error);
+        throw error;
+    }
+};
+
+// Usage examples:
+const getAppointments = async () => {
+    const response = await apiCall('/appointments');
+    return response.json();
+};
+
+const createMoodEntry = async (moodData) => {
+    const response = await apiCall('/mood-entries', {
+        method: 'POST',
+        body: JSON.stringify(moodData)
+    });
+    return response.json();
+};
+```
+
+### 🔧 **React Hook Integration Examples**
+
+#### **useAppointments Hook**
+```javascript
+import { useState, useEffect } from 'react';
+
+const useAppointments = () => {
+    const [appointments, setAppointments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchAppointments = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await apiCall('/appointments');
+            const data = await response.json();
+            setAppointments(data.appointments || []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const createAppointment = async (appointmentData) => {
+        try {
+            const response = await apiCall('/appointments', {
+                method: 'POST',
+                body: JSON.stringify(appointmentData)
+            });
+            const data = await response.json();
+            await fetchAppointments(); // Refresh list
+            return data;
+        } catch (err) {
+            setError(err.message);
+            throw err;
+        }
+    };
+
+    useEffect(() => {
+        fetchAppointments();
+    }, []);
+
+    return {
+        appointments,
+        loading,
+        error,
+        createAppointment,
+        refetch: fetchAppointments
+    };
+};
+
+// Usage in component:
+const AppointmentList = () => {
+    const { appointments, loading, error, createAppointment } = useAppointments();
+
+    if (loading) return <div>Loading...</div>;
+    if (error) return <div>Error: {error}</div>;
+
+    return (
+        <div>
+            {appointments.map(appointment => (
+                <div key={appointment.id}>
+                    <h3>{appointment.symptoms}</h3>
+                    <p>Status: {appointment.status}</p>
+                    <p>Date: {appointment.dateScheduled}</p>
+                </div>
+            ))}
+        </div>
+    );
+};
+```
+
+#### **useTimeSlots Hook**
+```javascript
+const useTimeSlots = (selectedDate) => {
+    const [timeSlots, setTimeSlots] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const fetchTimeSlots = async (date) => {
+        if (!date) return;
+        
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await apiCall(`/appointments/time-slots/${date}`);
+            const data = await response.json();
+            setTimeSlots(data.availableTimeSlots || []);
+        } catch (err) {
+            setError(err.message);
+            setTimeSlots([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (selectedDate) {
+            fetchTimeSlots(selectedDate);
+        }
+    }, [selectedDate]);
+
+    return { timeSlots, loading, error };
+};
+
+// Usage in component:
+const AppointmentBooking = () => {
+    const [selectedDate, setSelectedDate] = useState('');
+    const [selectedTime, setSelectedTime] = useState('');
+    const { timeSlots, loading } = useTimeSlots(selectedDate);
+
+    return (
+        <div>
+            <input 
+                type="date" 
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+            />
+            
+            {loading ? (
+                <p>Loading available times...</p>
+            ) : (
+                <select 
+                    value={selectedTime}
+                    onChange={(e) => setSelectedTime(e.target.value)}
+                >
+                    <option value="">Select time</option>
+                    {timeSlots.map(slot => (
+                        <option key={slot.start_time} value={slot.start_time}>
+                            {slot.startTimeFormatted} - {slot.endTimeFormatted}
+                        </option>
+                    ))}
+                </select>
+            )}
+        </div>
+    );
+};
+```
+
+### 📋 **Integration Checklist**
+
+- ✅ **Use correct base URL**: `http://localhost:5001/api`
+- ✅ **Include Bearer token**: `Authorization: Bearer ${token}`
+- ✅ **Use proper headers**: `Content-Type: application/json`
+- ✅ **Handle 401 errors**: Redirect to login and clear storage
+- ✅ **Validate responses**: Check `response.ok` before parsing JSON
+- ✅ **Use template literals**: Backticks for `${variable}` interpolation
+- ✅ **Check time slot availability**: Before creating appointments
+- ✅ **Implement loading states**: Show loading indicators during API calls
+- ✅ **Handle errors gracefully**: Show user-friendly error messages
+- ✅ **Use React hooks**: For data fetching and state management
+
+### 🚨 **Common Pitfalls to Avoid**
+
+1. **String concatenation with +**: `+ 'http://...'` creates NaN
+2. **Wrong header names**: `Auth` instead of `Authorization`
+3. **Missing plurals**: `header` instead of `headers`
+4. **Template literal syntax**: Single quotes instead of backticks
+5. **Port number confusion**: Using 5000 instead of 5001
+6. **Missing error handling**: Not checking `response.ok`
+7. **Token management**: Not refreshing expired tokens
+8. **Time slot validation**: Creating appointments without checking availability
+
+---
+
+## �🚀 Frontend Development Recommendations
 
 ### State Management Suggestions
 ```javascript
@@ -861,7 +1399,5 @@ const validateProfile = (formData, userRole) => {
 
 ---
 
-**Last Updated**: June 20, 2025  
+**Last Updated**: June 21, 2025  
 **API Version**: 1.0  
-**Frontend Integration**: Ready ✅
-
