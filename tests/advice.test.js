@@ -88,10 +88,12 @@ async function runAdviceTests() {
       });
     });
 
-    test.describe('Access Control for Advice', function() {
-      test.it('should prevent students from sending advice', async function() {
-        // Create appointment first
-        const createResult = await testHelper.appointment.createAppointment('student');
+    test.describe('Access Control for Advice', function() {      test.it('should prevent students from sending advice', async function() {
+        // Create appointment first - use Tuesday to avoid slot conflicts
+        const createResult = await testHelper.appointment.createAppointment('student', {
+          dateScheduled: '2025-06-24', // Tuesday instead of Monday
+          symptoms: 'Test for student advice prevention'
+        });
         const appointmentId = createResult.body.appointment?.id || createResult.body.appointment_id;
         
         // Try to send advice as student (should fail)
@@ -122,10 +124,12 @@ async function runAdviceTests() {
       });
     });
 
-    test.describe('Advice Validation', function() {
-      test.it('should validate advice message content', async function() {
-        // Create appointment first
-        const createResult = await testHelper.appointment.createAppointment('student');
+    test.describe('Advice Validation', function() {      test.it('should validate advice message content', async function() {
+        // Create appointment first - use Wednesday to avoid slot conflicts
+        const createResult = await testHelper.appointment.createAppointment('student', {
+          dateScheduled: '2025-06-25', // Wednesday instead of Monday
+          symptoms: 'Test for advice validation'
+        });
         const appointmentId = createResult.body.appointment?.id || createResult.body.appointment_id;
         
         // Try to send empty advice

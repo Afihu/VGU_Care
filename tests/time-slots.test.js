@@ -65,11 +65,9 @@ async function runTimeSlotTests() {
       if (!testTimeSlot) {
         console.log('⚠️ Skipping - no available time slots to book');
         return;
-      }
-
-      const appointmentData = {
+      }      const appointmentData = {
         dateScheduled: TEST_DATE_WEEKDAY,
-        timeScheduled: testTimeSlot.time,
+        timeScheduled: testTimeSlot.start_time,
         symptoms: 'Time slot booking test',
         priorityLevel: 'medium'
       };
@@ -90,11 +88,10 @@ async function runTimeSlotTests() {
           actualDate.startsWith(TEST_DATE_WEEKDAY) ||
           actualDate.startsWith(expectedDate)
         ), 
-        `Date should match. Expected: ${TEST_DATE_WEEKDAY}, Actual: ${actualDate}`
-      );
+        `Date should match. Expected: ${TEST_DATE_WEEKDAY}, Actual: ${actualDate}`      );
       
       // Handle time format differences (HH:MM vs HH:MM:SS)
-      const expectedTime = testTimeSlot.time;
+      const expectedTime = testTimeSlot.start_time;
       const actualTime = appointment.body?.appointment?.timeScheduled;
       const timeMatches = actualTime && (
         actualTime === expectedTime ||
@@ -117,7 +114,7 @@ async function runTimeSlotTests() {
       
       test.assertEqual(response.status, 200, 'Should return 200 for time slots check');
       
-      const bookedSlot = response.body.timeSlots.find(slot => slot.time === testTimeSlot.time);
+      const bookedSlot = response.body.timeSlots.find(slot => slot.start_time === testTimeSlot.start_time);
       if (bookedSlot) {
         test.assertEqual(bookedSlot.available, false, 'Booked time slot should be unavailable');
         console.log('✅ Time slot correctly marked as unavailable after booking');
@@ -128,15 +125,13 @@ async function runTimeSlotTests() {
       if (!testTimeSlot) {
         console.log('⚠️ Skipping - no time slot to test double booking');
         return;
-      }
-
-      // Try to book the same time slot again
+      }      // Try to book the same time slot again
       const appointmentData = {
         dateScheduled: TEST_DATE_WEEKDAY,
-        timeScheduled: testTimeSlot.time,
+        timeScheduled: testTimeSlot.start_time,
         symptoms: 'Double booking test',
         priorityLevel: 'medium'
-      };      const response = await testHelper.appointmentHelper.createAppointment('student', appointmentData);
+      };const response = await testHelper.appointmentHelper.createAppointment('student', appointmentData);
       
       // Should either get conflict error OR the time slot should no longer be available
       if (response.status >= 400) {

@@ -199,11 +199,11 @@ class NotificationService extends BaseService {
   /**
    * Notify student when appointment status changes (scheduled, completed, etc.)
    */
-  async notifyStudentAppointmentStatusChange(studentUserId, appointmentId, newStatus, medicalStaffName) {
-    const statusMessages = {
-      'scheduled': `Your appointment has been scheduled by ${medicalStaffName}.`,
+  async notifyStudentAppointmentStatusChange(studentUserId, appointmentId, newStatus, medicalStaffName) {    const statusMessages = {
+      'approved': `Your appointment has been approved by ${medicalStaffName}.`,
       'completed': `Your appointment with ${medicalStaffName} has been completed.`,
-      'cancelled': `Your appointment has been cancelled. Please reschedule if needed.`
+      'cancelled': `Your appointment has been cancelled. Please reschedule if needed.`,
+      'rejected': `Your appointment request has been rejected by ${medicalStaffName}.`
     };
 
     const title = 'Appointment Update';

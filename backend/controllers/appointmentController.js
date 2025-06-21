@@ -51,21 +51,45 @@ exports.getAppointments = async (req, res) => {
 // Create appointment with role-based validation
 exports.createAppointment = async (req, res) => {
   try {
-    const { symptoms, priorityLevel, medical_staff_id, dateScheduled, timeScheduled } = req.body; // Updated API format
+    const { symptoms, priorityLevel, healthIssueType, medical_staff_id, dateScheduled, timeScheduled } = req.body; // Added healthIssueType
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
-    
-    // Validate required fields
-    if (!symptoms || !priorityLevel) {
+      // Validate required fields
+    if (!symptoms || !priorityLevel || !healthIssueType || !dateScheduled || !timeScheduled) {
       return res.status(400).json({ 
-        error: 'Symptoms and priority level are required' 
+        error: 'Symptoms, priority level, health issue type, date, and time are required' 
       });
     }
 
-    // If time is specified, date must also be specified
-    if (timeScheduled && !dateScheduled) {
+    // Validate health issue type
+    const validHealthIssueTypes = ['physical', 'mental'];
+    if (!validHealthIssueTypes.includes(healthIssueType)) {
       return res.status(400).json({ 
-        error: 'Date must be specified when time is provided' 
+        error: 'Health issue type must be either "physical" or "mental"' 
+      });
+    }
+
+    // Validate date format (basic check)
+    const appointmentDate = new Date(dateScheduled);
+    if (isNaN(appointmentDate.getTime())) {
+      return res.status(400).json({ 
+        error: 'Invalid date format. Use YYYY-MM-DD' 
+      });
+    }
+
+    // Validate time format (basic check)
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
+    if (!timeRegex.test(timeScheduled)) {
+      return res.status(400).json({ 
+        error: 'Invalid time format. Use HH:MM:SS (e.g., 14:20:00)' 
+      });
+    }
+
+    // Check if appointment date is in the future
+    const now = new Date();
+    if (appointmentDate <= now) {
+      return res.status(400).json({ 
+        error: 'Appointment date must be in the future' 
       });
     }
     
@@ -73,19 +97,20 @@ exports.createAppointment = async (req, res) => {
     
     if (userRole === 'student') {
       // Students create appointments for themselves
-      appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel, medical_staff_id, dateScheduled, timeScheduled);
+      appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel, healthIssueType, medical_staff_id, dateScheduled, timeScheduled);
     } else if (userRole === 'admin') {
       // Admin can create appointments for students via different route (/api/admin/appointments/users/:userId)
       return res.status(400).json({ 
         error: 'Admins should use /api/admin/appointments/users/:userId endpoint' 
       });    } else if (userRole === 'medical_staff') {
       // Medical staff can create appointments for students with their assignment
-      appointment = await appointmentService.createAppointmentByMedicalStaff(userId, symptoms, priorityLevel, null, dateScheduled, timeScheduled);
+      appointment = await appointmentService.createAppointmentByMedicalStaff(userId, symptoms, priorityLevel, healthIssueType, null, dateScheduled, timeScheduled);
     }
     
     res.status(201).json({ 
       message: 'Appointment created successfully',
-      appointment 
+      appointment,
+      assignedSpecialtyGroup: healthIssueType // Show which specialty group was requested
     });
   } catch (error) {
     console.error('Create appointment error:', error);
@@ -185,24 +210,43 @@ exports.updateAppointment = async (req, res) => {  try {
       return res.status(403).json({ 
         error: 'You do not have permission to update this appointment' 
       });
-    }    // ROLE-BASED STATUS VALIDATION
-    if (updates.status) {
-      const newStatus = updates.status.toLowerCase();
+    }    // ROLE-BASED UPDATE VALIDATION
+    if (userRole === 'student') {
+      // Students can:
+      // 1. Cancel their appointments (status = 'cancelled')
+      // 2. Reschedule (change dateScheduled, timeScheduled)
+      // 3. Update symptoms and priority
       
-      if (userRole === 'student') {
-        // Students can only schedule or cancel their appointments
-        if (!['scheduled', 'cancelled'].includes(newStatus)) {
+      if (updates.status) {
+        const newStatus = updates.status.toLowerCase();
+        if (!['cancelled'].includes(newStatus)) {
           return res.status(403).json({
-            error: 'Students can only schedule or cancel appointments',
-            allowedStatuses: ['scheduled', 'cancelled']
+            error: 'Students can only cancel appointments',
+            allowedStatuses: ['cancelled']
           });
         }
-      } else if (userRole === 'medical_staff') {
-        // Medical staff can approve, reject, schedule, or complete appointments
-        if (!['approved', 'rejected', 'scheduled', 'completed'].includes(newStatus)) {
+      }
+      
+      // Students can update: dateScheduled, timeScheduled, symptoms, priorityLevel
+      const allowedStudentFields = ['dateScheduled', 'timeScheduled', 'symptoms', 'priorityLevel', 'status'];
+      const requestedFields = Object.keys(updates);
+      const unauthorizedFields = requestedFields.filter(field => !allowedStudentFields.includes(field));
+      
+      if (unauthorizedFields.length > 0) {
+        return res.status(403).json({
+          error: 'Students cannot update these fields',
+          unauthorizedFields,
+          allowedFields: allowedStudentFields
+        });      }
+      
+    } else if (userRole === 'medical_staff') {
+      // Medical staff can approve, reject, or complete appointments
+      if (updates.status) {
+        const newStatus = updates.status.toLowerCase();
+        if (!['approved', 'rejected', 'completed'].includes(newStatus)) {
           return res.status(403).json({
-            error: 'Medical staff can approve, reject, schedule, or complete appointments',
-            allowedStatuses: ['approved', 'rejected', 'scheduled', 'completed']
+            error: 'Medical staff can approve, reject, or complete appointments',
+            allowedStatuses: ['approved', 'rejected', 'completed']
           });
         }
       }
@@ -210,12 +254,14 @@ exports.updateAppointment = async (req, res) => {  try {
     }
 
     // Validate general updates
-    if (updates.status && !['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'].includes(updates.status)) {
+    if (updates.status && !['pending', 'approved', 'rejected', 'completed', 'cancelled'].includes(updates.status)) {
       return res.status(400).json({ 
         error: 'Invalid status value',
-        validStatuses: ['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled']
+        validStatuses: ['pending', 'approved', 'rejected', 'completed', 'cancelled']
       });
-    }// Update the appointment
+    }
+
+    // Update the appointment
     const result = await appointmentService.updateAppointment(appointmentId, updates);
     
     res.json({ 

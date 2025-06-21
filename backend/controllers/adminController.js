@@ -430,3 +430,90 @@ exports.deleteAbuseReport = async (req, res) => {
     }
   }
 };
+
+// ==================== BLACKOUT DATE MANAGEMENT ====================
+
+/**
+ * Add blackout date (holiday/maintenance)
+ * Admin privilege: Block specific dates from appointment booking
+ */
+exports.addBlackoutDate = async (req, res) => {
+  try {
+    const { date, reason, type = 'holiday' } = req.body;
+    const adminUserId = req.user.userId;
+    
+    // Validate required fields
+    if (!date || !reason) {
+      return res.status(400).json({ 
+        error: 'Date and reason are required' 
+      });
+    }
+
+    // Validate type
+    const validTypes = ['holiday', 'maintenance', 'staff_training', 'emergency'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ 
+        error: `Type must be one of: ${validTypes.join(', ')}` 
+      });
+    }
+
+    const result = await adminService.addBlackoutDate(date, reason, type, adminUserId);
+    
+    res.status(201).json({
+      message: 'Blackout date added successfully',
+      blackoutDate: result.blackoutDate,
+      cancelledAppointments: result.cancelledCount || 0
+    });
+  } catch (error) {
+    console.error('Add blackout date error:', error);
+    if (error.message.includes('already exists')) {
+      res.status(409).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+};
+
+/**
+ * Remove blackout date
+ * Admin privilege: Restore availability for specific dates
+ */
+exports.removeBlackoutDate = async (req, res) => {
+  try {
+    const { date } = req.params;
+    
+    const result = await adminService.removeBlackoutDate(date);
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Blackout date not found' });
+    }
+
+    res.json({
+      message: 'Blackout date removed successfully',
+      removedDate: result
+    });
+  } catch (error) {
+    console.error('Remove blackout date error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Get blackout dates
+ * Admin privilege: View all blocked dates
+ */
+exports.getBlackoutDates = async (req, res) => {
+  try {
+    const { startDate, endDate, type } = req.query;
+    
+    const blackoutDates = await adminService.getBlackoutDates(startDate, endDate, type);
+    
+    res.json({
+      blackoutDates,
+      count: blackoutDates.length
+    });
+  } catch (error) {
+    console.error('Get blackout dates error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};

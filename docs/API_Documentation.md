@@ -243,10 +243,10 @@ const createAppointment = async (appointmentData) => {
 // Request Body:
 {
   "symptoms": "Updated symptoms",      // Optional
-  "status": "approved",               // Optional: "pending" | "approved" | "rejected" | "scheduled" | "completed" | "cancelled"
+  "status": "approved",               // Optional: "pending" | "approved" | "rejected" | "completed" | "cancelled"
   "priorityLevel": "high",            // Optional: "low" | "medium" | "high"
-  "dateScheduled": "2025-06-21",      // Optional: new date
-  "timeScheduled": "10:00:00"         // Optional: new time (validates availability)
+  "dateScheduled": "2025-06-21",      // Optional: new date (reschedule)
+  "timeScheduled": "10:00:00"         // Optional: new time (reschedule - validates availability)
 }
 
 // Example Response:
@@ -262,8 +262,13 @@ const createAppointment = async (appointmentData) => {
 }
 ```
 **Auth**: Bearer Token (Ownership/Assignment required)  
-**Permission**: Medical staff can update any pending appointment  
-**Features**: **Time Slot Validation** - Prevents moving to unavailable time slots  
+**Access Control**: 
+- **Students**: Can update their own appointments (symptoms, priorityLevel, dateScheduled, timeScheduled) and cancel (status: "cancelled")
+- **Medical Staff**: Can approve/reject/complete any assigned appointment (status: "approved", "rejected", "completed")
+- **Admin**: Can update any field on any appointment
+**Features**: 
+- **Time Slot Validation** - Prevents rescheduling to unavailable time slots
+- **Rescheduling** - Students can change date/time, system validates availability
 **Status**: ✅ **Implemented & Tested**
 
 ### Delete Appointment

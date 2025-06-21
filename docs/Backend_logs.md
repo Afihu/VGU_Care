@@ -480,7 +480,7 @@ PostgreSQL database with full user, appointment, and role management.
 // Update appointment
 PATCH /api/admin/appointments/:appointmentId
 Headers: { Authorization: "Bearer <admin_token>", Content-Type: "application/json" }
-Body: { status: "scheduled" | "completed" | "cancelled", dateScheduled: "ISO date" }
+Body: { status: "approved" | "completed" | "cancelled", dateScheduled: "ISO date" }
 ```
 
 #### Mood Tracker Management  
@@ -674,6 +674,6 @@ Students can now view, create, and update their own medical appointments.
 **Key functionalities & Endpoints:**
 1.  **View:** `GET /api/appointments`
 2.  **Create:** `POST /api/appointments` (Requires: `symptoms`, `priorityLevel`)
-3.  **Update:** `PATCH /api/appointments/:id` (Updatable: `symptoms`, `status` ['scheduled', 'cancelled'], `priorityLevel`, `dateScheduled`)
+3.  **Update:** `PATCH /api/appointments/:id` (Updatable: `symptoms`, `status` ['approved', 'cancelled'], `priorityLevel`, `dateScheduled`, `timeScheduled`)
 
 Detailed docs: `docs/StudentAppointmentManagement.md`.

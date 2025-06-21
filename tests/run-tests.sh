@@ -29,12 +29,20 @@ echo "🕐 Running Time Slots Tests..."
 docker-compose --profile test run --rm test node tests/time-slots.test.js
 
 echo ""
-echo "🏥 Running Medical Staff Tests..."
+echo "� Running Blackout Dates Tests..."
+docker-compose --profile test run --rm test node tests/blackout-dates.test.js
+
+echo ""
+echo "�🏥 Running Medical Staff Tests..."
 docker-compose --profile test run --rm test node tests/medical-staff.test.js
 
 echo ""
 echo "💬 Running Advice System Tests..."
 docker-compose --profile test run --rm test node tests/advice.test.js
+
+echo ""
+echo "🔔 Running Notification Tests..."
+docker-compose --profile test run --rm test node tests/notification.test.js
 
 echo ""
 echo "😊 Running Mood Entry Tests..."

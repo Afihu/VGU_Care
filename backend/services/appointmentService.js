@@ -43,35 +43,57 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     );
   
     return result.rows[0] || null;
-  }  async createAppointment(userId, symptoms, priorityLevel, medicalStaffId = null, dateScheduled = null, timeScheduled = null) {
-    // If date and time are provided, validate the time slot
-    if (dateScheduled && timeScheduled) {
-      const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
-      if (!isAvailable) {
-        throw new Error('Selected time slot is not available');
-      }
-    } else {
-      // Use default scheduling if no specific time provided - set to tomorrow at 10:00 AM
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(10, 0, 0, 0);
-      dateScheduled = tomorrow.toISOString().split('T')[0] + ' 10:00:00';
-      timeScheduled = '10:00:00';
-    }// If no medical staff is specified, automatically assign based on availability and shift schedule
+  }  async createAppointment(userId, symptoms, priorityLevel, healthIssueType, medicalStaffId = null, dateScheduled, timeScheduled) {
+    // Validate required parameters
+    if (!dateScheduled || !timeScheduled) {
+      throw new Error('Date and time are required for appointment scheduling');
+    }
+
+    // Validate health issue type
+    const validHealthIssueTypes = ['physical', 'mental'];
+    if (!validHealthIssueTypes.includes(healthIssueType)) {
+      throw new Error('Health issue type must be either "physical" or "mental"');
+    }
+
+    // Validate the time slot and check for blackout dates
+    const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
+    if (!isAvailable) {
+      throw new Error('Selected time slot is not available');
+    }
+
+    // If no medical staff is specified, automatically assign based on specialty group and availability
     let assignedStaffId = medicalStaffId;
     if (!assignedStaffId) {
       try {
-        const leastAssignedStaff = await this.getLeastAssignedMedicalStaff(dateScheduled, timeScheduled);
+        const leastAssignedStaff = await this.getLeastAssignedMedicalStaffBySpecialty(healthIssueType, dateScheduled, timeScheduled);
         assignedStaffId = leastAssignedStaff.staff_id;
-        console.log(`[DEBUG] Auto-assigned appointment to medical staff: ${leastAssignedStaff.name} (${leastAssignedStaff.appointment_count} existing appointments)`);
+        console.log(`[DEBUG] Auto-assigned appointment to ${healthIssueType} specialist: ${leastAssignedStaff.name} (${leastAssignedStaff.appointment_count} existing appointments)`);
       } catch (error) {
         console.log(`[DEBUG] Could not auto-assign medical staff: ${error.message}`);
         // Continue without assignment if no medical staff available
       }
-    }let queryText, values;
+    }
+
+    let queryText, values;
     if (assignedStaffId) {
       queryText = `
-        INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, time_scheduled, medical_staff_id)
+        INSERT INTO appointments (user_id, symptoms, priority_level, health_issue_type, date_scheduled, time_scheduled, medical_staff_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING 
+          appointment_id as "id",
+          user_id as "userId",
+          status,
+          date_requested as "dateRequested",
+          date_scheduled as "dateScheduled",
+          time_scheduled as "timeScheduled",
+          priority_level as "priorityLevel",
+          symptoms,
+          health_issue_type as "healthIssueType"
+      `;
+      values = [userId, symptoms, priorityLevel, healthIssueType, dateScheduled, timeScheduled, assignedStaffId];
+    } else {
+      queryText = `
+        INSERT INTO appointments (user_id, symptoms, priority_level, health_issue_type, date_scheduled, time_scheduled)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING 
           appointment_id as "id",
@@ -81,24 +103,10 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
           date_scheduled as "dateScheduled",
           time_scheduled as "timeScheduled",
           priority_level as "priorityLevel",
-          symptoms
+          symptoms,
+          health_issue_type as "healthIssueType"
       `;
-      values = [userId, symptoms, priorityLevel, dateScheduled, timeScheduled, assignedStaffId];
-    } else {
-      queryText = `
-        INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, time_scheduled)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING 
-          appointment_id as "id",
-          user_id as "userId",
-          status,
-          date_requested as "dateRequested",
-          date_scheduled as "dateScheduled",
-          time_scheduled as "timeScheduled",
-          priority_level as "priorityLevel",
-          symptoms
-      `;
-      values = [userId, symptoms, priorityLevel, dateScheduled, timeScheduled];
+      values = [userId, symptoms, priorityLevel, healthIssueType, dateScheduled, timeScheduled];
     }const result = await query(queryText, values);
     const appointment = result.rows[0];
     console.log(`[DEBUG] Appointment created:`, appointment);
@@ -156,7 +164,7 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       console.log(`[DEBUG] updateAppointment - Received status for update: '${status}' (type: ${typeof status})`);
       const normalizedStatus = typeof status === 'string' ? status.trim().toLowerCase() : status;
       console.log(`[DEBUG] updateAppointment - Normalized status: '${normalizedStatus}' (type: ${typeof normalizedStatus})`);      // REMOVE THE RESTRICTIVE VALIDATION - Let the controller handle role-based validation
-      const validStatuses = ['pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'];
+      const validStatuses = ['pending', 'approved', 'rejected', 'completed', 'cancelled'];
       if (!validStatuses.includes(normalizedStatus)) {
         console.log(`[DEBUG] Invalid status update attempt. Status must be one of: ${validStatuses.join(', ')}. Received: '${normalizedStatus}'`);
         throw new Error(`Invalid status update. Allowed statuses are: ${validStatuses.join(', ')}.`);
@@ -487,7 +495,7 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       FROM medical_staff ms
       JOIN users u ON ms.user_id = u.user_id
       LEFT JOIN appointments a ON ms.staff_id = a.medical_staff_id 
-        AND a.status IN ('pending', 'approved', 'scheduled')
+        AND a.status IN ('pending', 'approved')
       WHERE u.status = 'active'
       GROUP BY ms.staff_id, ms.user_id, u.name, u.email
       ORDER BY appointment_count ASC, u.name ASC
@@ -499,20 +507,17 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     }
     
     return result.rows[0];
-  }
-  /**
-   * Get the least assigned medical staff member for auto-assignment
-   * Now considers shift schedules for better assignment
+  }  /**
+   * Get the least assigned medical staff member by specialty group for auto-assignment
    */
-  async getLeastAssignedMedicalStaff(preferredDate = null, preferredTime = null) {
+  async getLeastAssignedMedicalStaffBySpecialty(healthIssueType, preferredDate = null, preferredTime = null) {
     let queryText;
-    let values = [];
+    let values = [healthIssueType];
 
     if (preferredDate && preferredTime) {
-      // Get available staff based on shift schedule for the specific date/time
+      // Get available staff based on specialty group and shift schedule
       const inputDate = new Date(preferredDate);
       const dayOfWeek = inputDate.getDay();
-      const dayName = this.getDayName(dayOfWeek);
       
       queryText = `
         SELECT 
@@ -520,6 +525,7 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
           u.user_id,
           u.name,
           ms.specialty,
+          ms.specialty_group,
           ms.shift_schedule,
           COUNT(a.appointment_id) as appointment_count
         FROM medical_staff ms
@@ -527,17 +533,20 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
         LEFT JOIN appointments a ON ms.staff_id = a.medical_staff_id 
           AND a.status NOT IN ('cancelled', 'rejected', 'completed')
         WHERE u.status = 'active'
-        GROUP BY ms.staff_id, u.user_id, u.name, ms.specialty, ms.shift_schedule
+          AND ms.specialty_group = $1
+        GROUP BY ms.staff_id, u.user_id, u.name, ms.specialty, ms.specialty_group, ms.shift_schedule
         ORDER BY appointment_count ASC, u.name ASC
+        LIMIT 1
       `;
     } else {
-      // General assignment without time consideration
+      // General assignment by specialty group without time consideration
       queryText = `
         SELECT 
           ms.staff_id,
           u.user_id,
           u.name,
           ms.specialty,
+          ms.specialty_group,
           ms.shift_schedule,
           COUNT(a.appointment_id) as appointment_count
         FROM medical_staff ms
@@ -545,29 +554,20 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
         LEFT JOIN appointments a ON ms.staff_id = a.medical_staff_id 
           AND a.status NOT IN ('cancelled', 'rejected', 'completed')
         WHERE u.status = 'active'
-        GROUP BY ms.staff_id, u.user_id, u.name, ms.specialty, ms.shift_schedule
+          AND ms.specialty_group = $1
+        GROUP BY ms.staff_id, u.user_id, u.name, ms.specialty, ms.specialty_group, ms.shift_schedule
         ORDER BY appointment_count ASC, u.name ASC
+        LIMIT 1
       `;
     }
 
+    console.log(`[DEBUG] Looking for ${healthIssueType} specialists...`);
     const result = await query(queryText, values);
     
     if (result.rows.length === 0) {
-      throw new Error('No available medical staff found');
+      throw new Error(`No available medical staff found for ${healthIssueType} health issues`);
     }
-
-    // If we have a preferred time, filter by availability
-    if (preferredDate && preferredTime) {
-      const availableStaff = result.rows.filter(staff => {
-        return this.isStaffAvailableAtTime(staff.shift_schedule, preferredDate, preferredTime);
-      });
-
-      if (availableStaff.length > 0) {
-        return availableStaff[0]; // Return the least assigned available staff
-      }
-    }
-
-    return result.rows[0]; // Return the least assigned staff overall
+      return result.rows[0];
   }
 
   /**
@@ -612,10 +612,9 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     const [shiftStart, shiftEnd] = shift.split('-');
     return timeSlot >= shiftStart && timeSlot <= shiftEnd;
   }
-
   /**
    * Get available time slots for a specific date
-   * Returns time slots that are not already booked for the given date
+   * Returns time slots that are not already booked for the given date (excludes blackout dates)
    */  async getAvailableTimeSlots(date) {
     const inputDate = new Date(date);
     const dayOfWeek = inputDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
@@ -623,6 +622,15 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     // No slots available on weekends
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return [];
+    }
+
+    // Check for blackout dates (holidays)
+    const blackoutCheck = await query(`
+      SELECT reason, type FROM blackout_dates WHERE date = $1
+    `, [date]);
+    
+    if (blackoutCheck.rows.length > 0) {
+      return []; // No slots available on blackout dates
     }
 
     // Convert JavaScript day (0-6) to our database format (1-5 for Mon-Fri)
@@ -656,11 +664,19 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       available: true
     }));
   }
-
   /**
-   * Check if a specific time slot is available for booking
+   * Check if a specific time slot is available for booking (includes blackout date check)
    */
   async isTimeSlotAvailable(date, timeScheduled) {
+    // Check for blackout dates first
+    const blackoutCheck = await query(`
+      SELECT 1 FROM blackout_dates WHERE date = $1
+    `, [date]);
+    
+    if (blackoutCheck.rows.length > 0) {
+      return false; // Date is blocked
+    }
+
     const inputDate = new Date(date);
     const dayOfWeek = inputDate.getDay();
     

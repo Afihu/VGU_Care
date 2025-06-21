@@ -11,14 +11,42 @@ class AppointmentHelper {
     this.createdAppointmentIds = [];
   }  /**
    * Create a test appointment
-   */
-  async createAppointment(userType = 'student', appointmentData = {}) {
+   */  async createAppointment(userType = 'student', appointmentData = {}) {
+    // Get next weekday for appointment scheduling
+    const nextWeekday = new Date();
+    nextWeekday.setDate(nextWeekday.getDate() + 1);
+    
+    // Skip weekends - find next Monday-Friday
+    while (nextWeekday.getDay() === 0 || nextWeekday.getDay() === 6) {
+      nextWeekday.setDate(nextWeekday.getDate() + 1);
+    }    
+    const appointmentDate = nextWeekday.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    // Get available time slots and pick one dynamically
+    const timeSlotsResponse = await this.getAvailableTimeSlots(appointmentDate, userType);
+    const availableSlots = timeSlotsResponse.body.availableTimeSlots || [];
+    
+    if (availableSlots.length === 0) {
+      throw new Error('No available time slots for testing');
+    }
+    
+    // Use a different slot each time by using random selection from available slots
+    const randomIndex = Math.floor(Math.random() * availableSlots.length);
+    const selectedSlot = availableSlots[randomIndex];
+    
+    console.log(`[DEBUG] Selected slot ${randomIndex + 1}/${availableSlots.length}: ${selectedSlot.start_time}`);
+
     const defaultData = {
       symptoms: 'Test symptoms for automated testing',
-      priorityLevel: 'medium'
+      priorityLevel: 'medium',
+      healthIssueType: 'physical', // Default to physical health issues
+      dateScheduled: appointmentDate,
+      timeScheduled: selectedSlot.start_time // Use dynamically selected slot
     };
 
     const data = { ...defaultData, ...appointmentData };
+
+    console.log('[DEBUG] Final appointment data being sent:', JSON.stringify(data, null, 2));
 
     const response = await makeRequest(`${API_BASE_URL}/api/appointments`, 'POST', data, {
       'Authorization': `Bearer ${this.testHelper.auth.getToken(userType)}`
@@ -56,17 +84,30 @@ class AppointmentHelper {
 
     return response; // Return full response for testing
   }
-
   /**
    * Test create appointment functionality
    */
   async testCreateAppointment(appointmentData = {}, userType = 'student') {
+    // Get next weekday for appointment scheduling
+    const nextWeekday = new Date();
+    nextWeekday.setDate(nextWeekday.getDate() + 1);
+    
+    // Skip weekends - find next Monday-Friday
+    while (nextWeekday.getDay() === 0 || nextWeekday.getDay() === 6) {
+      nextWeekday.setDate(nextWeekday.getDate() + 1);
+    }
+    
+    const appointmentDate = nextWeekday.toISOString().split('T')[0]; // YYYY-MM-DD format
+
     const defaultData = {
       symptoms: 'Test symptoms for automated testing',
-      priorityLevel: 'medium'
+      priorityLevel: 'medium',
+      healthIssueType: 'physical',
+      dateScheduled: appointmentDate,
+      timeScheduled: '14:20:00' // Use available time slot
     };
 
-    const data = { ...defaultData, ...appointmentData };    const response = await makeRequest(`${API_BASE_URL}/api/appointments`, 'POST', data, {
+    const data = { ...defaultData, ...appointmentData };const response = await makeRequest(`${API_BASE_URL}/api/appointments`, 'POST', data, {
       'Authorization': `Bearer ${this.testHelper.auth.getToken(userType)}`
     });
 
@@ -109,6 +150,35 @@ class AppointmentHelper {
     );
 
     return response; // Return full response for testing
+  }
+
+  /**
+   * Reschedule appointment (for students) - Update date and time
+   */
+  async rescheduleAppointment(appointmentId, dateScheduled, timeScheduled, userType = 'student') {
+    const updateData = {
+      dateScheduled,
+      timeScheduled
+    };
+
+    const response = await makeRequest(`${API_BASE_URL}/api/appointments/${appointmentId}`, 'PATCH', 
+      updateData, 
+      { 'Authorization': `Bearer ${this.testHelper.auth.getToken(userType)}` }
+    );
+
+    return response;
+  }
+
+  /**
+   * Update appointment details (for students) - Update symptoms, priority, etc.
+   */
+  async updateAppointmentDetails(appointmentId, updateData, userType = 'student') {
+    const response = await makeRequest(`${API_BASE_URL}/api/appointments/${appointmentId}`, 'PATCH', 
+      updateData, 
+      { 'Authorization': `Bearer ${this.testHelper.auth.getToken(userType)}` }
+    );
+
+    return response;
   }
 
   /**
