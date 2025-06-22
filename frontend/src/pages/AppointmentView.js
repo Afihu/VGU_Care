@@ -1,8 +1,36 @@
 import React from 'react';
 import greens from '../assets/images/Healthy_Greens.jpg';
 import '../css/AppointmentView.css';
+import api from '../services/api';
+import helpers from '../utils/helpers';
 
 export default function AppointmentView() {
+
+  const userInfo = localStorage.getItem('session-info');
+  const parsed = helpers.JSONparser(userInfo);
+  const userToken = parsed.token;
+  
+  const handleAppointmentRetrieve = async (token) => {
+  
+    const response = await api.appointmentRetrieveService(token); 
+    const data = await response.json();
+    
+    return data;
+  }
+
+  async function testHandle() { //only used for testing 
+    console.trace("Call stack for testHandle()"); 
+    try {
+      const appointmentData = await handleAppointmentRetrieve(userToken);
+      console.log(appointmentData);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  testHandle();
+    
+  
+
   return (
     <div className="appointment-view">
       {/* Title Box */}
