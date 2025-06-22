@@ -9,27 +9,18 @@ export default function AppointmentView() {
   const userInfo = localStorage.getItem('session-info');
   const parsed = helpers.JSONparser(userInfo);
   const userToken = parsed.token;
-  
+
   const handleAppointmentRetrieve = async (token) => {
   
     const response = await api.appointmentRetrieveService(token); 
     const data = await response.json();
     
-    return data;
+    localStorage.setItem('user-appointments', JSON.stringify(data));
+    
   }
 
-  async function testHandle() { //only used for testing 
-    console.trace("Call stack for testHandle()"); 
-    try {
-      const appointmentData = await handleAppointmentRetrieve(userToken);
-      console.log(appointmentData);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  testHandle();
-    
-  
+  handleAppointmentRetrieve(userToken);
+  console.log(JSON.parse(localStorage.getItem('user-appointments')));  
 
   return (
     <div className="appointment-view">
@@ -70,3 +61,12 @@ export default function AppointmentView() {
     </div>
   );
 }
+
+  // const testHandle = () => { //only used for testing 
+  //   try {
+  //     handleAppointmentRetrieve(userToken);
+  //   } catch (error) {
+  //     console.log(error);   
+  //   }
+  // }
+  // testHandle();
