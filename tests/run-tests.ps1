@@ -34,16 +34,13 @@ Write-Host ""
 Write-Host "💬 Running Advice System Tests..." -ForegroundColor Yellow
 docker-compose --profile test run --rm test node tests/advice.test.js
 
-Write-Host "🔔 Running Notification System Tests..." -ForegroundColor Yellow
-docker-compose --profile test run --rm test node tests/notification.test.js
->>>>>>> origin/backend
+Write-Host ""
+Write-Host "📧 Running Email Service Tests..." -ForegroundColor Yellow
+docker-compose --profile test run --rm test node tests/email.test.js
 
 Write-Host ""
-Write-Host "✨ All tests completed!" -ForegroundColor Green
-=======
 Write-Host "🔔 Running Notification System Tests..." -ForegroundColor Yellow
 docker-compose --profile test run --rm test node tests/notification.test.js
->>>>>>> origin/backend
 
 Write-Host ""
 Write-Host "✨ All tests completed!" -ForegroundColor Green
