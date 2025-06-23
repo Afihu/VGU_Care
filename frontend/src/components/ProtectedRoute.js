@@ -3,6 +3,8 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
+  console.log(localStorage.getItem('session-info'));
+  
   const sessioninfo = localStorage.getItem('session-info'); // retrieve the stored user
 
   try {

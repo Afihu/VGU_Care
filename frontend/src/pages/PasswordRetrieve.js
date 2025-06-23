@@ -22,7 +22,7 @@ function PasswordRetrieve() {
             if (response.ok) {
                 setMessage(`Submission successful!`);
                 console.log('Email found, submission successful:', data);
-                localStorage.setItem('user', email);
+                localStorage.setItem('user-email', email);
             } else {
                 setMessage(data.message || 'Login failed');
                 console.error('Submission failed:', data);

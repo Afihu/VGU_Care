@@ -9,6 +9,8 @@ import {useNavigate} from 'react-router-dom';
 
 function Login() {
 
+  
+  localStorage.clear();
   const navigateTo = useNavigate();
   console.log(
     `
@@ -32,8 +34,7 @@ function Login() {
         :_                     /
           '-  .__  __. _ _ _ ) 
     `
-  );
-  
+  ); 
 
   // initialize essential variables
   const [email, setEmail] = useState('');
