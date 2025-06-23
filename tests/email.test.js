@@ -5,6 +5,9 @@ require('dotenv').config(); // Load .env from project root
 const { SimpleTest } = require('./testFramework');
 const EmailService = require('../backend/services/emailService');
 
+// Set the email address to be tested here
+const testRecipientEmail = '10422061@student.vgu.edu.vn';
+
 async function runEmailTests() {
   const test = new SimpleTest('📧 Email Notification Test Suite');
 
@@ -27,7 +30,7 @@ async function runEmailTests() {
         const emailService = new EmailService();
         
         const testEmail = {
-          to: process.env.EMAIL_FROM, // Send to same email as sender
+          to: testRecipientEmail, // Use the variable here
           subject: '🏥 VGU Care - Email Test',
           html: `
             <h2>🎉 Email Configuration Successful!</h2>
