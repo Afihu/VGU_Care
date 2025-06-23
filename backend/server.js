@@ -104,13 +104,6 @@ try {
 }
 
 try {
-  app.use('/api/mood', require('./routes/moodRoutes'));
-  console.log('✅ moodRoutes loaded');
-} catch (error) {
-  console.error('❌ moodRoutes failed:', error.message);
-}
-
-try {
   app.use('/api/advice', require('./routes/adviceRoutes'));
   console.log('✅ adviceRoutes loaded');
 } catch (error) {

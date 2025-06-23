@@ -23,7 +23,6 @@ class NotificationHelper {
     
     return response;
   }
-
   /**
    * Mark a notification as read
    */
@@ -32,7 +31,7 @@ class NotificationHelper {
     
     const response = await makeRequest(
       `${API_BASE_URL}/api/notifications/${notificationId}/read`, 
-      'PUT', 
+      'PATCH', 
       null, 
       {
         Authorization: `Bearer ${token}`

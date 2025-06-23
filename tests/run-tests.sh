@@ -36,13 +36,16 @@ echo ""
 echo "💬 Running Advice System Tests..."
 docker-compose --profile test run --rm test node tests/advice.test.js
 
-echo ""
-echo "😊 Running Mood Entry Tests..."
-docker-compose --profile test run --rm test node tests/mood.test.js
+echo "🔔 Running Notification System Tests..."
+docker-compose --profile test run --rm test node tests/notification.test.js
+>>>>>>> origin/backend
 
 echo ""
-echo "📧 Running Email Service Tests..."
-docker-compose --profile test run --rm test node tests/email.test.js
+echo "✨ All tests completed!"
+=======
+echo "🔔 Running Notification System Tests..."
+docker-compose --profile test run --rm test node tests/notification.test.js
+>>>>>>> origin/backend
 
 echo ""
 echo "✨ All tests completed!"

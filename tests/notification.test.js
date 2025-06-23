@@ -42,11 +42,15 @@ async function runNotificationTests() {
   test.describe('Appointment Notification Workflow', function() {    test.it('should create appointment and trigger notifications', async function() {
       // Create an appointment to trigger notifications - use dynamic date
       const testDate = DateUtils.getNextWeekday(1);
-      const appointment = await testHelper.appointmentHelper.createAppointment('student', {
+      const response = await testHelper.appointmentHelper.createAppointment('student', {
         dateScheduled: testDate,
         reason: 'Test appointment for notification'
       });
       
+      test.assertEqual(response.status, 201, 'Appointment creation should return 201 status');
+      test.assertExists(response.body.appointment, 'Response body should contain appointment object');
+      
+      const appointment = response.body.appointment;
       testAppointmentId = appointment.id;
       test.assertExists(testAppointmentId, 'Appointment should be created');
       console.log('✅ Test appointment created for notification testing');
