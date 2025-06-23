@@ -21,7 +21,7 @@
   
   .appointment-content {
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
   }
   
   .appointment-status-buttons {
@@ -72,8 +72,21 @@
   
   .appointment-image {
     width: 360px;
-    height: 500px;
-    object-fit: cover;
-    margin-left: 250px;
+    height: 600px;
   }
+
+.appointment-table{
+    width: 100%;
+    margin-left: 100px
+}
+
+.appointment-card{
+    width: 80%;
+    padding: 20px;
+    background-color: #4739df;
+    border-radius: 15px;
+    margin-top: 20px;
+    border-color: #ffffff;
+    color: #ffffff;
+}
   

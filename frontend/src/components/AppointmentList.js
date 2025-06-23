@@ -3,15 +3,14 @@ import '../css/AppointmentView.css';
 
 function AppointmentList({userAppointments}) {
     return(
-        <div className="entry-table">
-            <h2>All Appointments</h2>
+        <div className="appointment-table">
             {userAppointments.length === 0 ? (
                 <p>No appointment has been made</p>
             ) : (
-                userAppointments.map((entry, index) => (
+                userAppointments.map((userAppointment, index) => (
                     <div className="appointment-card" key={index}>
-                        <strong>{entry.status}</strong> - {entry.dateRequested}, {entry.dateScheduled}
-                        {(entry.hasAdvice) ? (<p>Doctor advice available</p>) : null}
+                        <strong>{userAppointment.status}</strong> - {userAppointment.dateRequested}, {userAppointment.dateScheduled}
+                        {(userAppointment.hasAdvice) ? (<p>Doctor advice available</p>) : null}
                     </div>
                 ))
             )}

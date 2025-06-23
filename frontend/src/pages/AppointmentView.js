@@ -1,26 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import greens from '../assets/images/Healthy_Greens.jpg';
 import '../css/AppointmentView.css';
 import api from '../services/api';
 import helpers from '../utils/helpers';
+import AppointmentList from '../components/AppointmentList';
 
 export default function AppointmentView() {
 
+  // variables for session info
   const userInfo = localStorage.getItem('session-info');
   const parsed = helpers.JSONparser(userInfo);
   const userToken = parsed.token;
+  const [userAppointments, setUserAppointments] = useState([]);
 
   const handleAppointmentRetrieve = async (token) => {
-  
     const response = await api.appointmentRetrieveService(token); 
-    const data = await response.json();
-    
-    localStorage.setItem('user-appointments', JSON.stringify(data));
-    
+    const data = await response.json(); 
+    return data;
   }
 
-  handleAppointmentRetrieve(userToken);
-  console.log(JSON.parse(localStorage.getItem('user-appointments')));  
+  // handleAppointmentRetrieve(userToken);
+
+  useEffect(() => {
+    const fetchUserAppointments = async() => {
+      try {
+        let data = await handleAppointmentRetrieve(userToken);
+        data = Object.entries(data.appointments).map(item => item[1]);
+        setUserAppointments(data);
+      } catch (error) {
+        console.error("Failed to fetch appointments: ", error);
+      }
+    }
+    fetchUserAppointments();
+  }, []);
+
+  useEffect(() => {
+    console.log("appointmnrnt: ", userAppointments);
+  })
+
 
   return (
     <div className="appointment-view">
@@ -52,11 +69,12 @@ export default function AppointmentView() {
         </div>
 
         {/* Image on the right */}
-        <img
+        {/* <img
           src={greens}
           alt="Healthy Greens"
           className="appointment-image"
-        />
+        />       */}
+        <AppointmentList userAppointments={userAppointments} />
       </div>
     </div>
   );
