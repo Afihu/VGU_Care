@@ -16,6 +16,7 @@ export default function TrackMood() {
         const fetchMoodEntries = async () => {
             try {
                 const data = await getMoodEntries();
+                console.log('Fetched mood entries:', data);
                 setEntries(data);
             } catch (error) {
                 console.error('Failed to load mood entries:', error);

@@ -41,7 +41,7 @@ const apiCall = async (endpoint, options = {}) => {
     throw new Error(errorData?.error || `API error: ${response.status}`);
   }
 
-  return response;
+  return await response.json();   //return parsed JSON response
 };
 
 export default apiCall;

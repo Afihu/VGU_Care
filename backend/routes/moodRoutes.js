@@ -13,11 +13,15 @@ router.use(authMiddleware);
  * - Admin: All mood entries
  */
 
-// Get mood entries with role-based filtering
-router.get('/', requireMoodTrackerAccess, (req, res) => {
-  // Controller will use req.moodAccess.filter for query filtering
-  res.json({ message: 'Get mood entries endpoint - role-based access implemented' });
-});
+// // Get mood entries with role-based filtering
+// router.get('/', requireMoodTrackerAccess, (req, res) => {
+//   // Controller will use req.moodAccess.filter for query filtering
+//   res.json({ message: 'Get mood entries endpoint - role-based access implemented' });
+// });
+const moodController = require('../controllers/moodController');
+router.get('/', requireMoodTrackerAccess, moodController.getMoodEntries);
+// SOMEONE FORGOT TO CALL THE CONTROLLER HERE, FIXED IT
+
 
 // Create mood entry - students can only create their own
 router.post('/', requireMoodTrackerAccess, (req, res) => {

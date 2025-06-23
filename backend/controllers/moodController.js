@@ -13,7 +13,7 @@ exports.getMoodEntries = async (req, res) => {
     
     const entries = await moodService.getMoodEntriesByUserId(userId);
     
-    res.json({ entries });
+    res.json( entries );  //will not work with curly brackets
   } catch (err) {
     console.error('Get mood entries error:', err);
     res.status(500).json({ error: err.message });
