@@ -34,7 +34,7 @@ export default function RequestAppointment() {
     };
 
     try {
-      const response = await fetch('http://localhost:5000/api/appointments', {
+      const response = await fetch('http://localhost:5001/api/appointments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,20 +123,7 @@ export default function RequestAppointment() {
           </div>
         </div>
 
-        <CareProviderList providers={[
-          {
-            name: 'Dr. Alice Johnson',
-            position: 'Therapist',
-            speciality: 'Cognitive Behavioral Therapy',
-            staff_id: 'T001'
-          },
-          {
-            name: 'Nurse Bob Smith',
-            position: 'Nurse',
-            speciality: 'Mental Health',
-            staff_id: 'N002'
-          }
-        ]} />
+        <CareProviderList />
 
       </div>
 
