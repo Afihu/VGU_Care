@@ -62,64 +62,9 @@ async function runEmailTests() {
   }
 }
 
-async function testEmail() {
-  // Force reload environment variables
-  delete require.cache[require.resolve('dotenv')];
-  require('dotenv').config(); 
-  
-  console.log('🧪 Testing SendGrid Email Configuration...');
-  console.log(`📧 Provider: ${process.env.EMAIL_PROVIDER}`);
-  console.log(`🔑 API Key: ${process.env.SENDGRID_API_KEY ? 'Set' : 'Missing'}`);
-  console.log(`📤 From: ${process.env.EMAIL_FROM}`);
-  console.log(`📧 Admin: ${process.env.ADMIN_EMAIL}`);
-  
-  if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your-sendgrid-api-key-here') {
-    console.log('❌ Please set your SENDGRID_API_KEY in .env file');
-    process.exit(1);
-  }
-
-  try {
-    const emailService = new EmailService();
-    
-    // Send a test email to yourself
-    const testEmail = {
-      to: 'kath.maithi@gmail.com', // Your verified email
-      subject: '🏥 VGU Care - Email Test',
-      html: `
-        <h2>🎉 Email Configuration Successful!</h2>
-        <p>Your VGU Care email system is working correctly with SendGrid.</p>
-        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-        <p><strong>Provider:</strong> SendGrid</p>
-        <hr>
-        <p style="color: #666; font-size: 12px;">
-          This is a test email from VGU Care development environment.
-        </p>
-      `
-    };
-
-    console.log('📤 Sending test email...');
-    await emailService.sendEmail(
-      testEmail.to,
-      testEmail.subject,
-      testEmail.html
-    );
-    console.log('✅ Test email sent successfully!');
-    console.log('📬 Check your inbox (and spam folder)');
-    
-  } catch (error) {
-    console.error('❌ Email test failed:', error.message);
-    if (error.response && error.response.body) {
-      console.error('🔍 SendGrid Error:', error.response.body);
-    }
-  }
-}
-
 // Run tests if this file is executed directly
 if (require.main === module) {
-  runEmailTests().catch(error => {
-    console.error('Test execution failed:', error);
-    process.exit(1);
-  });
+  runEmailTests();
 }
 
-module.exports = { runEmailTests, testEmail };
+module.exports = runEmailTests;
