@@ -41,4 +41,8 @@ echo "😊 Running Mood Entry Tests..."
 docker-compose --profile test run --rm test node tests/mood.test.js
 
 echo ""
+echo "🔔 Running Notification System Tests..."
+docker-compose --profile test run --rm test node tests/notification.test.js
+
+echo ""
 echo "✨ All tests completed!"

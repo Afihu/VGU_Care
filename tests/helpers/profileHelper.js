@@ -9,13 +9,16 @@ class ProfileHelper {
   constructor(testHelper) {
     this.testHelper = testHelper;
     this.authHelper = testHelper.authHelper;
-  }
-  /**
+  }  /**
    * Get profile for any user type (generic method)
    */
   async getProfile(userType) {
+    const token = this.authHelper.getToken(userType);
+    if (!token) {
+      throw new Error(`No authentication token available for ${userType}`);
+    }
     return await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, {
-      'Authorization': `Bearer ${this.authHelper.getToken(userType)}`
+      'Authorization': `Bearer ${token}`
     });
   }
 
@@ -23,8 +26,12 @@ class ProfileHelper {
    * Test getting user profile for any user type
    */
   async testGetProfile(userType, expectedRole) {
+    const token = this.authHelper.getToken(userType);
+    if (!token) {
+      throw new Error(`No authentication token available for ${userType}`);
+    }
     const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'GET', null, {
-      'Authorization': `Bearer ${this.authHelper.getToken(userType)}`
+      'Authorization': `Bearer ${token}`
     });
 
     return {
@@ -37,14 +44,16 @@ class ProfileHelper {
         correctRole: response.body.user && response.body.user.role === expectedRole
       }
     };
-  }
-
-  /**
+  }  /**
    * Test updating user profile
    */
   async testUpdateProfile(userType, updateData) {
-    const response = await makeRequest(`${API_BASE_URL}/api/users/me`, 'PUT', updateData, {
-      'Authorization': `Bearer ${this.authHelper.getToken(userType)}`
+    const token = this.authHelper.getToken(userType);
+    if (!token) {
+      throw new Error(`No authentication token available for ${userType}`);
+    }
+    const response = await makeRequest(`${API_BASE_URL}/api/users/profile`, 'PATCH', updateData, {
+      'Authorization': `Bearer ${token}`
     });
 
     return response;
@@ -54,8 +63,12 @@ class ProfileHelper {
    * Update profile for any user type (generic method)
    */
   async updateProfile(userType, updateData) {
-    return await makeRequest(`${API_BASE_URL}/api/users/me`, 'PUT', updateData, {
-      'Authorization': `Bearer ${this.authHelper.getToken(userType)}`
+    const token = this.authHelper.getToken(userType);
+    if (!token) {
+      throw new Error(`No authentication token available for ${userType}`);
+    }
+    return await makeRequest(`${API_BASE_URL}/api/users/profile`, 'PATCH', updateData, {
+      'Authorization': `Bearer ${token}`
     });
   }
 
