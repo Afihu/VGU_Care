@@ -1,6 +1,7 @@
 const { query } = require("../config/database");
 const BaseService = require("./baseService");
 const notificationService = require("./notificationService");
+const emailService = require("./emailService");
 
 class AppointmentService extends BaseService {  async getAppointmentsByUserId(userId) {
     const result = await query(
@@ -106,8 +107,7 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
           symptoms,
           health_issue_type as "healthIssueType"
       `;
-      values = [userId, symptoms, priorityLevel, healthIssueType, dateScheduled, timeScheduled];
-    }const result = await query(queryText, values);
+      values = [userId, symptoms, priorityLevel, healthIssueType, dateScheduled, timeScheduled];    }const result = await query(queryText, values);
     const appointment = result.rows[0];
     console.log(`[DEBUG] Appointment created:`, appointment);
 
@@ -115,8 +115,9 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     if (assignedStaffId) {
       try {
         // Get student name for notification
-        const studentResult = await query('SELECT name FROM users WHERE user_id = $1', [userId]);
-        const studentName = studentResult.rows[0]?.name || 'Student';
+        const studentResult = await query('SELECT name, email FROM users WHERE user_id = $1', [userId]);
+        const studentDetails = studentResult.rows[0];
+        const studentName = studentDetails?.name || 'Student';
         
         // Get medical staff user_id for notification
         const staffResult = await query('SELECT user_id FROM medical_staff WHERE staff_id = $1', [assignedStaffId]);
@@ -129,8 +130,22 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
             symptoms
           );
         }
+
+        // Send confirmation email to student
+        if (studentDetails?.email) {
+          await emailService.sendAppointmentCreatedEmail(
+            studentDetails.email,
+            studentName,
+            {
+              symptoms,
+              priorityLevel,
+              dateScheduled,
+              timeScheduled
+            }
+          );
+        }
       } catch (notificationError) {
-        console.log(`[DEBUG] Failed to send assignment notification: ${notificationError.message}`);
+        console.log(`[DEBUG] Failed to send notifications: ${notificationError.message}`);
         // Continue without failing the appointment creation
       }
     }

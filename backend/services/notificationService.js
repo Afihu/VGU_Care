@@ -1,14 +1,16 @@
 const { query } = require("../config/database");
 const BaseService = require("./baseService");
+const emailService = require("./emailService");
 
 /**
- * NotificationService - Handles in-app notification system
+ * NotificationService - Handles in-app and email notification system
  * 
  * Features:
  * - Medical staff notifications for new appointment assignments
  * - Student notifications for appointment status changes
  * - Mark notifications as read/unread
  * - Get user notifications with filtering
+ * - Email notifications for important events
  */
 class NotificationService extends BaseService {
 
@@ -143,7 +145,6 @@ class NotificationService extends BaseService {
   }
 
   // ==================== APPOINTMENT-SPECIFIC NOTIFICATIONS ====================
-
   /**
    * Notify medical staff when assigned to new appointment
    */
@@ -151,13 +152,31 @@ class NotificationService extends BaseService {
     const title = 'New Appointment Assigned';
     const message = `You have been assigned a new appointment from ${studentName}. Symptoms: ${symptoms}`;
     
-    return await this.createNotification(
+    // Create in-app notification
+    const notification = await this.createNotification(
       medicalStaffUserId, 
       'appointment_assigned', 
       title, 
       message, 
       appointmentId
     );
+
+    // Send email notification
+    try {
+      const staffDetails = await this.getMedicalStaffFromAppointment(appointmentId);
+      if (staffDetails) {
+        await emailService.sendMedicalStaffAssignmentEmail(
+          staffDetails.email,
+          staffDetails.name,
+          { symptoms, appointmentId },
+          studentName
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send email notification to medical staff:', error.message);
+    }
+
+    return notification;
   }
 
   /**
@@ -167,13 +186,31 @@ class NotificationService extends BaseService {
     const title = 'Appointment Approved';
     const message = `Your appointment has been approved by ${medicalStaffName}. Scheduled for: ${new Date(dateScheduled).toLocaleString()}`;
     
-    return await this.createNotification(
+    // Create in-app notification
+    const notification = await this.createNotification(
       studentUserId, 
       'appointment_approved', 
       title, 
       message, 
       appointmentId
     );
+
+    // Send email notification
+    try {
+      const studentDetails = await this.getStudentFromAppointment(appointmentId);
+      if (studentDetails) {
+        await emailService.sendAppointmentApprovedEmail(
+          studentDetails.email,
+          studentDetails.name,
+          { dateScheduled, appointmentId },
+          medicalStaffName
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send email notification to student:', error.message);
+    }
+
+    return notification;
   }
 
   /**

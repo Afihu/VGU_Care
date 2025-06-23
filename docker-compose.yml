@@ -56,7 +56,6 @@ services:
     restart: unless-stopped
     networks:
       - vgu_network
-
   # Backend API - Optimized
   backend:
     build:
@@ -82,6 +81,12 @@ services:
       - DATABASE_URL=postgresql://vgu_user:vgu_password@postgres:5432/vgu_care
       - JWT_SECRET=your_jwt_secret_key_here
       - PORT=5001
+      # Email configuration
+      - EMAIL_ENABLED=${EMAIL_ENABLED:-true}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-sendgrid}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
     ports:
       - "5001:5001"
     depends_on:
@@ -177,8 +182,7 @@ services:
     profiles:
       - tools
     networks:
-      - vgu_network
-  # Test Runner Service - Optimized
+      - vgu_network  # Test Runner Service - Optimized
   test:
     build:
       context: .                    # Build from project root (not tests/ directory)
@@ -221,6 +225,12 @@ services:
       - DB_PASSWORD=vgu_password
       - DATABASE_URL=postgresql://vgu_user:vgu_password@postgres:5432/vgu_care
       - JWT_SECRET=your_jwt_secret_key_here
+      # Email configuration for tests
+      - EMAIL_ENABLED=true
+      - EMAIL_PROVIDER=sendgrid
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
 
 volumes:
   postgres_data:
