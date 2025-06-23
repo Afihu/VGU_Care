@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../css/TrackMood.css';
 import MoodEntryList from '../components/MoodEntryList';
-
+import { getMoodEntries } from '../services/moodService';
 
 export default function TrackMood() {
     const navigate = useNavigate();
@@ -10,47 +10,27 @@ export default function TrackMood() {
     const [mood, setMood] = useState('');
     const [note, setNote] = useState('');
     const [saved, setSaved] = useState(false);
+    const [entries, setEntries] = useState([]);
+
+    useEffect(() => {
+        const fetchMoodEntries = async () => {
+            try {
+                const data = await getMoodEntries();
+                setEntries(data);
+            } catch (error) {
+                console.error('Failed to load mood entries:', error);
+            }
+        };
+
+        fetchMoodEntries();
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         setSaved(true);
-        // Here you'll later send mood/note to backend
+        // implement something here later
     };
 
-    // Sample entries for testing
-    const [entries, setEntries] = useState([
-        {
-            mood: "Happy",
-            note: "Got high grade in stats. Yayyyyyyyyyyyyy",
-            date: "6/12/2025",
-            time: "09:36:16 PM"
-        },
-        {
-            mood: "Anxious",
-            note: "My big deadline is coming.",
-            date: "6/10/2025",
-            time: "10:03:15 PM"
-        },
-        {
-            mood: "Happy",
-            note: "Had a great day!",
-            date: "6/10/2025",
-            time: "9:58:38 PM"
-        },
-        {
-            mood: "Neutral",
-            note: "Just an average day.",
-            date: "6/10/2025",
-            time: "9:58:38 PM"
-        },
-        {
-            mood: "Sad",
-            note: "Feeling down today.",
-            date: "6/10/2025",
-            time: "9:58:38 PM"
-        }
-    ]);
-    
     return (
         <div>
             <div style={{display: 'flex', alignItems: 'flex-start', flexDirection: 'row', padding: '30px' }}>
@@ -87,4 +67,3 @@ export default function TrackMood() {
         </div>
     );
 }
-

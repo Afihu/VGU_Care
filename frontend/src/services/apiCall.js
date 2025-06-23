@@ -1,26 +1,47 @@
 // services/apiCall.js
-const apiCall = async (endpoint, options = {}) => {
-    const token = localStorage.getItem('token');
-  
-    const defaultHeaders = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
-  
-    const config = {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    };
-  
-    const response = await fetch(`http://localhost:5001/api${endpoint}`, config);
-  
-    return response;
-  };
-  
-  export default apiCall;
-  
 
-  //we use this cause in the API_documentation.md says so
+const getToken = () => {
+  const sessionInfo = localStorage.getItem('session-info');
+  if (!sessionInfo) return null;
+
+  try {
+    const { token } = JSON.parse(sessionInfo);
+    return token;
+  } catch {
+    console.warn('Invalid session-info format');
+    return null;
+  }
+};
+
+const apiCall = async (endpoint, options = {}) => {
+  const token = getToken();
+
+  const defaultHeaders = {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+  };
+
+  const config = {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...(options.headers || {}),
+    },
+  };
+
+  const response = await fetch(`http://localhost:5001/api${endpoint}`, config);
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem('session-info');
+      window.location.href = '/login';
+      return;
+    }
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData?.error || `API error: ${response.status}`);
+  }
+
+  return response;
+};
+
+export default apiCall;
