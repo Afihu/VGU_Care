@@ -1,18 +1,46 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import logo_image from '../assets/images/yes.jpg';
 import eye_icon from '../assets/others/see.svg';
 import blind_icon from '../assets/others/no_see.svg';
-
-
 import {useNavigate} from 'react-router-dom'; 
+
+const API_BASE_URL = 'http://localhost:5001/api';
 
 function Login() {
 
+  async function checkTokenValidity() {
+    let token = localStorage.getItem('session-info');
+
+    if(token != null) {
+      token = JSON.parse(token).token;
+      console.log('Old token detected');
+    } else{
+      console.log('No old token detected');
+      return;
+    }
+
+    try {
+      const response = await fetch(API_BASE_URL + '/users/me', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if(response.ok){
+        console.log('token still valid, picking up from last session');
+      } else localStorage.clear();
+
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   
-  localStorage.clear();
-  const navigateTo = useNavigate();
-  console.log(
+  useEffect(() => {
+    console.log(
     `
     ⠄⠄⠄⠄⢠⣿⣿⣿⣿⣿⢻⣿⣿⣿⣿⣿⣿⣿⣿⣯⢻⣿⣿⣿⣿⣆⠄⠄⠄
     ⠄⠄⣼⢀⣿⣿⣿⣿⣏⡏⠄⠹⣿⣿⣿⣿⣿⣿⣿⣿⣧⢻⣿⣿⣿⣿⡆⠄⠄
@@ -36,7 +64,12 @@ function Login() {
     `
   ); 
 
-  // initialize essential variables
+  checkTokenValidity();
+
+  }, [])
+
+  // initialize essential variables 
+  const navigateTo = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
