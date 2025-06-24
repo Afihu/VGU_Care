@@ -49,6 +49,13 @@ router.patch('/users/:userId/role', adminController.updateUserRole);
  */
 router.patch('/users/:userId/status', adminController.updateUserStatus);
 
+/**
+ * PATCH /api/admin/users/:userId/name
+ * Admin privilege: Update user name
+ * Body: { name: 'New Name' }
+ */
+router.patch('/users/:userId/name', adminController.updateUserName);
+
 // ==================== APPOINTMENT MANAGEMENT ROUTES ====================
 
 /**

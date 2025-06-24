@@ -149,8 +149,19 @@ const loadAppointments = async () => {
 ### Login
 - **POST** `/api/login`
 - **Body**: `{ email: "string", password: "string" }`
-- **Response**: `{ message, user: { email, role, status }, token }`
-- **Status**: ✅ **Implemented & Tested**
+- **Response**: 
+```javascript
+{
+  "message": "Login successful",
+  "user": { 
+    "id": "uuid",
+    "email": "student@vgu.edu.vn", 
+    "role": "student", // Possible values: "student", "medical_staff", "admin"
+    "status": "active" // Possible values: "active", "inactive", "banned"
+  }, 
+  "token": "jwt_token_string"
+}
+```
 
 ### Signup
 - **POST** `/api/signup`
@@ -160,17 +171,18 @@ const loadAppointments = async () => {
     "email": "string (@vgu.edu.vn domain required)",
     "password": "string",
     "name": "string", 
-    "gender": "male|female|other",
-    "age": "number",
-    "role": "student|medical_staff|admin",
+    "gender": "male", // Required: "male", "female", "other"
+    "age": "number", // Required: positive integer
+    "role": "student", // Required: "student", "medical_staff", "admin"
     "roleSpecificData": {
       // For Students:
       "intakeYear": "number (optional, defaults to current year)",
       "major": "string (optional, defaults to 'Undeclared')", 
-      "housingLocation": "dorm_1|dorm_2|off_campus (optional, defaults to 'off_campus')"
+      "housingLocation": "dorm_1", // Optional: "dorm_1", "dorm_2", "off_campus" (defaults to 'off_campus')
       
       // For Medical Staff:
       "specialty": "string (optional, defaults to 'General Medicine')",
+      "specialtyGroup": "physical", // Optional: "physical", "mental" (defaults to 'physical')
       "shiftSchedule": {
         "monday": ["09:00-17:00"],
         "tuesday": ["09:00-17:00"],
@@ -181,7 +193,18 @@ const loadAppointments = async () => {
     }
   }
   ```
-- **Response**: `{ message: "User account created successfully", user: { id, email, role } }`
+- **Response**: 
+```javascript
+{
+  "message": "User account created successfully", 
+  "user": { 
+    "id": "uuid", 
+    "email": "student@vgu.edu.vn", 
+    "role": "student", // "student", "medical_staff", "admin"
+    "status": "active" // Default: "active"
+  }
+}
+```
 - **Validation**:
   - Email must be from @vgu.edu.vn domain
   - All fields (email, password, name, gender, age, role) are required
@@ -191,7 +214,6 @@ const loadAppointments = async () => {
 - **Error Responses**:
   - `400`: Missing required fields, invalid email domain, invalid role, or user already exists
   - `500`: Server error during account creation
-- **Status**: ✅ **Implemented & Tested**
 
 ---
 
@@ -200,11 +222,38 @@ const loadAppointments = async () => {
 ### Get Current User Profile
 - **GET** `/api/users/me`
 - **Auth**: Bearer Token (All Roles)
-- **Response**: `{ user: { email, role, name, age, ... } }`
-- **Status**: ✅ **Implemented & Tested**
-- **Enhanced**: Now includes role-specific fields:
-  - **Students**: `intakeYear`, `major`, `housingLocation` (`dorm_1`, `dorm_2`, `off_campus`)
-  - **Medical Staff**: `specialty`, `shiftSchedule` (JSONB with weekly schedule)
+- **Response**: 
+```javascript
+{
+  "user": {
+    "id": "uuid",
+    "email": "student@vgu.edu.vn",
+    "role": "student", // Possible values: "student", "medical_staff", "admin"
+    "name": "John Doe",
+    "gender": "male", // Possible values: "male", "female", "other"
+    "age": 20,
+    "status": "active", // Possible values: "active", "inactive", "banned"
+    "points": 150,
+    "createdAt": "2025-06-19T10:30:00Z",
+    "updatedAt": "2025-06-19T10:30:00Z",
+    
+    // Role-specific fields for students:
+    "intakeYear": 2023, // Only for students
+    "major": "Computer Science", // Only for students
+    "housingLocation": "dorm_1", // Only for students: "dorm_1", "dorm_2", "off_campus"
+    
+    // Role-specific fields for medical staff:
+    "specialty": "General Medicine", // Only for medical staff
+    "specialtyGroup": "physical", // Only for medical staff: "physical", "mental"
+    "shiftSchedule": { // Only for medical staff
+      "monday": ["09:00-17:00"],
+      "tuesday": ["09:00-17:00"],
+      "wednesday": ["09:00-17:00"],
+      "thursday": ["09:00-17:00"],
+      "friday": ["09:00-17:00"]
+    }  }
+}
+```
 
 ### Update Profile
 - **PATCH** `/api/users/profile`
@@ -213,16 +262,17 @@ const loadAppointments = async () => {
   ```json
   {
     "name": "string (optional)",
-    "gender": "male|female|other (optional)",
+    "gender": "male", // Optional: "male", "female", "other"
     "age": "number (optional)",
     "roleSpecificData": {
       // For Students:
       "intakeYear": "number (optional)",
       "major": "string (optional)",
-      "housingLocation": "dorm_1|dorm_2|off_campus (optional)"
+      "housingLocation": "dorm_1", // Optional: "dorm_1", "dorm_2", "off_campus"
       
       // For Medical Staff:
       "specialty": "string (optional)",
+      "specialtyGroup": "physical", // Optional: "physical", "mental"
       "shiftSchedule": {
         "monday": ["09:00-17:00"],
         "tuesday": ["09:00-17:00", "18:00-22:00"],
@@ -231,29 +281,36 @@ const loadAppointments = async () => {
     }
   }
   ```
-- **Response**: `{ message: "Profile updated successfully", user: {...} }`
-- **Status**: ✅ **Implemented & Tested** *(Updated June 23, 2025)*
-- **Validation**: 
-  - Housing location must be valid enum value
-  - Shift schedule must follow HH:MM-HH:MM format
-  - Start time must be before end time
-  - Proper error handling with 400 status for validation errors
+- **Response**: 
+```javascript
+{
+  "message": "Profile updated successfully", 
+  "user": {
+    // Same structure as GET /users/me response
+    "id": "uuid",
+    "email": "student@vgu.edu.vn",
+    "role": "student", // "student", "medical_staff", "admin"
+    "name": "Updated Name",
+    "gender": "male", // "male", "female", "other"
+    "age": 21,
+    "status": "active", // "active", "inactive", "banned"
+    // ... role-specific fields  
+    }
+}
+```
 
 ### Change Password
 - **PATCH** `/api/users/change-password`
 - **Auth**: Bearer Token
 - **Body**: `{ currentPassword, newPassword }`
-- **Status**: ✅ **Implemented**
 
 ### Get User Profile by ID
 - **GET** `/api/users/profile/:userId`
 - **Auth**: Bearer Token (Role-based access)
-- **Status**: ✅ **Implemented**
 
 ### Get All Students
 - **GET** `/api/users/students`
 - **Auth**: Bearer Token (Medical Staff + Admin only)
-- **Status**: ✅ **Implemented**
 
 ---
 
@@ -268,16 +325,18 @@ const loadAppointments = async () => {
     {
       "id": "uuid",
       "userId": "uuid", 
-      "status": "pending",
+      "medicalStaffId": "uuid", // null if not yet assigned
+      "status": "pending", // Possible values: "pending", "approved", "rejected", "completed", "cancelled"
       "dateRequested": "2025-06-19T10:30:00Z",
       "dateScheduled": "2025-06-20T00:00:00Z",
       "timeScheduled": "09:00:00",
-      "priorityLevel": "medium",
+      "priorityLevel": "medium", // Possible values: "low", "medium", "high"
       "symptoms": "Headache and fever",
+      "healthIssueType": "physical", // Possible values: "physical", "mental"
       "hasAdvice": false
     }
   ],
-  "userRole": "student",
+  "userRole": "student", // Possible values: "student", "medical_staff", "admin"
   "accessLevel": "filtered"
 }
 ```
@@ -286,7 +345,28 @@ const loadAppointments = async () => {
 - Students: Own appointments only
 - Medical Staff: Assigned and pending appointments  
 - Admin: All appointments  
-**Status**: ✅ **Implemented & Tested**
+
+### Get Pending Appointments
+**GET** `/api/appointments/pending`
+```javascript
+// Example Response:
+{
+  "appointments": [
+    {
+      "id": "uuid",
+      "userId": "uuid", 
+      "status": "pending",
+      "dateRequested": "2025-06-19T10:30:00Z",
+      "dateScheduled": "2025-06-20T00:00:00Z",
+      "timeScheduled": "09:00:00",
+      "priorityLevel": "medium",
+      "symptoms": "Headache and fever"
+    }
+  ]
+}
+```
+**Auth**: Bearer Token (Medical Staff + Admin only)  
+**Access**: Medical staff can see pending appointments assigned to them, admin can see all pending appointments  
 
 ### Get Available Time Slots
 **GET** `/api/appointments/time-slots/:date`
@@ -323,7 +403,6 @@ const loadAppointments = async () => {
 - 20-minute time slots from 9:00 AM to 4:00 PM
 - Excludes already booked slots for the specified date
 - Does not show slots for cancelled/rejected appointments  
-**Status**: ✅ **Implemented & Tested**
 
 ### Create Appointment
 **POST** `/api/appointments`
@@ -331,7 +410,8 @@ const loadAppointments = async () => {
 // Request Body:
 {
   "symptoms": "Headache and fever",
-  "priorityLevel": "medium",           // "low" | "medium" | "high"
+  "priorityLevel": "medium",           // Required: "low", "medium", "high"
+  "healthIssueType": "physical",       // Required: "physical", "mental"
   "dateScheduled": "2025-06-20",       // Optional: specific date
   "timeScheduled": "09:00:00"          // Optional: specific time (requires dateScheduled)
 }
@@ -342,12 +422,14 @@ const loadAppointments = async () => {
   "appointment": {
     "id": "uuid",
     "userId": "uuid",
-    "status": "pending", 
+    "medicalStaffId": "uuid", // null if not yet assigned
+    "status": "pending", // Default: "pending"
     "dateRequested": "2025-06-19T10:30:00Z",
     "dateScheduled": "2025-06-20T00:00:00Z",
     "timeScheduled": "09:00:00",
-    "priorityLevel": "medium",
-    "symptoms": "Headache and fever"
+    "priorityLevel": "medium", // "low", "medium", "high"
+    "symptoms": "Headache and fever",
+    "healthIssueType": "physical" // "physical", "mental"
   }
 }
 ```
@@ -358,7 +440,6 @@ const loadAppointments = async () => {
 **Features**: 
 - **Time Slot Validation** - Prevents double-booking of time slots
 - **Auto-Assignment** - Appointments automatically assigned to medical staff with fewest appointments  
-**Status**: ✅ **Implemented & Tested**
 
 ### Integration Flow
 ```javascript
@@ -401,16 +482,17 @@ const createAppointment = async (appointmentData) => {
 {
   "id": "uuid",
   "userId": "uuid",
-  "status": "pending",
+  "medicalStaffId": "uuid", // null if not yet assigned
+  "status": "pending", // Possible values: "pending", "approved", "rejected", "completed", "cancelled"
   "dateRequested": "2025-06-19T10:30:00Z", 
   "dateScheduled": "2025-06-20T00:00:00Z",
   "timeScheduled": "09:00:00",
-  "priorityLevel": "medium",
-  "symptoms": "Headache and fever"
+  "priorityLevel": "medium", // Possible values: "low", "medium", "high"
+  "symptoms": "Headache and fever",
+  "healthIssueType": "physical" // Possible values: "physical", "mental"
 }
 ```
 **Auth**: Bearer Token (Ownership/Assignment required)  
-**Status**: ✅ **Implemented & Tested**
 
 ### Update Appointment
 **PATCH** `/api/appointments/:appointmentId`
@@ -418,8 +500,9 @@ const createAppointment = async (appointmentData) => {
 // Request Body:
 {
   "symptoms": "Updated symptoms",      // Optional
-  "status": "approved",               // Optional: "pending" | "approved" | "rejected" | "completed" | "cancelled"
-  "priorityLevel": "high",            // Optional: "low" | "medium" | "high"
+  "status": "approved",               // Optional: "pending", "approved", "rejected", "completed", "cancelled"
+  "priorityLevel": "high",            // Optional: "low", "medium", "high"
+  "healthIssueType": "mental",        // Optional: "physical", "mental"
   "dateScheduled": "2025-06-21",      // Optional: new date (reschedule)
   "timeScheduled": "10:00:00"         // Optional: new time (reschedule - validates availability)
 }
@@ -428,12 +511,14 @@ const createAppointment = async (appointmentData) => {
 {
   "id": "uuid",
   "userId": "uuid", 
-  "status": "approved",
+  "medicalStaffId": "uuid",
+  "status": "approved", // "pending", "approved", "rejected", "completed", "cancelled"
   "dateRequested": "2025-06-19T10:30:00Z",
   "dateScheduled": "2025-06-21T00:00:00Z",
   "timeScheduled": "10:00:00",
-  "priorityLevel": "high",
-  "symptoms": "Updated symptoms"
+  "priorityLevel": "high", // "low", "medium", "high"
+  "symptoms": "Updated symptoms",
+  "healthIssueType": "mental" // "physical", "mental"
 }
 ```
 **Auth**: Bearer Token (Ownership/Assignment required)  
@@ -444,7 +529,6 @@ const createAppointment = async (appointmentData) => {
 **Features**: 
 - **Time Slot Validation** - Prevents rescheduling to unavailable time slots
 - **Rescheduling** - Students can change date/time, system validates availability
-**Status**: ✅ **Implemented & Tested**
 
 ### Delete Appointment
 **DELETE** `/api/appointments/:appointmentId`
@@ -455,7 +539,6 @@ const createAppointment = async (appointmentData) => {
 }
 ```
 **Auth**: Bearer Token (Ownership/Assignment required)  
-**Status**: ✅ **Implemented**
 
 ---
 
@@ -465,26 +548,115 @@ const createAppointment = async (appointmentData) => {
 - **GET** `/api/medical-staff/profile`
 - **Auth**: Bearer Token (Medical Staff only)
 - **Response**: `{ success: true, user: { name, email, role, specialty, shiftSchedule, ... } }`
-- **Status**: ✅ **Implemented & Tested**
 
 ### Update Medical Staff Profile
 - **PATCH** `/api/medical-staff/profile`
 - **Auth**: Bearer Token (Medical Staff only)
 - **Body**: `{ name?, specialty?, age?, gender?, shiftSchedule? }`
 - **Response**: `{ success: true, user: { ... } }`
-- **Status**: ✅ **Implemented & Tested**
 
 ### Get All Student Profiles
 - **GET** `/api/medical-staff/students`
 - **Auth**: Bearer Token (Medical Staff only)
 - **Response**: `{ success: true, students: [...], count: number }`
-- **Status**: ✅ **Implemented & Tested**
 
 ### Get Specific Student Profile
 - **GET** `/api/medical-staff/students/:studentId`
 - **Auth**: Bearer Token (Medical Staff only)
 - **Response**: `{ success: true, student: { ... } }`
-- **Status**: ✅ **Implemented & Tested**
+
+### Get Pending Appointments (Medical Staff)
+**GET** `/api/medical-staff/appointments/pending`
+```javascript
+// Example Response:
+{
+  "appointments": [
+    {
+      "id": "uuid",
+      "userId": "uuid",
+      "status": "pending",
+      "symptoms": "Headache and fever",
+      "priorityLevel": "medium",
+      "dateScheduled": "2025-06-20T00:00:00Z",
+      "timeScheduled": "09:00:00"
+    }
+  ]
+}
+```
+**Auth**: Bearer Token (Medical Staff only)  
+
+### Approve Appointment (Medical Staff)
+**POST** `/api/medical-staff/appointments/:appointmentId/approve`
+```javascript
+// Example Response:
+{
+  "message": "Appointment approved successfully",
+  "appointment": {
+    "id": "uuid",
+    "status": "approved"
+    // ...other details
+  }
+}
+```
+**Auth**: Bearer Token (Medical Staff only)  
+
+### Reject Appointment (Medical Staff)
+**POST** `/api/medical-staff/appointments/:appointmentId/reject`
+```javascript
+// Request Body (optional):
+{
+  "reason": "Scheduling conflict"
+}
+
+// Example Response:
+{
+  "message": "Appointment rejected successfully",
+  "appointment": {
+    "id": "uuid",
+    "status": "rejected"
+    // ...other details
+  }
+}
+```
+**Auth**: Bearer Token (Medical Staff only)  
+
+### Get Sent Advice (Medical Staff)
+**GET** `/api/medical-staff/advice/sent`
+```javascript
+// Example Response:
+{
+  "advice": [
+    {
+      "id": "uuid",
+      "appointmentId": "uuid",
+      "message": "Please rest and stay hydrated",
+      "sentAt": "2025-06-24T10:30:00Z"
+    }
+  ]
+}
+```
+**Auth**: Bearer Token (Medical Staff only)  
+
+### Send Advice (Medical Staff Route)
+**POST** `/api/medical-staff/appointments/:appointmentId`
+```javascript
+// Request Body:
+{
+  "message": "Please rest and drink plenty of fluids"
+}
+
+// Example Response:
+{
+  "message": "Advice sent successfully",
+  "advice": {
+    "id": "uuid",
+    "appointmentId": "uuid",
+    "message": "Please rest and drink plenty of fluids",
+    "sentAt": "2025-06-24T10:30:00Z"
+  }
+}
+```
+**Auth**: Bearer Token (Medical Staff only)  
 
 ---
 
@@ -494,13 +666,11 @@ const createAppointment = async (appointmentData) => {
 - **GET** `/api/health`
 - **Auth**: None
 - **Response**: `{ message, timestamp }`
-- **Status**: ✅ **Implemented & Tested**
 
 ### Database Test
 - **GET** `/api/test-db`
 - **Auth**: None
 - **Response**: `{ message }`
-- **Status**: ✅ **Implemented & Tested**
 
 ---
 
@@ -512,21 +682,20 @@ const createAppointment = async (appointmentData) => {
 - **PATCH** `/api/admin/users/:userId/role` - Update user role
 - **PATCH** `/api/admin/users/:userId/status` - Update user status
 - **Auth**: Bearer Token (Admin only)
-- **Status**: ✅ **Fully Implemented & Tested**
 
 ### Appointment Management
 - **GET** `/api/admin/appointments` - Get all appointments
 - **POST** `/api/admin/appointments/users/:userId` - Create appointment for user
 - **PATCH** `/api/admin/appointments/:appointmentId` - Update any appointment
 - **Auth**: Bearer Token (Admin only)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ### Mood Tracker Management
 - **GET** `/api/admin/mood-entries` - Get all mood entries
 - **POST** `/api/admin/mood-entries/users/:userId` - Create mood entry for user
 - **PATCH** `/api/admin/mood-entries/:entryId` - Update mood entry
 - **Auth**: Bearer Token (Admin only)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ### Temporary Advice Management
 - **GET** `/api/admin/temporary-advice` - Get all advice
@@ -534,7 +703,7 @@ const createAppointment = async (appointmentData) => {
 - **PATCH** `/api/admin/temporary-advice/:adviceId` - Update advice
 - **DELETE** `/api/admin/temporary-advice/:adviceId` - Delete advice
 - **Auth**: Bearer Token (Admin only)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ### Abuse Reports Management
 - **GET** `/api/admin/abuse-reports` - Get all reports
@@ -542,7 +711,7 @@ const createAppointment = async (appointmentData) => {
 - **PATCH** `/api/admin/abuse-reports/:reportId` - Update report
 - **DELETE** `/api/admin/abuse-reports/:reportId` - Delete report
 - **Auth**: Bearer Token (Admin only)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ---
 
@@ -553,7 +722,7 @@ const createAppointment = async (appointmentData) => {
 ```javascript
 // Request Body:
 {
-  "mood": "happy",        // Required: "happy" | "sad" | "neutral" | "anxious" | "stressed"
+  "mood": "happy",        // Required: "happy", "sad", "neutral", "anxious", "stressed"
   "notes": "Feeling good today!"  // Optional: Additional notes
 }
 
@@ -562,16 +731,16 @@ const createAppointment = async (appointmentData) => {
   "moodEntry": {
     "id": "uuid",
     "userId": "uuid",
-    "mood": "happy",
+    "studentId": "uuid",
+    "mood": "happy", // Possible values: "happy", "sad", "neutral", "anxious", "stressed"
     "notes": "Feeling good today!",
-    "createdAt": "2025-06-23T10:30:00Z",
-    "updatedAt": "2025-06-23T10:30:00Z"
+    "entryDate": "2025-06-23T10:30:00Z"
   }
 }
 ```
 - **Auth**: Bearer Token (Student role only)
 - **Response**: Created mood entry object
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 **GET** `/api/mood-entries`
 ```javascript
@@ -581,23 +750,23 @@ const createAppointment = async (appointmentData) => {
     {
       "id": "uuid",
       "userId": "uuid",
-      "mood": "happy",
+      "studentId": "uuid",
+      "mood": "happy", // Possible values: "happy", "sad", "neutral", "anxious", "stressed"
       "notes": "Feeling good today!",
-      "createdAt": "2025-06-23T10:30:00Z",
-      "updatedAt": "2025-06-23T10:30:00Z"
+      "entryDate": "2025-06-23T10:30:00Z"
     }
   ]
 }
 ```
 - **Auth**: Bearer Token (Student role only)
 - **Response**: Object containing `moodEntries` array with own mood entries
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 **PATCH** `/api/mood-entries/:entryId` or **PUT** `/api/mood-entries/:entryId`
 ```javascript
 // Request Body:
 {
-  "mood": "stressed",     // Optional: Updated mood value
+  "mood": "stressed",     // Optional: "happy", "sad", "neutral", "anxious", "stressed"
   "notes": "Updated notes"  // Optional: Updated notes
 }
 
@@ -606,16 +775,16 @@ const createAppointment = async (appointmentData) => {
   "moodEntry": {
     "id": "uuid",
     "userId": "uuid",
-    "mood": "stressed",
+    "studentId": "uuid",
+    "mood": "stressed", // Updated mood value
     "notes": "Updated notes",
-    "createdAt": "2025-06-23T10:30:00Z",
-    "updatedAt": "2025-06-23T11:00:00Z"
+    "entryDate": "2025-06-23T10:30:00Z"
   }
 }
 ```
 - **Auth**: Bearer Token (Student role only, ownership required)
 - **Response**: Updated mood entry object
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 **DELETE** `/api/mood-entries/:entryId`
 ```javascript
@@ -627,7 +796,7 @@ const createAppointment = async (appointmentData) => {
 ```
 - **Auth**: Bearer Token (Student role only, ownership required)
 - **Response**: Success confirmation
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 **GET** `/api/mood-entries/student/:studentUserId`
 ```javascript
@@ -637,10 +806,10 @@ const createAppointment = async (appointmentData) => {
     {
       "id": "uuid",
       "userId": "uuid",
-      "mood": "happy",
+      "studentId": "uuid",
+      "mood": "happy", // Possible values: "happy", "sad", "neutral", "anxious", "stressed"
       "notes": "Feeling good today!",
-      "createdAt": "2025-06-23T10:30:00Z",
-      "updatedAt": "2025-06-23T10:30:00Z"
+      "entryDate": "2025-06-23T10:30:00Z"
     }
   ]
 }
@@ -648,7 +817,7 @@ const createAppointment = async (appointmentData) => {
 - **Auth**: Bearer Token (Medical Staff only)
 - **Access**: Medical staff can only view mood entries for students they have appointments with
 - **Response**: Object containing `moodEntries` array for specified student
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ### Mood Values
 Valid mood values are:
@@ -671,18 +840,20 @@ Valid mood values are:
     {
       "id": "uuid",
       "userId": "uuid",
-      "type": "appointment_update",
+      "appointmentId": "uuid", // null if not appointment-related
+      "type": "appointment_approved", // Possible values: "appointment_assigned", "appointment_approved", "appointment_rejected", "appointment_completed", "general"
       "title": "Appointment Scheduled",
       "message": "Your appointment has been scheduled for June 20, 2025",
-      "isRead": false,
-      "createdAt": "2025-06-19T10:30:00Z"
+      "isRead": false, // Possible values: true, false
+      "createdAt": "2025-06-19T10:30:00Z",
+      "readAt": null // null if not read, timestamp if read
     }
   ]
 }
 ```
 - **Auth**: Bearer Token (All roles)
 - **Access**: User-specific notifications only
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ### Get Unread Count
 **GET** `/api/notifications/count`
@@ -693,7 +864,7 @@ Valid mood values are:
 }
 ```
 - **Auth**: Bearer Token (All roles)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ### Mark Notification as Read
 **PATCH** `/api/notifications/:notificationId/read`
@@ -701,11 +872,21 @@ Valid mood values are:
 // Example Response:
 {
   "message": "Notification marked as read",
-  "notification": { ... }
+  "notification": {
+    "id": "uuid",
+    "userId": "uuid",
+    "appointmentId": "uuid",
+    "type": "appointment_approved", // "appointment_assigned", "appointment_approved", "appointment_rejected", "appointment_completed", "general"
+    "title": "Appointment Scheduled",
+    "message": "Your appointment has been scheduled for June 20, 2025",
+    "isRead": true, // Now marked as read
+    "createdAt": "2025-06-19T10:30:00Z",
+    "readAt": "2025-06-19T11:00:00Z" // Timestamp when marked as read
+  }
 }
 ```
 - **Auth**: Bearer Token (Ownership required)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ### Mark All Notifications as Read
 **PATCH** `/api/notifications/read-all`
@@ -717,7 +898,7 @@ Valid mood values are:
 }
 ```
 - **Auth**: Bearer Token (All roles)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ### Delete Notification
 **DELETE** `/api/notifications/:notificationId`
@@ -728,7 +909,7 @@ Valid mood values are:
 }
 ```
 - **Auth**: Bearer Token (Ownership required)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ---
 
@@ -898,7 +1079,7 @@ const safeApiCall = async (endpoint, options = {}) => {
 - **PATCH** `/api/reports/:reportId` - Update report
 - **DELETE** `/api/reports/:reportId` - Delete report
 - **Auth**: Bearer Token (Medical Staff + Admin only)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ### Temporary Advice
 - **GET** `/api/advice` - Get advice (All roles can view)
@@ -907,11 +1088,145 @@ const safeApiCall = async (endpoint, options = {}) => {
 - **PATCH** `/api/advice/:adviceId` - Update advice (Medical Staff + Admin)
 - **DELETE** `/api/advice/:adviceId` - Delete advice (Medical Staff + Admin)
 - **Auth**: Bearer Token (Role-based access)
-- **Status**: ✅ **Fully Implemented & Tested**
+ 
 
 ---
 
-## 🔒 Authentication & Authorization
+## � Complete Field Specifications
+
+### User Fields
+```javascript
+{
+  "id": "uuid",
+  "email": "string (@vgu.edu.vn domain)",
+  "role": "student" | "medical_staff" | "admin",
+  "name": "string",
+  "gender": "male" | "female" | "other",
+  "age": "number (positive integer)",
+  "status": "active" | "inactive" | "banned",
+  "points": "number (integer, default: 0)",
+  "createdAt": "ISO 8601 timestamp",
+  "updatedAt": "ISO 8601 timestamp"
+}
+```
+
+### Student-Specific Fields
+```javascript
+{
+  "intakeYear": "number (year)",
+  "major": "string",
+  "housingLocation": "dorm_1" | "dorm_2" | "off_campus"
+}
+```
+
+### Medical Staff-Specific Fields
+```javascript
+{
+  "specialty": "string",
+  "specialtyGroup": "physical" | "mental",
+  "shiftSchedule": {
+    "monday": ["HH:MM-HH:MM"],
+    "tuesday": ["HH:MM-HH:MM"],
+    // ... other days (optional)
+  }
+}
+```
+
+### Appointment Fields
+```javascript
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "medicalStaffId": "uuid | null",
+  "status": "pending" | "approved" | "rejected" | "completed" | "cancelled",
+  "dateRequested": "ISO 8601 timestamp",
+  "dateScheduled": "ISO 8601 timestamp",
+  "timeScheduled": "HH:MM:SS",
+  "priorityLevel": "low" | "medium" | "high",
+  "symptoms": "string (text)",
+  "healthIssueType": "physical" | "mental"
+}
+```
+
+### Mood Entry Fields
+```javascript
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "studentId": "uuid",
+  "mood": "happy" | "sad" | "neutral" | "anxious" | "stressed",
+  "notes": "string | null",
+  "entryDate": "ISO 8601 timestamp",
+  "createdAt": "ISO 8601 timestamp",
+  "updatedAt": "ISO 8601 timestamp"
+}
+```
+
+### Notification Fields
+```javascript
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "appointmentId": "uuid | null",
+  "type": "appointment_assigned" | "appointment_approved" | "appointment_rejected" | "appointment_completed" | "general",
+  "title": "string",
+  "message": "string",
+  "isRead": "boolean",
+  "createdAt": "ISO 8601 timestamp",
+  "readAt": "ISO 8601 timestamp | null"
+}
+```
+
+### Abuse Report Fields
+```javascript
+{
+  "id": "uuid",
+  "staffId": "uuid",
+  "studentId": "uuid | null",
+  "appointmentId": "uuid | null",
+  "reportType": "system_abuse" | "false_urgency" | "inappropriate_behavior" | "other",
+  "description": "string",
+  "status": "open" | "investigating" | "resolved",
+  "reportDate": "ISO 8601 timestamp"
+}
+```
+
+### Blackout Date Fields
+```javascript
+{
+  "date": "YYYY-MM-DD",
+  "reason": "string",
+  "type": "holiday" | "maintenance" | "staff_training" | "emergency",
+  "createdBy": "uuid",
+  "createdAt": "ISO 8601 timestamp"
+}
+```
+
+### Time Slot Fields
+```javascript
+{
+  "startTime": "HH:MM:SS",
+  "endTime": "HH:MM:SS",
+  "startTimeFormatted": "HH:MM",
+  "endTimeFormatted": "HH:MM"
+}
+```
+
+### Validation Rules
+- **Email**: Must end with `@vgu.edu.vn`
+- **Age**: Must be positive integer
+- **Housing Location**: Students only, defaults to `off_campus`
+- **Specialty Group**: Medical staff only, defaults to `physical`
+- **Shift Schedule**: Time format `HH:MM-HH:MM`, start time must be before end time
+- **Appointment Time**: 20-minute slots, Monday-Friday, 9:00 AM - 4:00 PM (excluding 12:00-1:00 PM lunch)
+- **Priority Level**: Required for appointments
+- **Health Issue Type**: Required for appointments, determines medical staff assignment
+- **Mood**: Must be one of the 5 defined values
+- **Status Fields**: All status enums are strictly validated
+
+---
+
+## �🔒 Authentication & Authorization
 
 ### Required Headers
 ```javascript
@@ -941,51 +1256,6 @@ Content-Type: "application/json" // For POST/PATCH requests
 // Server Error
 500: { error: "Internal server error" }
 ```
-
----
-
-## 📊 Implementation Status
-
-### ✅ Fully Implemented & Tested
-- **Authentication System** (Login/Signup with JWT)
-- **Enhanced User Profile Management** (with housing location & shift schedules)
-- **Advanced Appointment Management** (Role-based with auto-assignment & time slot booking)
-- **Medical Staff System** (Complete profile & student access management)
-- **Mood Tracker System** (`/mood-entries` endpoints for comprehensive mood tracking)
-- **Notification System** (Real-time notifications with read/unread status)
-- **Temporary Advice System** (Medical staff can provide advice)
-- **Abuse Reports System** (Reporting and management)
-- **Comprehensive Admin Management** (Complete CRUD for all resources)
-- **Infrastructure APIs** (Health checks and database tests)
-
-### 🎯 Frontend Integration Ready
-All core APIs are ready for frontend integration with:
-- Comprehensive error handling patterns
-- Role-based access control
-- JWT authentication flow
-- Real-time notification support
-- Profile expansion features (housing location, shift schedules)
-- Advanced appointment booking with time slot management
-
-### 📝 Technical Notes for Frontend Developers
-1. **Authentication**: JWT tokens expire in 24 hours - implement refresh logic
-2. **Base URL**: All APIs use `/api` prefix (e.g., `/api/appointments`)
-3. **Error Handling**: Use status codes 401, 403, 400, 404, 500 for proper UX
-4. **Role Management**: Three roles - `student`, `medical_staff`, `admin`
-5. **Profile Fields**: New fields `housingLocation` (students) and `shiftSchedule` (medical staff)
-6. **Appointment Logic**: 20-minute slots, 9AM-4PM, Monday-Friday only
-7. **Auto-Assignment**: Appointments automatically assigned to least busy medical staff
-8. **Notifications**: Poll `/notifications/count` for unread badge updates
-9. **Time Slots**: Always check availability before showing booking options
-10. **Validation**: Frontend should match backend validation (housing enums, time formats)
-
-### 🧪 Testing Coverage
-- **100% Core API Test Coverage**: All implemented endpoints have comprehensive tests
-- **Role-Based Access Testing**: All permission scenarios covered
-- **Integration Testing**: Full workflow testing for appointments, profiles, mood tracking
-- **Error Scenario Testing**: All error cases and edge cases tested
-- **Database Integration Testing**: Schema and data integrity verified
-
 ---
 
 ## �️ Frontend API Integration Guide
@@ -1068,7 +1338,7 @@ if (!response.ok) {
 const data = await response.json();
 ```
 
-### ✅ **Complete Working Examples**
+### **Complete Working Examples**
 
 #### **1. Get Appointments (Corrected)**
 ```javascript
@@ -1359,34 +1629,6 @@ const AppointmentBooking = () => {
     );
 };
 ```
-
-### 📋 **Integration Checklist**
-
-- ✅ **Use correct base URL**: `http://localhost:5001/api`
-- ✅ **Include Bearer token**: `Authorization: Bearer ${token}`
-- ✅ **Use proper headers**: `Content-Type: application/json`
-- ✅ **Handle 401 errors**: Redirect to login and clear storage
-- ✅ **Validate responses**: Check `response.ok` before parsing JSON
-- ✅ **Use template literals**: Backticks for `${variable}` interpolation
-- ✅ **Check time slot availability**: Before creating appointments
-- ✅ **Implement loading states**: Show loading indicators during API calls
-- ✅ **Handle errors gracefully**: Show user-friendly error messages
-- ✅ **Use React hooks**: For data fetching and state management
-
-### 🚨 **Common Pitfalls to Avoid**
-
-1. **String concatenation with +**: `+ 'http://...'` creates NaN
-2. **Wrong header names**: `Auth` instead of `Authorization`
-3. **Missing plurals**: `header` instead of `headers`
-4. **Template literal syntax**: Single quotes instead of backticks
-5. **Port number confusion**: Using 5000 instead of 5001
-6. **Missing error handling**: Not checking `response.ok`
-7. **Token management**: Not refreshing expired tokens
-8. **Time slot validation**: Creating appointments without checking availability
-
----
-
-## �🚀 Frontend Development Recommendations
 
 ### State Management Suggestions
 ```javascript

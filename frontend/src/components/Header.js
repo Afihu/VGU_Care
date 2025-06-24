@@ -1,13 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import '../css/Header.css';
-import {useLocation} from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import logo_image from '../assets/images/logo.png';
-import {useNavigate} from 'react-router-dom';
 
 function Header() {
     const navigateTo = useNavigate();
     const location = useLocation();
+    const [userRole, setUserRole] = useState('');
     const hideHeaderforPaths = ['/login']; //add more when needed
+
+    useEffect(() => {
+        const userInfo = localStorage.getItem('session-info');
+        if (userInfo) {
+            try {
+                const parsed = JSON.parse(userInfo);
+                setUserRole(parsed.user?.role || '');
+            } catch (e) {
+                console.warn("Invalid JSON in localStorage:", e);
+            }
+        }
+    }, [location]);
 
     if (hideHeaderforPaths.includes(location.pathname)) {
        return (

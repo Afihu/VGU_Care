@@ -96,6 +96,34 @@ exports.updateUserStatus = async (req, res) => {
   }
 };
 
+/**
+ * Update user name
+ * Admin privilege: Update user information
+ */
+exports.updateUserName = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const result = await adminService.updateUserName(userId, name);
+    res.json({ 
+      message: 'User name updated successfully',
+      user: result 
+    });
+  } catch (err) {
+    console.error('Update user name error:', err);
+    if (err.message.includes('not found') || err.message.includes('cannot be empty')) {
+      res.status(400).json({ error: err.message });
+    } else {
+      res.status(500).json({ error: err.message });
+    }
+  }
+};
+
 // ==================== APPOINTMENT MANAGEMENT ====================
 
 /**

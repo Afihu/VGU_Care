@@ -73,7 +73,6 @@ class AdminService extends BaseService {
       return { message: `User role updated from ${currentRole} to ${newRole}` };
     });
   }
-
   /**
    * Update user status (active/inactive/banned) - Admin exclusive privilege
    */
@@ -86,6 +85,26 @@ class AdminService extends BaseService {
     const result = await query(
       'UPDATE users SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 RETURNING user_id, email, status',
       [status, userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error('User not found');
+    }
+
+    return result.rows[0];
+  }
+
+  /**
+   * Update user name - Admin exclusive privilege
+   */
+  async updateUserName(userId, name) {
+    if (!name || name.trim().length === 0) {
+      throw new Error('Name cannot be empty');
+    }
+
+    const result = await query(
+      'UPDATE users SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 RETURNING user_id, name, email',
+      [name.trim(), userId]
     );
 
     if (result.rows.length === 0) {

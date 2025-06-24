@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import '../css/Home.css';
 import { useNavigate } from 'react-router-dom';
 import LogoutButton from '../components/LogoutButton';
+import AdminDashboard from './AdminDashboard';
 
 import image1 from '../assets/images/Asian_Doctor_Patient.jpg';
 import image2 from '../assets/images/Psychotheraphy.jpg';
@@ -12,13 +13,19 @@ import Modal from '../components/Modal';
 function Home(){
     const navigate = useNavigate();
     const userInfo = localStorage.getItem('session-info');
+    const userRole = JSON.parse(userInfo).user.role;
+
+    // If user is admin, render AdminDashboard
+    if (userRole === 'admin') {
+        return <AdminDashboard />;
+    }
 
     return(     
         <div>
             <div class='flex-container'>
                 {/* {console.log( JSON.parse(userInfo).user.role)} Just in case */}
                 { 
-                    JSON.parse(userInfo).user.role.includes('student') ? (
+                    userRole.includes('student') ? (
                         <div class='element-flex-container' onClick={() => navigate('/request-appointment')}>
                         <button class='req-appoint-label'>Request Appointment</button>
                         <button class='Button'>
@@ -28,15 +35,20 @@ function Home(){
                     ) : null
                 }
                 
-                <div class='element-flex-container' onClick={() => navigate('/appointment-view')}>
-                    <button class='view-appointment-label'>View Appointments</button>
-                    <button class='Button'>
-                        <span class='view-appointment-icon'></span>
-                    </button>
-                </div> 
+                {/* Only show view appointments for non-admin users */}
+                {
+                    userRole !== 'admin' ? (
+                        <div class='element-flex-container' onClick={() => navigate('/appointment-view')}>
+                            <button class='view-appointment-label'>View Appointments</button>
+                            <button class='Button'>
+                                <span class='view-appointment-icon'></span>
+                            </button>
+                        </div>
+                    ) : null
+                }
 
                 {
-                    (JSON.parse(userInfo).user.role.includes('student')) ? 
+                    userRole.includes('student') ? 
                     (<div class='element-flex-container' onClick={() => navigate('/track-mood')}>
                         <button class='track-mood-label'>Track Mood</button>
                         <button class='Button'>
@@ -46,7 +58,7 @@ function Home(){
                     ) : null
                 }
                     
-
+            
             </div>
 
             <div class='flex-container'>

@@ -150,13 +150,13 @@ SELECT u.user_id,
            WHEN u.email = 'student7@vgu.edu.vn' THEN 2020
        END as intake_year,
        CASE 
-           WHEN u.email = 'student1@vgu.edu.vn' THEN 'Computer Science'
-           WHEN u.email = 'student2@vgu.edu.vn' THEN 'Business Administration'
-           WHEN u.email = 'student3@vgu.edu.vn' THEN 'Engineering'
-           WHEN u.email = 'student4@vgu.edu.vn' THEN 'Medicine'
-           WHEN u.email = 'student5@vgu.edu.vn' THEN 'International Relations'
-           WHEN u.email = 'student6@vgu.edu.vn' THEN 'Economics'
-           WHEN u.email = 'student7@vgu.edu.vn' THEN 'Psychology'
+           WHEN u.email = 'student1@vgu.edu.vn' THEN 'CSE'
+           WHEN u.email = 'student2@vgu.edu.vn' THEN 'BBA'
+           WHEN u.email = 'student3@vgu.edu.vn' THEN 'ECE'
+           WHEN u.email = 'student4@vgu.edu.vn' THEN 'MEN'
+           WHEN u.email = 'student5@vgu.edu.vn' THEN 'ARC'
+           WHEN u.email = 'student6@vgu.edu.vn' THEN 'BFA'
+           WHEN u.email = 'student7@vgu.edu.vn' THEN 'BCE'
        END as major,
        CASE 
            WHEN u.email = 'student1@vgu.edu.vn' THEN 'dorm_1'

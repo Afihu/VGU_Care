@@ -1,0 +1,243 @@
+/* AdminDataTable.css - Styling for admin data tables */
+
+.admin-table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+  overflow: hidden;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.table-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.table-count {
+  color: #6c757d;
+  font-size: 0.9rem;
+  background-color: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-table thead {
+  background-color: #f1f3f4;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.admin-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+.admin-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background-color: #e3f2fd !important;
+}
+
+.actions-column {
+  width: 100px;
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.edit-btn, .delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  transition: background-color 0.2s ease;
+}
+
+.edit-btn:hover {
+  background-color: #fff3cd;
+}
+
+.delete-btn:hover {
+  background-color: #f8d7da;
+}
+
+.loading-container, .empty-container {
+  padding: 40px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.loading-container p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.empty-container p {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #999;
+}
+
+/* Status badge styles */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-active {
+  background-color: #d1edff;
+  color: #0c5aa6;
+}
+
+.status-inactive {
+  background-color: #ffeaa7;
+  color: #d63031;
+}
+
+.status-banned {
+  background-color: #fab1a0;
+  color: #e17055;
+}
+
+.status-pending {
+  background-color: #fdcb6e;
+  color: #f39c12;
+}
+
+.status-confirmed {
+  background-color: #00b894;
+  color: white;
+}
+
+.status-completed {
+  background-color: #6c5ce7;
+  color: white;
+}
+
+.status-cancelled {
+  background-color: #fd79a8;
+  color: white;
+}
+
+/* Role badge styles */
+.role-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.role-student {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.role-medical_staff {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.role-admin {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+/* Priority badge styles */
+.priority-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.priority-low {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.priority-medium {
+  background-color: #fff8e1;
+  color: #f57c00;
+}
+
+.priority-high {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .table-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .admin-table {
+    font-size: 0.8rem;
+  }
+  
+  .admin-table th,
+  .admin-table td {
+    padding: 8px 12px;
+  }
+  
+  .table-header h3 {
+    font-size: 1.3rem;
+  }
+}
