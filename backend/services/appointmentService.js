@@ -235,16 +235,84 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
         symptoms
     `;
     console.log('[DEBUG] updateAppointment - Query:', queryText);
-    console.log('[DEBUG] updateAppointment - Values:', values);
-
-    const result = await query(queryText, values);
+    console.log('[DEBUG] updateAppointment - Values:', values);    const result = await query(queryText, values);
 
     if (result.rows.length === 0) {
       throw new Error("Appointment not found or update failed");
     }
     
-    console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(result.rows[0], null, 2));
-    return result.rows[0];
+    const updatedAppointment = result.rows[0];
+    console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(updatedAppointment, null, 2));
+
+    // AUTOMATIC SYMPTOM UPDATE NOTIFICATION
+    // If symptoms were updated, automatically notify the assigned medical staff
+    if (symptoms !== undefined) {
+      try {
+        console.log('[AUTO-NOTIFICATION] Symptoms updated - sending notification to medical staff...');
+        
+        // Get complete appointment details with student and medical staff information
+        const appointmentDetailsResult = await query(`
+          SELECT 
+            a.appointment_id,
+            a.symptoms,
+            a.priority_level,
+            a.date_scheduled,
+            a.time_scheduled,
+            a.status,
+            u.name as student_name,
+            u.email as student_email,
+            ms_user.name as medical_staff_name,
+            ms_user.email as medical_staff_email
+          FROM appointments a
+          JOIN users u ON a.user_id = u.user_id
+          LEFT JOIN medical_staff ms ON a.medical_staff_id = ms.staff_id
+          LEFT JOIN users ms_user ON ms.user_id = ms_user.user_id
+          WHERE a.appointment_id = $1
+        `, [appointmentId]);
+
+        if (appointmentDetailsResult.rows.length > 0) {
+          const appointmentDetails = appointmentDetailsResult.rows[0];
+          
+          // Only send notification if medical staff is assigned
+          if (appointmentDetails.medical_staff_email) {
+            console.log(`[AUTO-NOTIFICATION] Sending symptom update notification to ${appointmentDetails.medical_staff_name} (${appointmentDetails.medical_staff_email})`);
+            
+            // Create EmailService instance for sending notification
+            const EmailService = require('./emailService');
+            const emailSender = new EmailService();
+            
+            // Send symptom update notification email to medical staff
+            const symptomUpdateResult = await emailSender.sendSymptomUpdateNotificationEmail(
+              appointmentDetails.medical_staff_email,
+              appointmentDetails.medical_staff_name,
+              {
+                appointmentId: appointmentDetails.appointment_id,
+                symptoms: appointmentDetails.symptoms,
+                priorityLevel: appointmentDetails.priority_level,
+                dateScheduled: appointmentDetails.date_scheduled,
+                timeScheduled: appointmentDetails.time_scheduled,
+                status: appointmentDetails.status
+              },
+              appointmentDetails.student_name,
+              appointmentDetails.student_email
+            );
+            
+            if (symptomUpdateResult.success) {
+              console.log('[AUTO-NOTIFICATION] Symptom update notification sent successfully');
+            } else {
+              console.log('[AUTO-NOTIFICATION] Failed to send symptom update notification:', symptomUpdateResult.error);
+            }
+          } else {
+            console.log('[AUTO-NOTIFICATION] No medical staff assigned - skipping symptom update notification');
+          }
+        }
+      } catch (error) {
+        // Don't let email failures break the appointment update
+        console.error('[AUTO-NOTIFICATION] Error sending symptom update notification:', error.message);
+      }
+    }
+    
+    return updatedAppointment;
   }
   async getAppointmentsByMedicalStaff(medicalStaffUserId) {
     // Get medical staff's staff_id from user_id

@@ -66,12 +66,33 @@ class EmailService extends BaseService {  constructor() {
 
   /**
    * Send email with error handling and logging
-   */
-  async sendEmail(to, subject, htmlContent, textContent = null) {
+   */  async sendEmail(to, subject, htmlContent, textContent = null) {
     try {
       if (!this.isEmailEnabled()) {
         console.log(`[EMAIL DISABLED] Would send email to ${to}: ${subject}`);
         return { success: true, disabled: true };
+      }
+
+      // Validate email format
+      if (!this.validateEmailFormat(to)) {
+        console.error(`[EMAIL ERROR] Invalid email format: ${to}`);
+        return { success: false, error: 'Invalid email format' };
+      }
+
+      // Optional: Check email domain (can be slow, so make it optional)
+      if (process.env.EMAIL_VALIDATE_DOMAIN === 'true') {
+        const domainValid = await this.validateEmailDomain(to);
+        if (!domainValid) {
+          console.error(`[EMAIL ERROR] Invalid or non-existent domain for: ${to}`);
+          return { success: false, error: 'Invalid email domain' };
+        }
+      }
+
+      // Check if email domain exists
+      const isDomainValid = await this.validateEmailDomain(to);
+      if (!isDomainValid) {
+        console.error(`[EMAIL ERROR] Invalid email domain: ${to}`);
+        return { success: false, error: 'Invalid email domain' };
       }
 
       const mailOptions = {
@@ -434,6 +455,104 @@ class EmailService extends BaseService {  constructor() {
     
     return await this.sendEmail(
       userEmail, 
+      subject, 
+      this.createEmailTemplate(subject, content, actionButton)
+    );
+  }
+
+  /**
+   * Validate email address format
+   */
+  validateEmailFormat(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  /**
+   * Check if email domain exists (basic DNS check)
+   */
+  async validateEmailDomain(email) {
+    try {
+      const domain = email.split('@')[1];
+        // In test environment, use stricter validation with whitelist
+      if (process.env.NODE_ENV === 'test') {
+        const allowedTestEmails = [
+          '10422061@student.vgu.edu.vn',
+          'kath.maithi@gmail.com',
+          'nhimaihello@gmail.com',
+          // Add more known valid emails for testing
+        ];
+        
+        if (!allowedTestEmails.includes(email)) {
+          console.log(`[EMAIL VALIDATION] Email ${email} not in test whitelist`);
+          return false;
+        }
+      }
+      
+      const dns = require('dns').promises;
+      await dns.resolveMx(domain);
+      return true;
+    } catch (error) {
+      console.log(`[EMAIL VALIDATION] Domain check failed for ${email}: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Send email to medical staff when patient updates symptoms
+   */
+  async sendSymptomUpdateNotificationEmail(staffEmail, staffName, appointmentDetails, studentName, studentEmail) {
+    const subject = '⚠️ Patient Symptom Update - Urgent Review Required';
+    
+    const content = `
+      <p>Dear ${staffName},</p>
+      <p><strong>Important:</strong> One of your assigned patients has updated their symptoms and may require immediate attention.</p>
+      
+      <div class="alert">
+        <h3>📋 Patient Information:</h3>
+        <ul>
+          <li><strong>Patient:</strong> ${studentName}</li>
+          <li><strong>Patient Email:</strong> ${studentEmail}</li>
+          <li><strong>Appointment ID:</strong> ${appointmentDetails.appointmentId}</li>
+          <li><strong>Current Status:</strong> ${appointmentDetails.status}</li>
+          <li><strong>Priority Level:</strong> ${appointmentDetails.priorityLevel}</li>
+        </ul>
+      </div>
+
+      <div class="alert">
+        <h3>📅 Appointment Schedule:</h3>
+        <ul>
+          <li><strong>Date:</strong> ${appointmentDetails.dateScheduled ? new Date(appointmentDetails.dateScheduled).toLocaleDateString() : 'Not scheduled'}</li>
+          <li><strong>Time:</strong> ${appointmentDetails.timeScheduled || 'Not scheduled'}</li>
+        </ul>
+      </div>
+
+      <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #721c24;">🔴 Updated Symptoms:</h3>
+        <p style="font-weight: bold; background-color: #ffffff; padding: 15px; border-radius: 3px; margin: 10px 0; color: #721c24;">
+          ${appointmentDetails.symptoms}
+        </p>
+      </div>
+
+      <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #0c5460;">📋 Recommended Actions:</h3>
+        <ul style="color: #0c5460;">
+          <li><strong>Review symptom changes immediately</strong> - Compare with initial symptoms</li>
+          <li><strong>Assess urgency level</strong> - Consider if priority should be increased</li>
+          <li><strong>Contact patient if needed</strong> - For clarification or immediate advice</li>
+          <li><strong>Update appointment scheduling</strong> - If urgent care is required</li>
+          <li><strong>Provide medical guidance</strong> - Through the VGU Care system</li>
+        </ul>
+      </div>
+
+      <p>This is an automated notification sent when patients update their symptoms. Please review this case promptly and take appropriate medical action.</p>
+      <p>Log into the VGU Care system to view the complete appointment details and respond to the patient.</p>
+    `;
+
+    const actionButton = `<a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/medical-staff/appointments" class="button">Review Appointment</a>`;
+    
+    return await this.sendEmail(
+      staffEmail, 
       subject, 
       this.createEmailTemplate(subject, content, actionButton)
     );

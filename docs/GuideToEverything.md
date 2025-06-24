@@ -205,10 +205,10 @@ Our backend has undergone significant improvements to support enhanced user prof
 ```
 
 #### Appointment Logic Improvements
-- **Smart Staff Assignment**: Appointments consider staff availability and shift schedules
-- **Location-Based Scheduling**: Housing location influences appointment time slot suggestions
+- **Required Date/Time**: Appointment date and time must be specified during creation
+- **Direct Staff Assignment**: Medical staff must be assigned when creating the appointment
 - **Enhanced Validation**: Comprehensive checks for appointment conflicts and availability
-- **Better Error Handling**: Clear error messages for scheduling conflicts
+- **Better Error Handling**: Clear error messages for scheduling conflicts and missing required fields
 
 #### API Endpoints
 For detailed API documentation including new endpoints and updated request/response formats, see:

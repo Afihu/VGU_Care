@@ -1,6 +1,6 @@
 const { query } = require("../config/database");
 const BaseService = require("./baseService");
-const emailService = require("./emailService");
+const EmailService = require("./emailService");
 
 /**
  * NotificationService - Handles in-app and email notification system
@@ -159,12 +159,11 @@ class NotificationService extends BaseService {
       title, 
       message, 
       appointmentId
-    );
-
-    // Send email notification
+    );    // Send email notification
     try {
       const staffDetails = await this.getMedicalStaffFromAppointment(appointmentId);
       if (staffDetails) {
+        const emailService = new EmailService();
         await emailService.sendMedicalStaffAssignmentEmail(
           staffDetails.email,
           staffDetails.name,
@@ -193,10 +192,9 @@ class NotificationService extends BaseService {
       title, 
       message, 
       appointmentId
-    );
-
-    // Send email notification
+    );    // Send email notification
     try {
+      const emailService = new EmailService();
       const studentDetails = await this.getStudentFromAppointment(appointmentId);
       if (studentDetails) {
         await emailService.sendAppointmentApprovedEmail(
@@ -257,10 +255,9 @@ class NotificationService extends BaseService {
 
   /**
    * Get medical staff user_id from appointment
-   */
-  async getMedicalStaffFromAppointment(appointmentId) {
+   */  async getMedicalStaffFromAppointment(appointmentId) {
     const result = await query(`
-      SELECT ms.user_id, u.name
+      SELECT ms.user_id, u.name, u.email
       FROM appointments a
       JOIN medical_staff ms ON a.medical_staff_id = ms.staff_id
       JOIN users u ON ms.user_id = u.user_id
@@ -269,13 +266,12 @@ class NotificationService extends BaseService {
 
     return result.rows[0] || null;
   }
-
   /**
    * Get student details from appointment
    */
   async getStudentFromAppointment(appointmentId) {
     const result = await query(`
-      SELECT a.user_id, u.name
+      SELECT a.user_id, u.name, u.email
       FROM appointments a
       JOIN users u ON a.user_id = u.user_id
       WHERE a.appointment_id = $1
