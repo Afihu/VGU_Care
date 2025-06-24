@@ -564,8 +564,7 @@ const createAppointment = async (appointmentData) => {
     "userId": "uuid",
     "mood": "happy",
     "notes": "Feeling good today!",
-    "createdAt": "2025-06-23T10:30:00Z",
-    "updatedAt": "2025-06-23T10:30:00Z"
+    "entry_date": "2025-06-23T10:30:00Z"
   }
 }
 ```
@@ -583,8 +582,7 @@ const createAppointment = async (appointmentData) => {
       "userId": "uuid",
       "mood": "happy",
       "notes": "Feeling good today!",
-      "createdAt": "2025-06-23T10:30:00Z",
-      "updatedAt": "2025-06-23T10:30:00Z"
+      "entry_date": "2025-06-23T10:30:00Z"
     }
   ]
 }
@@ -608,8 +606,7 @@ const createAppointment = async (appointmentData) => {
     "userId": "uuid",
     "mood": "stressed",
     "notes": "Updated notes",
-    "createdAt": "2025-06-23T10:30:00Z",
-    "updatedAt": "2025-06-23T11:00:00Z"
+    "entry_date": "2025-06-23T10:30:00Z"
   }
 }
 ```
@@ -639,8 +636,7 @@ const createAppointment = async (appointmentData) => {
       "userId": "uuid",
       "mood": "happy",
       "notes": "Feeling good today!",
-      "createdAt": "2025-06-23T10:30:00Z",
-      "updatedAt": "2025-06-23T10:30:00Z"
+      "entry_date": "2025-06-23T10:30:00Z"
     }
   ]
 }
