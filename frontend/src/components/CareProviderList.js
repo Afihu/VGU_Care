@@ -1,26 +1,36 @@
 // components/CareProviderList.js
 import React, { useEffect, useState } from 'react';
-import { getAllMedicalStaff } from '../services/medicalStaffService';
 import '../css/RequestAppointment.css';
+import api from '../services/api';
 
 export default function CareProviderList() {
   const [providers, setProviders] = useState([]);
 
   useEffect(() => {
-    const fetchProviders = async () => {
+    const fetchProfile = async () => {
       try {
-        const data = await getAllMedicalStaff();
-        if (data?.success && data.medicalStaff) {
-          setProviders(data.medicalStaff);
+        const sessionInfo = JSON.parse(localStorage.getItem('session-info'));
+        const token = sessionInfo?.token;
+
+        if (!token) {
+          console.warn('No token found');
+          return;
+        }
+
+        const response = await api.getMedicalStaffProfile(token);
+        const data = await response.json();
+
+        if (data.success && data.user) {
+          setProviders([data.user]);
         } else {
-          console.warn('Failed to fetch medical staff.');
+          console.warn('Invalid medical staff profile response');
         }
       } catch (error) {
-        console.error('Error fetching providers:', error);
+        console.error('Error fetching provider:', error);
       }
     };
 
-    fetchProviders();
+    fetchProfile();
   }, []);
 
   return (
@@ -33,8 +43,8 @@ export default function CareProviderList() {
           <div className="entry-card" key={index}>
             <p><strong>Name:</strong> {provider.name}</p>
             <p><strong>Position:</strong> Medical Staff</p>
-            <p><strong>Speciality:</strong> {provider.specialty}</p>
-            <p><strong>ID:</strong> {provider.staff_id}</p>
+            <p><strong>Specialty:</strong> {provider.specialty}</p>
+            <p><strong>Email:</strong> {provider.email}</p>
           </div>
         ))
       )}

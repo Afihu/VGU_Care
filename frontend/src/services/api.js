@@ -90,7 +90,19 @@ const api = {
           }
         });
         return handleApiError(response);
-    }
+    },
+
+    getMedicalStaffProfile: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/medical-staff/profile';
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response);  // handles 401, 403, etc.
+    },
       
 }
 
