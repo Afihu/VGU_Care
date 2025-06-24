@@ -78,7 +78,20 @@ const api = {
             throw error;
         }
 
+    },
+
+    getMoodEntries: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/mood-entries';
+        const response = await fetch(apiEndpoint, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        return handleApiError(response);
     }
+      
 }
 
 export default api;
