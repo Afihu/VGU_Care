@@ -21,8 +21,17 @@ CREATE TABLE students (
     student_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     intake_year INT NOT NULL,
-    major VARCHAR(100) NOT NULL,
+    major VARCHAR(100) NOT NULL,    
     housing_location VARCHAR(20) CHECK (housing_location IN ('dorm_1', 'dorm_2', 'off_campus')) DEFAULT 'off_campus'
+);
+
+-- Schedules table for managing shift schedules
+CREATE TABLE schedules (
+    schedule_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(50) NOT NULL UNIQUE, -- 'morning', 'afternoon', 'full-day', etc.
+    description VARCHAR(255),
+    schedule_data JSONB NOT NULL, -- {"monday": ["09:00-12:00"], "tuesday": ["09:00-12:00"], ...}
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Medical Staff table
@@ -31,7 +40,7 @@ CREATE TABLE medical_staff (
     user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     specialty VARCHAR(100) NOT NULL,
     specialty_group VARCHAR(10) CHECK (specialty_group IN ('physical', 'mental')) NOT NULL DEFAULT 'physical',
-    shift_schedule JSONB DEFAULT '{}'::jsonb  -- Store schedule as JSON: {"monday": ["09:00-17:00"], "tuesday": ["09:00-17:00"], ...}
+    schedule_id UUID REFERENCES schedules(schedule_id) ON DELETE SET NULL
 );
 
 -- Admin table
@@ -169,6 +178,13 @@ SELECT u.user_id,
        END as housing_location
 FROM users u WHERE u.role = 'student';
 
+-- Add new fields before inserting data
+-- Add shift_schedule to medical_staff table
+ALTER TABLE medical_staff ADD COLUMN IF NOT EXISTS shift_schedule JSONB DEFAULT '{}'::jsonb;
+
+-- Add specialty_group to medical_staff table for physical/mental categorization  
+ALTER TABLE medical_staff ADD COLUMN IF NOT EXISTS specialty_group VARCHAR(10) CHECK (specialty_group IN ('physical', 'mental')) DEFAULT 'physical';
+
 -- Insert Medical Staff
 INSERT INTO medical_staff (user_id, specialty, specialty_group, shift_schedule)
 SELECT u.user_id,
@@ -271,15 +287,8 @@ ON CONFLICT (start_time, day_of_week) DO NOTHING;
 CREATE INDEX IF NOT EXISTS idx_appointments_date_time ON appointments(date_scheduled, time_scheduled);
 CREATE INDEX IF NOT EXISTS idx_time_slots_day_time ON time_slots(day_of_week, start_time);
 
--- Add new fields for profile expansion
 -- Add housing_location to students table
 ALTER TABLE students ADD COLUMN IF NOT EXISTS housing_location VARCHAR(20) CHECK (housing_location IN ('dorm_1', 'dorm_2', 'off_campus')) DEFAULT 'off_campus';
-
--- Add shift_schedule to medical_staff table
-ALTER TABLE medical_staff ADD COLUMN IF NOT EXISTS shift_schedule JSONB DEFAULT '{}'::jsonb;
-
--- Add specialty_group to medical_staff table for physical/mental categorization
-ALTER TABLE medical_staff ADD COLUMN IF NOT EXISTS specialty_group VARCHAR(10) CHECK (specialty_group IN ('physical', 'mental')) DEFAULT 'physical';
 
 -- Add health_issue_type to appointments table
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS health_issue_type VARCHAR(10) CHECK (health_issue_type IN ('physical', 'mental'));
