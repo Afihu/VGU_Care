@@ -1,0 +1,18 @@
+.logout-button {
+  position: absolute; /* Removes from normal flow, positions relative to .parent-container */
+  bottom: 20px;       /* 10 pixels from the bottom edge of .parent-container */
+  right: 10px;
+  height: auto;
+  width: 125px;
+
+  padding: 10px 15px;
+  border-radius: 5px;
+  border-color: red;
+  background-color: transparent;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.logout-button:hover{   
+    background-color: #e1dad9;
+    transform: translateY(-2px);
+}

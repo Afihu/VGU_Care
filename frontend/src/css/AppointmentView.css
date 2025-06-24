@@ -330,4 +330,14 @@
 .modal-button.cancel-appointment:hover {
     background-color: #c82333;
 }
+
+.appointment-logout {
+  bottom: 20px;       /* 10 pixels from the bottom edge of .parent-container */
+  right: 7000px;
+}
+
+.appointment-view .logout-button{
+  bottom: 20px;       /* 10 pixels from the bottom edge of .parent-container */
+  right: 110px;
+}
   

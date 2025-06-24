@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../css/TrackMood.css';
 import MoodEntryList from '../components/MoodEntryList';
 import { getMoodEntries } from '../services/moodService';
+import LogoutButton from '../components/LogoutButton';
 
 export default function TrackMood() {
     const navigate = useNavigate();
@@ -65,6 +66,7 @@ export default function TrackMood() {
                 <MoodEntryList entries={entries} />
 
             </div>
+            <LogoutButton />
         </div>
     );
 }

@@ -45,19 +45,6 @@
   height: 145%;
   width: auto;
 }
-.logout-button {
-  position: absolute; /* Removes from normal flow, positions relative to .parent-container */
-  bottom: 20px;       /* 10 pixels from the bottom edge of .parent-container */
-  right: 10px;
-  height: auto;
-  width: 125px;
-
-  padding: 10px 15px;
-  border-radius: 5px;
-  border-color: red;
-  background-color: transparent;
-}
-
 
 /* section for granular stuff */
 .req-appoint-label {

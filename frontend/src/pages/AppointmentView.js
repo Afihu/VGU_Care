@@ -6,6 +6,7 @@ import api from '../services/api';
 import helpers from '../utils/helpers';
 import AppointmentList from '../components/AppointmentList';
 import Modal from '../components/Modal.js';
+import LogoutButton from '../components/LogoutButton.js';
 
 export default function AppointmentView() {
 
@@ -122,6 +123,8 @@ export default function AppointmentView() {
             </div>
         )}
       </Modal>
+
+      <LogoutButton/>
 
     </div>
   );
