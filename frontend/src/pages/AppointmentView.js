@@ -4,6 +4,7 @@ import '../css/AppointmentView.css';
 import api from '../services/api';
 import helpers from '../utils/helpers';
 import AppointmentList from '../components/AppointmentList';
+import Modal from '../components/Modal.js';
 
 export default function AppointmentView() {
 
@@ -12,6 +13,8 @@ export default function AppointmentView() {
   const parsed = helpers.JSONparser(userInfo);
   const userToken = parsed.token;
   const [userAppointments, setUserAppointments] = useState([]);
+  const [filteredAppointments, setFilteredAppointments] = useState([]);
+  const [filter, setFilter] = useState('ALL'); 
 
   const handleAppointmentRetrieve = async (token) => {
     const response = await api.appointmentRetrieveService(token); 
@@ -27,6 +30,7 @@ export default function AppointmentView() {
         let data = await handleAppointmentRetrieve(userToken);
         data = Object.entries(data.appointments).map(item => item[1]);
         setUserAppointments(data);
+        setFilteredAppointments(data);
       } catch (error) {
         console.error("Failed to fetch appointments: ", error);
       }
@@ -35,47 +39,57 @@ export default function AppointmentView() {
   }, []);
 
   useEffect(() => {
-    console.log("appointmnrnt: ", userAppointments);
-  })
+    if (filter === 'ALL') {
+      setFilteredAppointments(userAppointments);
+      console.log(userAppointments);
+    } else {
+      const filtered = userAppointments.filter(app => app.status.toUpperCase() === filter);
+      setFilteredAppointments(filtered);
+    }
+  }, [filter, userAppointments])
 
 
   return (
-    <div className="appointment-view">
-      {/* Title Box */}
-      <div className="appointment-title-box">
-        MY APPOINTMENTS
-      </div>
-
-      {/* Status boxes and image side by side */}
-      <div className="appointment-content">
-
+    <div className="appointment-view">    
+      <div className="appointment-main-column">
         {/* Status boxes */}
         <div className="appointment-status-buttons">
-          <button type="button" className="appointment-button button-all">
+
+          <button type="button" className="create-appointment-btn">
+          +
+          </button>
+
+          <button type="button" className="appointment-button button-all" onClick={() => setFilter("ALL")}>
             ALL
           </button>
 
-          <button type="button" className="appointment-button button-approved">
+          <button type="button" className="appointment-button button-approved" onClick={() => setFilter("APPROVED")}>
             APPROVED
           </button>
 
-          <button type="button" className="appointment-button button-pending">
+          <button type="button" className="appointment-button button-pending" onClick={() => setFilter("PENDING")}>
             PENDING
           </button>
 
-          <button type="button" className="appointment-button button-rejected">
+          <button type="button" className="appointment-button button-rejected" onClick={() => setFilter("REJECTED")}>
             REJECTED
           </button>
         </div>
 
-        {/* Image on the right */}
-        {/* <img
+        <div className='appointment-content'>
+          <AppointmentList userAppointments={filteredAppointments} />
+        </div>
+
+      </div>
+
+      <div className="appointment-image-container">
+        <img
           src={greens}
           alt="Healthy Greens"
           className="appointment-image"
-        />       */}
-        <AppointmentList userAppointments={userAppointments} />
+        />
       </div>
+
     </div>
   );
 }
