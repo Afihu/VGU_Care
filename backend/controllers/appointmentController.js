@@ -51,10 +51,11 @@ exports.getAppointments = async (req, res) => {
 // Create appointment with role-based validation
 exports.createAppointment = async (req, res) => {
   try {
-    const { symptoms, priorityLevel, healthIssueType, medical_staff_id, dateScheduled, timeScheduled } = req.body; // Added healthIssueType
+    const { symptoms, priorityLevel, healthIssueType, medical_staff_id, dateScheduled, timeScheduled } = req.body;
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
-      // Validate required fields
+    
+    // Validate required fields
     if (!symptoms || !priorityLevel || !healthIssueType || !dateScheduled || !timeScheduled) {
       return res.status(400).json({ 
         error: 'Symptoms, priority level, health issue type, date, and time are required' 
@@ -75,13 +76,18 @@ exports.createAppointment = async (req, res) => {
       return res.status(400).json({ 
         error: 'Invalid date format. Use YYYY-MM-DD' 
       });
-    }
-
-    // Validate time format (basic check)
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
-    if (!timeRegex.test(timeScheduled)) {
+    }    // Validate time format (accepts both HH:MM and HH:MM:SS)
+    const timeRegexWithSeconds = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
+    const timeRegexWithoutSeconds = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    
+    let formattedTimeScheduled = timeScheduled;
+    
+    if (timeRegexWithoutSeconds.test(timeScheduled) && !timeRegexWithSeconds.test(timeScheduled)) {
+      // Add seconds if not provided (HH:MM -> HH:MM:00)
+      formattedTimeScheduled = timeScheduled + ':00';
+    } else if (!timeRegexWithSeconds.test(timeScheduled)) {
       return res.status(400).json({ 
-        error: 'Invalid time format. Use HH:MM:SS (e.g., 14:20:00)' 
+        error: 'Invalid time format. Use HH:MM or HH:MM:SS (e.g., 14:20 or 14:20:00)' 
       });
     }
 
@@ -94,23 +100,44 @@ exports.createAppointment = async (req, res) => {
     }
     
     let appointment;
-    
-    if (userRole === 'student') {
+      if (userRole === 'student') {
       // Students create appointments for themselves
-      appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel, healthIssueType, medical_staff_id, dateScheduled, timeScheduled);
+      // If medical_staff_id is provided, validate it exists and is active
+      if (medical_staff_id) {
+        const staffValidation = await appointmentService.validateMedicalStaffExists(medical_staff_id);
+        if (!staffValidation.exists) {
+          return res.status(400).json({ 
+            error: 'Selected medical staff not found or inactive' 
+          });
+        }
+        
+        // Check if the selected staff's specialty matches the health issue type
+        if (staffValidation.specialtyGroup !== healthIssueType) {
+          return res.status(400).json({ 
+            error: `Selected medical staff specializes in ${staffValidation.specialtyGroup} health issues, but you requested ${healthIssueType} care. Please select an appropriate specialist or let the system auto-assign.` 
+          });
+        }
+        
+        console.log(`[DEBUG] Student selected medical staff: ${staffValidation.name} (${staffValidation.specialty})`);
+      }
+        appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel, healthIssueType, medical_staff_id, dateScheduled, formattedTimeScheduled);
     } else if (userRole === 'admin') {
       // Admin can create appointments for students via different route (/api/admin/appointments/users/:userId)
       return res.status(400).json({ 
         error: 'Admins should use /api/admin/appointments/users/:userId endpoint' 
       });    } else if (userRole === 'medical_staff') {
       // Medical staff can create appointments for students with their assignment
-      appointment = await appointmentService.createAppointmentByMedicalStaff(userId, symptoms, priorityLevel, healthIssueType, null, dateScheduled, timeScheduled);
-    }
-    
-    res.status(201).json({ 
+      appointment = await appointmentService.createAppointmentByMedicalStaff(userId, symptoms, priorityLevel, healthIssueType, null, dateScheduled, formattedTimeScheduled);
+    }    res.status(201).json({ 
       message: 'Appointment created successfully',
       appointment,
-      assignedSpecialtyGroup: healthIssueType // Show which specialty group was requested
+      assignedSpecialtyGroup: healthIssueType, // Show which specialty group was requested
+      assignmentMethod: medical_staff_id ? 'manual_selection' : 'auto_assigned',
+      timeAdjustment: appointment.timeScheduled !== formattedTimeScheduled ? {
+        requested: formattedTimeScheduled,
+        assigned: appointment.timeScheduled,
+        reason: 'Requested time slot not available, assigned nearest available slot'
+      } : null
     });
   } catch (error) {
     console.error('Create appointment error:', error);
@@ -432,6 +459,25 @@ exports.getAvailableTimeSlots = async (req, res) => {
     });
   } catch (error) {
     console.error('Get available time slots error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Get available medical staff for appointment booking
+ * Returns active medical staff grouped by specialty
+ */
+exports.getAvailableMedicalStaff = async (req, res) => {
+  try {
+    const medicalStaff = await appointmentService.getAvailableMedicalStaffForBooking();
+    
+    res.json({ 
+      medicalStaff,
+      count: medicalStaff.length,
+      message: 'Available medical staff retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Get available medical staff error:', error);
     res.status(500).json({ error: error.message });
   }
 };

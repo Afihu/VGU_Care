@@ -124,3 +124,122 @@
     border-color: #ffffff;
     color: #ffffff;
 }
+
+/* Medical Staff Selection Styles */
+.care-provider-info {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-left: 20px;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+.care-provider-info h3 {
+    color: #62b3ed;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.auto-assign-info {
+    background-color: #e8f4f8;
+    border: 1px solid #b8daff;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.auto-assign-info p {
+    margin: 5px 0;
+    color: #0c63e4;
+}
+
+.selected-staff-info {
+    background-color: #e8f5e8;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.selected-staff-info p {
+    margin: 5px 0;
+    color: #155724;
+}
+
+.priority-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.priority-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.priority-options input[type="radio"] {
+    margin: 0;
+}
+
+/* Health Issue Type Styles */
+.health-issue-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.health-issue-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+/* Reminder Note Styles */
+.reminder-note {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.reminder-note h4 {
+    color: #856404;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.reminder-note ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #856404;
+}
+
+.reminder-note li {
+    margin-bottom: 5px;
+}
+
+/* Time Slot Information Styles */
+.time-slot-info {
+    background-color: #e8f4f8;
+    border: 1px solid #b8daff;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.time-slot-info p {
+    margin: 4px 0;
+    color: #0c63e4;
+}
+
+.time-slot-info p:first-child {
+    font-weight: bold;
+    margin-bottom: 8px;
+}

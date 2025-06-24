@@ -53,15 +53,20 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     const validHealthIssueTypes = ['physical', 'mental'];
     if (!validHealthIssueTypes.includes(healthIssueType)) {
       throw new Error('Health issue type must be either "physical" or "mental"');
-    }
-
-    // Validate the time slot and check for blackout dates
-    const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
-    if (!isAvailable) {
-      throw new Error('Selected time slot is not available');
-    }
-
-    // If no medical staff is specified, automatically assign based on specialty group and availability
+    }    // Validate the time slot and check for blackout dates
+    // If the exact time slot is not available, find the nearest available one
+    let finalTimeScheduled = timeScheduled;
+    const isExactSlotAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
+    
+    if (!isExactSlotAvailable) {
+      console.log(`[DEBUG] Requested time slot ${timeScheduled} not available, finding nearest available slot...`);
+      try {
+        finalTimeScheduled = await this.findNearestAvailableTimeSlot(dateScheduled, timeScheduled);
+        console.log(`[DEBUG] Adjusted time from ${timeScheduled} to ${finalTimeScheduled}`);
+      } catch (error) {
+        throw new Error(`No available time slots found near ${timeScheduled} on ${dateScheduled}: ${error.message}`);
+      }
+    }// If medical staff is specified, use it; otherwise auto-assign based on specialty and availability
     let assignedStaffId = medicalStaffId;
     if (!assignedStaffId) {
       try {
@@ -72,11 +77,12 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
         console.log(`[DEBUG] Could not auto-assign medical staff: ${error.message}`);
         // Continue without assignment if no medical staff available
       }
+    } else {
+      console.log(`[DEBUG] Using user-specified medical staff: ${assignedStaffId}`);
     }
 
     let queryText, values;
-    if (assignedStaffId) {
-      queryText = `
+    if (assignedStaffId) {      queryText = `
         INSERT INTO appointments (user_id, symptoms, priority_level, health_issue_type, date_scheduled, time_scheduled, medical_staff_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING 
@@ -90,7 +96,7 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
           symptoms,
           health_issue_type as "healthIssueType"
       `;
-      values = [userId, symptoms, priorityLevel, healthIssueType, dateScheduled, timeScheduled, assignedStaffId];
+      values = [userId, symptoms, priorityLevel, healthIssueType, dateScheduled, finalTimeScheduled, assignedStaffId];
     } else {
       queryText = `
         INSERT INTO appointments (user_id, symptoms, priority_level, health_issue_type, date_scheduled, time_scheduled)
@@ -106,7 +112,7 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
           symptoms,
           health_issue_type as "healthIssueType"
       `;
-      values = [userId, symptoms, priorityLevel, healthIssueType, dateScheduled, timeScheduled];
+      values = [userId, symptoms, priorityLevel, healthIssueType, dateScheduled, finalTimeScheduled];
     }const result = await query(queryText, values);
     const appointment = result.rows[0];
     console.log(`[DEBUG] Appointment created:`, appointment);
@@ -666,27 +672,56 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
   }
   /**
    * Check if a specific time slot is available for booking (includes blackout date check)
-   */
-  async isTimeSlotAvailable(date, timeScheduled) {
+   */  async isTimeSlotAvailable(date, timeScheduled) {
+    console.log(`[DEBUG] Checking time slot availability for date: ${date}, time: ${timeScheduled}`);
+    
     // Check for blackout dates first
     const blackoutCheck = await query(`
       SELECT 1 FROM blackout_dates WHERE date = $1
     `, [date]);
     
     if (blackoutCheck.rows.length > 0) {
+      console.log(`[DEBUG] Date ${date} is blacklisted`);
       return false; // Date is blocked
     }
 
     const inputDate = new Date(date);
     const dayOfWeek = inputDate.getDay();
+    console.log(`[DEBUG] Date ${date} is day of week: ${dayOfWeek} (0=Sun, 1=Mon, ..., 6=Sat)`);
+    
+    // Convert JavaScript day (0=Sunday) to database day (1=Monday)
+    // JavaScript: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+    // Database: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri
+    let dbDayOfWeek;
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      console.log(`[DEBUG] Weekend day (${dayOfWeek}) - no appointments available`);
+      return false; // No appointments on weekends
+    } else {
+      dbDayOfWeek = dayOfWeek; // Monday=1, Tuesday=2, ..., Friday=5
+    }
+    
+    console.log(`[DEBUG] Converted to database day of week: ${dbDayOfWeek}`);
     
     // Check if the time slot exists for this day of week
     const slotExistsResult = await query(`
-      SELECT 1 FROM time_slots 
+      SELECT start_time, end_time FROM time_slots 
       WHERE day_of_week = $1 AND start_time = $2
-    `, [dayOfWeek, timeScheduled]);
+    `, [dbDayOfWeek, timeScheduled]);
+
+    console.log(`[DEBUG] Time slot query result:`, slotExistsResult.rows);
 
     if (slotExistsResult.rows.length === 0) {
+      console.log(`[DEBUG] Time slot ${timeScheduled} doesn't exist for day ${dbDayOfWeek}`);
+      
+      // Let's also check what time slots ARE available for this day
+      const availableSlotsResult = await query(`
+        SELECT start_time FROM time_slots 
+        WHERE day_of_week = $1 
+        ORDER BY start_time
+      `, [dbDayOfWeek]);
+      
+      console.log(`[DEBUG] Available time slots for day ${dbDayOfWeek}:`, availableSlotsResult.rows.map(row => row.start_time));
+      
       return false; // Time slot doesn't exist for this day
     }
 
@@ -698,7 +733,132 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       AND status NOT IN ('cancelled', 'rejected')
     `, [date, timeScheduled]);
 
-    return result.rows.length === 0; // Available if no conflicting appointments
+    const isAvailable = result.rows.length === 0;
+    console.log(`[DEBUG] Time slot availability check: ${isAvailable ? 'AVAILABLE' : 'BOOKED'}`);
+    
+    return isAvailable; // Available if no conflicting appointments
+  }
+
+  /**
+   * Validate if medical staff exists and is active
+   * Returns staff details including specialty information
+   */
+  async validateMedicalStaffExists(medicalStaffId) {
+    const result = await query(`
+      SELECT 
+        ms.staff_id,
+        ms.specialty,
+        ms.specialty_group,
+        u.user_id,
+        u.name,
+        u.status
+      FROM medical_staff ms
+      INNER JOIN users u ON ms.user_id = u.user_id
+      WHERE ms.staff_id = $1
+    `, [medicalStaffId]);
+    
+    if (result.rows.length === 0) {
+      return { exists: false };
+    }
+    
+    const staff = result.rows[0];
+    
+    return {
+      exists: true,
+      isActive: staff.status === 'active',
+      staffId: staff.staff_id,
+      userId: staff.user_id,
+      name: staff.name,
+      specialty: staff.specialty,
+      specialtyGroup: staff.specialty_group
+    };
+  }
+
+  /**
+   * Get available medical staff for appointment booking
+   * Returns active medical staff with basic information
+   */
+  async getAvailableMedicalStaffForBooking() {
+    const result = await query(`
+      SELECT 
+        ms.staff_id as "staffId",
+        ms.specialty,
+        ms.specialty_group as "specialtyGroup",
+        u.user_id as "userId",
+        u.name,
+        u.email,
+        COUNT(a.appointment_id) as "appointmentCount"
+      FROM medical_staff ms
+      INNER JOIN users u ON ms.user_id = u.user_id
+      LEFT JOIN appointments a ON ms.staff_id = a.medical_staff_id 
+        AND a.status IN ('pending', 'approved')
+      WHERE u.status = 'active'
+      GROUP BY ms.staff_id, ms.specialty, ms.specialty_group, u.user_id, u.name, u.email
+      ORDER BY ms.specialty_group, u.name ASC
+    `);
+    
+    return result.rows;
+  }
+
+  /**
+   * Find the nearest available time slot for a given date and time
+   * Rounds backward to the nearest 20-minute interval, then forward if occupied
+   */
+  async findNearestAvailableTimeSlot(date, requestedTime) {
+    // Parse the requested time
+    const [hours, minutes] = requestedTime.split(':').map(Number);
+    
+    // Round backward to nearest 20-minute interval
+    const roundedMinutes = Math.floor(minutes / 20) * 20;
+    const roundedTime = `${hours.toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}:00`;
+    
+    console.log(`[DEBUG] Requested time: ${requestedTime}, Rounded to: ${roundedTime}`);
+    
+    // Get the day of week for the date
+    const inputDate = new Date(date);
+    const dayOfWeek = inputDate.getDay();
+    
+    // Get all available time slots for this day
+    const availableSlotsResult = await query(`
+      SELECT start_time, end_time 
+      FROM time_slots 
+      WHERE day_of_week = $1 
+      AND start_time >= $2
+      ORDER BY start_time
+    `, [dayOfWeek, roundedTime]);
+    
+    if (availableSlotsResult.rows.length === 0) {
+      throw new Error(`No time slots available after ${roundedTime} on this day`);
+    }
+    
+    // Check each slot starting from the rounded time
+    for (const slot of availableSlotsResult.rows) {
+      const isAvailable = await this.isTimeSlotAvailable(date, slot.start_time);
+      if (isAvailable) {
+        console.log(`[DEBUG] Found available slot: ${slot.start_time}`);
+        return slot.start_time;
+      }
+      console.log(`[DEBUG] Slot ${slot.start_time} is occupied, trying next...`);
+    }
+    
+    // If no slots available after the rounded time, check earlier slots
+    const earlierSlotsResult = await query(`
+      SELECT start_time, end_time 
+      FROM time_slots 
+      WHERE day_of_week = $1 
+      AND start_time < $2
+      ORDER BY start_time DESC
+    `, [dayOfWeek, roundedTime]);
+    
+    for (const slot of earlierSlotsResult.rows) {
+      const isAvailable = await this.isTimeSlotAvailable(date, slot.start_time);
+      if (isAvailable) {
+        console.log(`[DEBUG] Found available earlier slot: ${slot.start_time}`);
+        return slot.start_time;
+      }
+    }
+    
+    throw new Error('No available time slots found for this date');
   }
 
 }
