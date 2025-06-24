@@ -69,7 +69,7 @@ exports.changePassword = async (req, res) => {
 // Role-based profile access - students can only view their own, medical staff + admin can view any
 exports.getProfileById = async (req, res) => {
   try {
-    const targetUserId = parseInt(req.params.userId);
+    const targetUserId = req.params.userId;
     const profile = await profileService.getProfile(targetUserId);
     
     res.json({ user: profile });

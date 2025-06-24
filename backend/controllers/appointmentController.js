@@ -50,23 +50,32 @@ exports.getAppointments = async (req, res) => {
 
 // Create appointment with role-based validation
 exports.createAppointment = async (req, res) => {
-  try {
-    const { symptoms, priorityLevel, healthIssueType, medical_staff_id, dateScheduled, timeScheduled } = req.body;
+  try {    const { symptoms, priorityLevel, healthIssueType, medical_staff_id, dateScheduled, timeScheduled } = req.body;
     const userRole = req.appointmentAccess.role;
     const userId = req.appointmentAccess.userId;
+    
+    // Ensure medical_staff_id is null if not provided
+    const medicalStaffId = medical_staff_id || null;
     
     // Validate required fields
     if (!symptoms || !priorityLevel || !healthIssueType || !dateScheduled || !timeScheduled) {
       return res.status(400).json({ 
         error: 'Symptoms, priority level, health issue type, date, and time are required' 
       });
-    }
-
-    // Validate health issue type
+    }    // Validate health issue type
     const validHealthIssueTypes = ['physical', 'mental'];
     if (!validHealthIssueTypes.includes(healthIssueType)) {
       return res.status(400).json({ 
         error: 'Health issue type must be either "physical" or "mental"' 
+      });
+    }
+
+    // Validate priority level
+    const validPriorityLevels = ['low', 'medium', 'high'];
+    const normalizedPriorityLevel = typeof priorityLevel === 'string' ? priorityLevel.trim().toLowerCase() : priorityLevel;
+    if (!validPriorityLevels.includes(normalizedPriorityLevel)) {
+      return res.status(400).json({ 
+        error: 'Priority level must be "low", "medium", or "high"' 
       });
     }
 
@@ -101,10 +110,9 @@ exports.createAppointment = async (req, res) => {
     
     let appointment;
       if (userRole === 'student') {
-      // Students create appointments for themselves
-      // If medical_staff_id is provided, validate it exists and is active
-      if (medical_staff_id) {
-        const staffValidation = await appointmentService.validateMedicalStaffExists(medical_staff_id);
+      // Students create appointments for themselves      // If medical_staff_id is provided, validate it exists and is active
+      if (medicalStaffId) {
+        const staffValidation = await appointmentService.validateMedicalStaffExists(medicalStaffId);
         if (!staffValidation.exists) {
           return res.status(400).json({ 
             error: 'Selected medical staff not found or inactive' 
@@ -120,19 +128,19 @@ exports.createAppointment = async (req, res) => {
         
         console.log(`[DEBUG] Student selected medical staff: ${staffValidation.name} (${staffValidation.specialty})`);
       }
-        appointment = await appointmentService.createAppointment(userId, symptoms, priorityLevel, healthIssueType, medical_staff_id, dateScheduled, formattedTimeScheduled);
+        appointment = await appointmentService.createAppointment(userId, symptoms, normalizedPriorityLevel, healthIssueType, medicalStaffId, dateScheduled, formattedTimeScheduled);
     } else if (userRole === 'admin') {
       // Admin can create appointments for students via different route (/api/admin/appointments/users/:userId)
       return res.status(400).json({ 
         error: 'Admins should use /api/admin/appointments/users/:userId endpoint' 
       });    } else if (userRole === 'medical_staff') {
-      // Medical staff can create appointments for students with their assignment
-      appointment = await appointmentService.createAppointmentByMedicalStaff(userId, symptoms, priorityLevel, healthIssueType, null, dateScheduled, formattedTimeScheduled);
-    }    res.status(201).json({ 
+      // Medical staff can create appointments using the same universal method
+      appointment = await appointmentService.createAppointment(userId, symptoms, normalizedPriorityLevel, healthIssueType, medicalStaffId, dateScheduled, formattedTimeScheduled);
+    }res.status(201).json({ 
       message: 'Appointment created successfully',
       appointment,
       assignedSpecialtyGroup: healthIssueType, // Show which specialty group was requested
-      assignmentMethod: medical_staff_id ? 'manual_selection' : 'auto_assigned',
+      assignmentMethod: medicalStaffId ? 'manual_selection' : 'auto_assigned',
       timeAdjustment: appointment.timeScheduled !== formattedTimeScheduled ? {
         requested: formattedTimeScheduled,
         assigned: appointment.timeScheduled,
@@ -286,15 +294,24 @@ exports.updateAppointment = async (req, res) => {  try {
         error: 'Invalid status value',
         validStatuses: ['pending', 'approved', 'rejected', 'completed', 'cancelled']
       });
-    }
-
-    // Update the appointment
+    }    // Update the appointment
     const result = await appointmentService.updateAppointment(appointmentId, updates);
+    
+    // Check if time was adjusted
+    let timeAdjustment = null;
+    if (updates.timeScheduled && result.timeScheduled !== updates.timeScheduled) {
+      timeAdjustment = {
+        requested: updates.timeScheduled,
+        assigned: result.timeScheduled,
+        reason: 'Requested time slot not available, assigned nearest available slot'
+      };
+    }
     
     res.json({ 
       success: true,
       message: 'Appointment updated successfully',
-      appointment: result 
+      appointment: result,
+      timeAdjustment: timeAdjustment
     });
   } catch (error) {
     console.error('Update appointment error:', error);
@@ -310,14 +327,39 @@ exports.deleteAppointment = async (req, res) => {
   try {
     const appointmentId = req.params.appointmentId;
     const userRole = req.appointmentAccess.role;
+    const userId = req.appointmentAccess.userId;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(appointmentId)) {
+      return res.status(400).json({ 
+        error: 'Invalid appointment ID format' 
+      });
+    }
+    
+    const deletedAppointment = await appointmentService.deleteAppointment(
+      appointmentId, 
+      userId, 
+      userRole
+    );
     
     res.json({ 
       message: 'Appointment deleted successfully',
-      appointmentId,
+      appointment: deletedAppointment,
       deletedBy: userRole 
     });
   } catch (error) {
     console.error('Delete appointment error:', error);
+    
+    if (error.message === 'Appointment not found') {
+      return res.status(404).json({ error: error.message });
+    }
+    
+    if (error.message === 'You do not have permission to delete this appointment' ||
+        error.message === 'Cannot delete completed appointments') {
+      return res.status(403).json({ error: error.message });
+    }
+    
     res.status(500).json({ error: error.message });
   }
 };
@@ -355,7 +397,7 @@ exports.getPendingAppointments = async (req, res) => {
 exports.approveAppointment = async (req, res) => {
   try {
     const { appointmentId } = req.params;
-    const { dateScheduled, advice } = req.body; // Optional advice message
+    const { dateScheduled, timeScheduled, advice } = req.body; // Optional advice message
     const userId = req.user.userId;
     const userRole = req.user.role;
     
@@ -365,11 +407,50 @@ exports.approveAppointment = async (req, res) => {
       });
     }
     
+    // Validate input parameters if provided
+    if (dateScheduled) {
+      const appointmentDate = new Date(dateScheduled);
+      if (isNaN(appointmentDate.getTime())) {
+        return res.status(400).json({ 
+          error: 'Invalid date format. Use YYYY-MM-DD' 
+        });
+      }
+      
+      // Check if appointment date is in the future
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Set to start of today for comparison
+      appointmentDate.setHours(0, 0, 0, 0);
+      if (appointmentDate < now) {
+        return res.status(400).json({ 
+          error: 'Appointment date must be today or in the future' 
+        });
+      }
+    }
+    
+    let formattedTimeScheduled = timeScheduled;
+    if (timeScheduled) {
+      // Validate time format (accepts both HH:MM and HH:MM:SS)
+      const timeRegexWithSeconds = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
+      const timeRegexWithoutSeconds = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      
+      if (!timeRegexWithSeconds.test(timeScheduled) && !timeRegexWithoutSeconds.test(timeScheduled)) {
+        return res.status(400).json({ 
+          error: 'Invalid time format. Use HH:MM or HH:MM:SS (e.g., 14:20 or 14:20:00)' 
+        });
+      }
+      
+      // Ensure we have the correct time format for the service
+      if (timeRegexWithoutSeconds.test(timeScheduled) && !timeRegexWithSeconds.test(timeScheduled)) {
+        formattedTimeScheduled = timeScheduled + ':00';
+      }
+    }
+    
     // Approve the appointment
     const appointment = await appointmentService.approveAppointment(
       appointmentId, 
       userId, 
-      dateScheduled
+      dateScheduled,
+      formattedTimeScheduled
     );
     
     let sentAdvice = null;

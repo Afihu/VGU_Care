@@ -145,13 +145,18 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
   }    async updateAppointment(appointmentId, updateData) {
     const { symptoms, status, priorityLevel, dateScheduled, timeScheduled } = updateData;
 
-    console.log('[DEBUG] updateAppointment - Received updateData:', JSON.stringify(updateData, null, 2));
-
-    // If updating time, validate time slot availability
+    console.log('[DEBUG] updateAppointment - Received updateData:', JSON.stringify(updateData, null, 2));    // If updating time, validate time slot availability and find nearest if needed
+    let finalTimeScheduled = timeScheduled;
     if (dateScheduled && timeScheduled) {
       const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
       if (!isAvailable) {
-        throw new Error('Selected time slot is not available');
+        console.log(`[DEBUG] updateAppointment - Requested time slot ${timeScheduled} not available, finding nearest available slot...`);
+        try {
+          finalTimeScheduled = await this.findNearestAvailableTimeSlot(dateScheduled, timeScheduled);
+          console.log(`[DEBUG] updateAppointment - Adjusted time from ${timeScheduled} to ${finalTimeScheduled}`);
+        } catch (error) {
+          throw new Error(`No available time slots found near ${timeScheduled} on ${dateScheduled}: ${error.message}`);
+        }
       }
     }
 
@@ -197,11 +202,9 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       updates.push(`date_scheduled = $${paramCount}`);
       values.push(dateScheduled);
       paramCount++;
-    }
-
-    if (timeScheduled !== undefined) {
+    }    if (timeScheduled !== undefined) {
       updates.push(`time_scheduled = $${paramCount}`);
-      values.push(timeScheduled);
+      values.push(finalTimeScheduled); // Use the adjusted time slot
       paramCount++;
     }
 
@@ -274,7 +277,7 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
 
     return result.rows;
   }
-  async createAppointmentByMedicalStaff(medicalStaffUserId, symptoms, priorityLevel, studentUserId = null, dateScheduled = null, timeScheduled = null) {
+  async createAppointmentByMedicalStaff(medicalStaffUserId, symptoms, priorityLevel, healthIssueType, studentUserId = null, dateScheduled = null, timeScheduled = null) {
     // Get medical staff's staff_id from user_id
     const staffResult = await query(
       'SELECT staff_id FROM medical_staff WHERE user_id = $1',
@@ -300,11 +303,10 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       dateScheduled = tomorrow.toISOString().split('T')[0] + ' 10:00:00';
       timeScheduled = '10:00:00';
     }
-    
-    const result = await query(
+      const result = await query(
       `
-      INSERT INTO appointments (user_id, symptoms, priority_level, date_scheduled, time_scheduled, medical_staff_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO appointments (user_id, symptoms, priority_level, health_issue_type, date_scheduled, time_scheduled, medical_staff_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING 
         appointment_id as "id",
         user_id as "userId",
@@ -313,9 +315,10 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
         date_scheduled as "dateScheduled",
         time_scheduled as "timeScheduled",
         priority_level as "priorityLevel",
-        symptoms
+        symptoms,
+        health_issue_type as "healthIssueType"
       `,
-      [studentUserId || medicalStaffUserId, symptoms, priorityLevel, dateScheduled, timeScheduled, staffId]
+      [studentUserId || medicalStaffUserId, symptoms, priorityLevel, healthIssueType, dateScheduled, timeScheduled, staffId]
     );
 
     console.log(`[DEBUG] Medical staff appointment created:`, result.rows[0]);
@@ -355,12 +358,11 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     if (staffResult.rows.length === 0) {
       throw new Error('Medical staff not found');
     }
-    
-    const staffId = staffResult.rows[0].staff_id;
+      const staffId = staffResult.rows[0].staff_id;
     
     // If date and time are provided, validate the time slot
     if (dateScheduled && timeScheduled) {
-      const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled);
+      const isAvailable = await this.isTimeSlotAvailable(dateScheduled, timeScheduled, appointmentId);
       if (!isAvailable) {
         throw new Error('Selected time slot is not available');
       }
@@ -669,11 +671,11 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       endTime: slot.endTimeFormatted,
       available: true
     }));
-  }
-  /**
+  }  /**
    * Check if a specific time slot is available for booking (includes blackout date check)
-   */  async isTimeSlotAvailable(date, timeScheduled) {
-    console.log(`[DEBUG] Checking time slot availability for date: ${date}, time: ${timeScheduled}`);
+   */
+  async isTimeSlotAvailable(date, timeScheduled, excludeAppointmentId = null) {
+    console.log(`[DEBUG] Checking time slot availability for date: ${date}, time: ${timeScheduled}, excluding appointment: ${excludeAppointmentId}`);
     
     // Check for blackout dates first
     const blackoutCheck = await query(`
@@ -723,15 +725,22 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       console.log(`[DEBUG] Available time slots for day ${dbDayOfWeek}:`, availableSlotsResult.rows.map(row => row.start_time));
       
       return false; // Time slot doesn't exist for this day
-    }
-
-    // Check if the time slot is available (not booked)
-    const result = await query(`
+    }    // Check if the time slot is available (not booked by other appointments)
+    let conflictQuery = `
       SELECT 1 FROM appointments 
       WHERE DATE(date_scheduled) = $1 
       AND time_scheduled = $2
       AND status NOT IN ('cancelled', 'rejected')
-    `, [date, timeScheduled]);
+    `;
+    let queryParams = [date, timeScheduled];
+    
+    // Exclude the current appointment if specified
+    if (excludeAppointmentId) {
+      conflictQuery += ` AND appointment_id != $3`;
+      queryParams.push(excludeAppointmentId);
+    }
+
+    const result = await query(conflictQuery, queryParams);
 
     const isAvailable = result.rows.length === 0;
     console.log(`[DEBUG] Time slot availability check: ${isAvailable ? 'AVAILABLE' : 'BOOKED'}`);
@@ -859,6 +868,109 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     }
     
     throw new Error('No available time slots found for this date');
+  }
+
+  /**
+   * Delete appointment - with role-based authorization
+   * Students can delete their own appointments
+   * Medical staff can delete pending appointments or appointments assigned to them
+   * Admins can delete any appointment
+   */
+  async deleteAppointment(appointmentId, userId, userRole) {
+    console.log(`[DEBUG] deleteAppointment called with appointmentId: ${appointmentId}, userId: ${userId}, userRole: ${userRole}`);
+    
+    // First, get the appointment to check permissions
+    const appointmentResult = await query(`
+      SELECT 
+        appointment_id,
+        user_id,
+        medical_staff_id,
+        status,
+        date_scheduled,
+        time_scheduled,
+        symptoms
+      FROM appointments 
+      WHERE appointment_id = $1
+    `, [appointmentId]);
+    
+    if (appointmentResult.rows.length === 0) {
+      throw new Error('Appointment not found');
+    }
+    
+    const appointment = appointmentResult.rows[0];
+    
+    // Role-based authorization
+    let canDelete = false;
+    
+    if (userRole === 'admin') {
+      canDelete = true; // Admins can delete any appointment
+    } else if (userRole === 'student') {
+      // Students can only delete their own appointments
+      canDelete = appointment.user_id === userId;
+    } else if (userRole === 'medical_staff') {
+      // Medical staff can delete:
+      // 1. Pending appointments (not yet assigned)
+      // 2. Appointments assigned to them
+      if (appointment.status === 'pending') {
+        canDelete = true;
+      } else {
+        // Check if this medical staff is assigned to the appointment
+        const staffResult = await query(
+          'SELECT staff_id FROM medical_staff WHERE user_id = $1',
+          [userId]
+        );
+        
+        if (staffResult.rows.length > 0) {
+          const staffId = staffResult.rows[0].staff_id;
+          canDelete = appointment.medical_staff_id === staffId;
+        }
+      }
+    }
+    
+    if (!canDelete) {
+      throw new Error('You do not have permission to delete this appointment');
+    }
+    
+    // Check if appointment can be deleted based on status
+    if (appointment.status === 'completed') {
+      throw new Error('Cannot delete completed appointments');
+    }
+    
+    // Perform the deletion
+    const deleteResult = await query(`
+      DELETE FROM appointments 
+      WHERE appointment_id = $1
+      RETURNING 
+        appointment_id as "id",
+        user_id as "userId",
+        status,
+        date_scheduled as "dateScheduled",
+        time_scheduled as "timeScheduled"
+    `, [appointmentId]);
+    
+    if (deleteResult.rows.length === 0) {
+      throw new Error('Failed to delete appointment');
+    }
+    
+    const deletedAppointment = deleteResult.rows[0];
+    
+    // Send notification to the student (if not deleted by the student themselves)
+    if (userRole !== 'student') {
+      try {
+        const notificationService = require('./notificationService');
+        await notificationService.notifyStudentAppointmentCancelled(
+          appointment.user_id,
+          appointment.appointment_id,
+          `Your appointment scheduled for ${appointment.date_scheduled} at ${appointment.time_scheduled} has been cancelled.`
+        );
+      } catch (notificationError) {
+        console.log(`[DEBUG] Failed to send cancellation notification: ${notificationError.message}`);
+        // Continue without failing the deletion
+      }
+    }
+    
+    console.log(`[DEBUG] Successfully deleted appointment: ${appointmentId}`);
+    return deletedAppointment;
   }
 
 }
