@@ -39,7 +39,7 @@ Based on our ERD diagram, the following is the detailed rundown of the VGU Care 
 - **appointment_id** (UUID, Primary Key)
 - **user_id** (UUID, Foreign Key → Users)
 - **medical_staff_id** (UUID, Foreign Key → Medical Staff)
-- **status** (ENUM: 'pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled')
+- **status** (ENUM: 'pending', 'approved', 'rejected', 'completed', 'cancelled')
 - **date_requested** (TIMESTAMP, Not Null)
 - **date_scheduled** (TIMESTAMP, Null)
 - **time_scheduled** (TIME) - For 20-minute time slots

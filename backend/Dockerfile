@@ -1,8 +1,8 @@
-# Use smaller Alpine image and specific Node version
-FROM node:18-alpine AS base
+# Use regular node image if alpine fails
+FROM node:18 AS base
 
-# Add necessary packages for native modules
-RUN apk add --no-cache python3 make g++
+# Install build tools for native modules
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

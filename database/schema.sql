@@ -30,6 +30,7 @@ CREATE TABLE medical_staff (
     staff_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     specialty VARCHAR(100) NOT NULL,
+    specialty_group VARCHAR(10) CHECK (specialty_group IN ('physical', 'mental')) NOT NULL DEFAULT 'physical',
     shift_schedule JSONB DEFAULT '{}'::jsonb  -- Store schedule as JSON: {"monday": ["09:00-17:00"], "tuesday": ["09:00-17:00"], ...}
 );
 
@@ -44,12 +45,13 @@ CREATE TABLE appointments (
     appointment_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     medical_staff_id UUID REFERENCES medical_staff(staff_id) ON DELETE SET NULL,
-    status VARCHAR(20) CHECK (status IN ('scheduled', 'completed', 'cancelled')) NOT NULL DEFAULT 'scheduled',
+    status VARCHAR(20) CHECK (status IN ('pending', 'approved', 'rejected', 'completed', 'cancelled')) NOT NULL DEFAULT 'pending',
     date_requested TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    date_scheduled TIMESTAMP NULL,
-    time_scheduled TIME,
+    date_scheduled TIMESTAMP NOT NULL,
+    time_scheduled TIME NOT NULL,
     priority_level VARCHAR(10) CHECK (priority_level IN ('low', 'medium', 'high')) NOT NULL,
-    symptoms TEXT NOT NULL
+    symptoms TEXT NOT NULL,
+    health_issue_type VARCHAR(10) CHECK (health_issue_type IN ('physical', 'mental')) NOT NULL
 );
 
 -- Temporary Advice table
@@ -90,7 +92,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     notification_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     appointment_id UUID REFERENCES appointments(appointment_id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL CHECK (type IN ('appointment_assigned', 'appointment_approved', 'appointment_rejected', 'appointment_scheduled', 'appointment_completed', 'general')),
+    type VARCHAR(50) NOT NULL CHECK (type IN ('appointment_assigned', 'appointment_approved', 'appointment_rejected', 'appointment_completed', 'general')),
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
@@ -101,6 +103,19 @@ CREATE TABLE IF NOT EXISTS notifications (
 -- Create index for better query performance
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
+
+-- Blackout dates table for holiday management
+CREATE TABLE blackout_dates (
+    blackout_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    date DATE NOT NULL UNIQUE,
+    reason VARCHAR(255) NOT NULL,
+    type VARCHAR(50) DEFAULT 'holiday' CHECK (type IN ('holiday', 'maintenance', 'staff_training', 'emergency')),
+    created_by UUID REFERENCES users(user_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for fast date lookups
+CREATE INDEX IF NOT EXISTS idx_blackout_dates_date ON blackout_dates(date);
 
 -- Dummy Data (10 users: 7 students, 2 medical staff, 1 admin)
 
@@ -155,15 +170,18 @@ SELECT u.user_id,
 FROM users u WHERE u.role = 'student';
 
 -- Insert Medical Staff
-INSERT INTO medical_staff (user_id, specialty, shift_schedule)
+INSERT INTO medical_staff (user_id, specialty, specialty_group, shift_schedule)
 SELECT u.user_id,
        CASE 
            WHEN u.email = 'doctor1@vgu.edu.vn' THEN 'General Medicine'
            WHEN u.email = 'doctor2@vgu.edu.vn' THEN 'Psychology'
        END as specialty,
        CASE 
-           WHEN u.email = 'doctor1@vgu.edu.vn' THEN '{"monday": ["09:00-17:00"], "tuesday": ["09:00-17:00"], "wednesday": ["09:00-17:00"], "thursday": ["09:00-17:00"], "friday": ["09:00-17:00"]}'::jsonb
-           WHEN u.email = 'doctor2@vgu.edu.vn' THEN '{"monday": ["10:00-18:00"], "tuesday": ["10:00-18:00"], "wednesday": ["10:00-18:00"], "thursday": ["10:00-18:00"], "friday": ["10:00-18:00"]}'::jsonb
+           WHEN u.email = 'doctor1@vgu.edu.vn' THEN 'physical'
+           WHEN u.email = 'doctor2@vgu.edu.vn' THEN 'mental'
+       END as specialty_group,       CASE 
+           WHEN u.email = 'doctor1@vgu.edu.vn' THEN '{"monday": ["09:00-16:00"], "tuesday": ["09:00-16:00"], "wednesday": ["09:00-16:00"], "thursday": ["09:00-16:00"], "friday": ["09:00-16:00"]}'::jsonb
+           WHEN u.email = 'doctor2@vgu.edu.vn' THEN '{"monday": ["09:00-16:00"], "tuesday": ["09:00-16:00"], "wednesday": ["09:00-16:00"], "thursday": ["09:00-16:00"], "friday": ["09:00-16:00"]}'::jsonb
        END as shift_schedule
 FROM users u WHERE u.role = 'medical_staff';
 
@@ -171,9 +189,16 @@ FROM users u WHERE u.role = 'medical_staff';
 INSERT INTO admins (user_id)
 SELECT user_id FROM users WHERE role = 'admin';
 
--- Sample appointments
-INSERT INTO appointments (user_id, priority_level, symptoms, date_scheduled)
-SELECT s.user_id, 'medium', 'Headache and fever', CURRENT_TIMESTAMP + INTERVAL '2 days'
+-- Sample appointments with proper time scheduling
+INSERT INTO appointments (user_id, priority_level, symptoms, health_issue_type, date_scheduled, time_scheduled, medical_staff_id)
+SELECT 
+  s.user_id, 
+  'medium', 
+  'Headache and fever', 
+  'physical', 
+  CURRENT_TIMESTAMP + INTERVAL '2 days',
+  '10:00:00',
+  (SELECT staff_id FROM medical_staff WHERE specialty_group = 'physical' LIMIT 1)
 FROM students s LIMIT 3;
 
 -- Sample mood entries
@@ -190,7 +215,7 @@ WHERE u.email = 'student1@vgu.edu.vn';
 -- Update the appointments table status to include approval workflow
 ALTER TABLE appointments DROP CONSTRAINT IF EXISTS appointments_status_check;
 ALTER TABLE appointments ADD CONSTRAINT appointments_status_check 
-CHECK (status IN ('pending', 'approved', 'rejected', 'scheduled', 'completed', 'cancelled'));
+CHECK (status IN ('pending', 'approved', 'rejected', 'completed', 'cancelled'));
 
 -- Set default to 'pending' instead of 'scheduled'
 ALTER TABLE appointments ALTER COLUMN status SET DEFAULT 'pending';
@@ -214,16 +239,32 @@ CREATE TABLE IF NOT EXISTS time_slots (
     UNIQUE(start_time, day_of_week)
 );
 
--- Populate time_slots with 20-minute slots from 9am to 4pm (Monday to Friday)
--- This creates 21 slots per day (7 hours * 3 slots per hour)
+-- Populate time_slots with 20-minute slots from 9am to 4pm EXCLUDING lunch (12pm-1pm)
+-- Morning slots: 9:00-12:00 (9 slots) + Afternoon slots: 13:00-16:00 (9 slots) = 18 slots per day
 INSERT INTO time_slots (start_time, end_time, day_of_week)
 SELECT 
-    (TIME '09:00:00' + (interval '20 minutes' * slot_number)) as start_time,
-    (TIME '09:00:00' + (interval '20 minutes' * (slot_number + 1))) as end_time,
+    start_time,
+    (start_time + interval '20 minutes') as end_time,
     day_num
-FROM 
-    generate_series(0, 20) as slot_number, -- 21 slots = 7 hours
-    generate_series(1, 5) as day_num -- Monday to Friday
+FROM (
+    -- Morning slots: 9:00 AM to 12:00 PM (9 slots)
+    SELECT 
+        (TIME '09:00:00' + (interval '20 minutes' * slot_number)) as start_time,
+        day_num
+    FROM 
+        generate_series(0, 8) as slot_number, -- 9 morning slots
+        generate_series(1, 5) as day_num -- Monday to Friday
+    
+    UNION ALL
+    
+    -- Afternoon slots: 1:00 PM to 4:00 PM (9 slots)  
+    SELECT 
+        (TIME '13:00:00' + (interval '20 minutes' * slot_number)) as start_time,
+        day_num
+    FROM 
+        generate_series(0, 8) as slot_number, -- 9 afternoon slots
+        generate_series(1, 5) as day_num -- Monday to Friday
+) slots
 ON CONFLICT (start_time, day_of_week) DO NOTHING;
 
 -- Create indexes for better performance on time slot queries
@@ -237,7 +278,17 @@ ALTER TABLE students ADD COLUMN IF NOT EXISTS housing_location VARCHAR(20) CHECK
 -- Add shift_schedule to medical_staff table
 ALTER TABLE medical_staff ADD COLUMN IF NOT EXISTS shift_schedule JSONB DEFAULT '{}'::jsonb;
 
+-- Add specialty_group to medical_staff table for physical/mental categorization
+ALTER TABLE medical_staff ADD COLUMN IF NOT EXISTS specialty_group VARCHAR(10) CHECK (specialty_group IN ('physical', 'mental')) DEFAULT 'physical';
+
+-- Add health_issue_type to appointments table
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS health_issue_type VARCHAR(10) CHECK (health_issue_type IN ('physical', 'mental'));
+
 -- Update existing data with default values for new fields
 UPDATE students SET housing_location = 'off_campus' WHERE housing_location IS NULL;
 
-UPDATE medical_staff SET shift_schedule = '{"monday": ["09:00-17:00"], "tuesday": ["09:00-17:00"], "wednesday": ["09:00-17:00"], "thursday": ["09:00-17:00"], "friday": ["09:00-17:00"]}'::jsonb WHERE shift_schedule IS NULL OR shift_schedule = '{}'::jsonb;
+UPDATE medical_staff SET shift_schedule = '{"monday": ["09:00-16:00"], "tuesday": ["09:00-16:00"], "wednesday": ["09:00-16:00"], "thursday": ["09:00-16:00"], "friday": ["09:00-16:00"]}'::jsonb WHERE shift_schedule IS NULL OR shift_schedule = '{}'::jsonb;
+
+-- Update medical staff with appropriate specialty groups
+UPDATE medical_staff SET specialty_group = 'physical' WHERE specialty_group IS NULL AND specialty LIKE '%Medicine%';
+UPDATE medical_staff SET specialty_group = 'mental' WHERE specialty_group IS NULL AND specialty LIKE '%Psychology%';

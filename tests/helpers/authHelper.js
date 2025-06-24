@@ -3,7 +3,7 @@
  * Consolidates all authentication-related testing utilities
  */
 
-const { makeRequest, authenticate, API_BASE_URL, TEST_CREDENTIALS } = require('./testFramework');
+const { makeRequest, authenticate, API_BASE_URL, TEST_CREDENTIALS } = require('../testFramework');
 
 class AuthHelper {
   constructor() {
@@ -68,17 +68,23 @@ class AuthHelper {
     // If we still can't find it, make staff_id optional
     console.warn('[WARNING] Could not fetch staff_id for medical staff, proceeding without it');
     return null; // Return null instead of throwing error
-  }
-  /**
+  }  /**
    * Get token for a specific user type
    */
   getToken(userType) {
     console.log(`[DEBUG] Getting token for ${userType}, available tokens:`, Object.keys(this.tokens));
     if (!this.tokens[userType]) {
       console.log(`[DEBUG] No token found for ${userType}, tokens object:`, this.tokens);
-      throw new Error(`No token available for user type: ${userType}`);
+      return null; // Return null instead of throwing error
     }
     return this.tokens[userType];
+  }
+
+  /**
+   * Check if token exists for user type
+   */
+  hasToken(userType) {
+    return this.tokens[userType] && this.tokens[userType].length > 0;
   }
   /**
    * Get user data for a specific user type

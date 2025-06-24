@@ -2,7 +2,7 @@
  * Mood Entry Management Test Suite
  */
 
-const { SimpleTest, API_BASE_URL } = require('./testFramework');
+const { SimpleTest, API_BASE_URL, makeRequest } = require('./testFramework');
 const TestHelper = require('./helpers/testHelper');
 
 async function runMoodTests() {
@@ -56,8 +56,7 @@ async function runMoodTests() {
         await testHelper.moodHelper.createMoodEntry('medicalStaff', {
           mood: 'calm',
           notes: 'Staff mood entry'
-        });
-        test.fail('Medical staff should not be able to create mood entries');
+        });        test.fail('Medical staff should not be able to create mood entries');
       } catch (error) {
         // This should fail with 403
         test.assert(error.message.includes('403'), 'Should receive 403 error for medical staff creating mood entries');

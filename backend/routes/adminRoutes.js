@@ -149,4 +149,26 @@ router.patch('/abuse-reports/:reportId', adminController.updateAbuseReport);
  */
 router.delete('/abuse-reports/:reportId', adminController.deleteAbuseReport);
 
+// ==================== BLACKOUT DATE MANAGEMENT ROUTES ====================
+
+/**
+ * POST /api/admin/blackout-dates
+ * Admin privilege: Add blackout dates to prevent appointment booking
+ * Body: { date: 'YYYY-MM-DD', reason: string, type?: 'holiday'|'maintenance'|'staff_training'|'emergency' }
+ */
+router.post('/blackout-dates', adminController.addBlackoutDate);
+
+/**
+ * GET /api/admin/blackout-dates
+ * Admin privilege: View all blackout dates
+ * Query: ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&type=holiday
+ */
+router.get('/blackout-dates', adminController.getBlackoutDates);
+
+/**
+ * DELETE /api/admin/blackout-dates/:date
+ * Admin privilege: Remove blackout dates to restore appointment booking
+ */
+router.delete('/blackout-dates/:date', adminController.removeBlackoutDate);
+
 module.exports = router;

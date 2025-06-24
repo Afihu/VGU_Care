@@ -5,6 +5,7 @@
 
 const { SimpleTest, makeRequest, API_BASE_URL } = require('./testFramework');
 const TestHelper = require('./helpers/testHelper');
+const DateUtils = require('./utils/dateUtils');
 
 async function runAppointmentTests() {
   const test = new SimpleTest('🏥 Appointment Management Test Suite');
@@ -16,11 +17,33 @@ async function runAppointmentTests() {
     // Setup: Initialize test helpers
     await testHelper.initialize();
 
-    test.describe('Appointment CRUD Operations', function() {      test.it('should create appointment as student', async function() {
-        console.log('[DEBUG] Starting appointment creation test...');
+    test.describe('Appointment CRUD Operations', function() {      test.it('should create appointment as student', async function() {        console.log('[DEBUG] Starting appointment creation test...');        
+        // Get next weekday
+        const nextWeekday = new Date();
+        nextWeekday.setDate(nextWeekday.getDate() + 1);
+        while (nextWeekday.getDay() === 0 || nextWeekday.getDay() === 6) {
+          nextWeekday.setDate(nextWeekday.getDate() + 1);
+        }
+        const appointmentDate = nextWeekday.toISOString().split('T')[0];
+        
+        // Get available time slots for this date
+        const timeSlotsResponse = await testHelper.appointment.getAvailableTimeSlots(appointmentDate);
+        console.log('[DEBUG] Available slots count:', timeSlotsResponse.body.availableTimeSlots?.length || 0);
+        
+        // Use the first available time slot
+        const firstAvailableSlot = timeSlotsResponse.body.availableTimeSlots?.[0];
+        if (!firstAvailableSlot) {
+          throw new Error('No available time slots found for testing');
+        }
+        
+        console.log('[DEBUG] Using time slot:', firstAvailableSlot.start_time);
+        
         const result = await testHelper.appointment.testCreateAppointment({
           symptoms: 'Test headache and fever',
-          priorityLevel: 'medium'
+          priorityLevel: 'medium',
+          healthIssueType: 'physical',
+          dateScheduled: appointmentDate,
+          timeScheduled: firstAvailableSlot.start_time
         });
         
         console.log('[DEBUG] Test result:', JSON.stringify(result, null, 2));
@@ -66,7 +89,8 @@ async function runAppointmentTests() {
         // Create appointment
         const createResult = await testHelper.appointment.createAppointment('student', {
           symptoms: 'Appointment to be cancelled',
-          priorityLevel: 'low'
+          priorityLevel: 'low',
+          healthIssueType: 'mental'
         });
         const appointmentId = createResult.body.appointment?.id || createResult.body.appointment_id;
         
@@ -76,13 +100,12 @@ async function runAppointmentTests() {
         test.assertEqual(cancelResponse.status, 200, 'Cancellation should succeed');
         test.assertEqual(cancelResponse.body.appointment.status, 'cancelled', 'Status should be cancelled');
         console.log('✅ Student can cancel their appointment');
-      });
-
-      test.it('should allow student to update appointment details', async function() {
+      });      test.it('should allow student to update appointment details', async function() {
         // Create appointment
         const createResult = await testHelper.appointment.createAppointment('student', {
           symptoms: 'Original symptoms',
-          priorityLevel: 'low'
+          priorityLevel: 'low',
+          healthIssueType: 'physical'
         });
         const appointmentId = createResult.body.appointment?.id || createResult.body.appointment_id;
         
@@ -99,6 +122,41 @@ async function runAppointmentTests() {
         test.assertEqual(updateResponse.status, 200, 'Update should succeed');
         test.assertEqual(updateResponse.body.appointment.symptoms, updateData.symptoms, 'Symptoms should be updated');
         console.log('✅ Student can update appointment details');
+      });
+
+      test.it('should allow student to reschedule appointment', async function() {
+        // Create appointment
+        const createResult = await testHelper.appointment.createAppointment('student', {
+          symptoms: 'Test for rescheduling',
+          priorityLevel: 'medium',
+          healthIssueType: 'physical'
+        });
+        const appointmentId = createResult.body.appointment?.id || createResult.body.appointment_id;
+          // Get available time slots for a different date
+        const nextDay = new Date();
+        nextDay.setDate(nextDay.getDate() + 2); // Two days ahead to avoid conflicts
+        while (nextDay.getDay() === 0 || nextDay.getDay() === 6) {
+          nextDay.setDate(nextDay.getDate() + 1);
+        }
+        const rescheduleDate = nextDay.toISOString().split('T')[0];
+        
+        const slotsResponse = await testHelper.appointment.getAvailableTimeSlots(rescheduleDate);
+        if (slotsResponse.body.availableTimeSlots && slotsResponse.body.availableTimeSlots.length > 0) {
+          const newTimeSlot = slotsResponse.body.availableTimeSlots[0];
+          
+          // Reschedule appointment
+          const rescheduleResponse = await testHelper.appointment.rescheduleAppointment(
+            appointmentId, 
+            rescheduleDate, 
+            newTimeSlot.start_time
+          );
+          
+          test.assertEqual(rescheduleResponse.status, 200, 'Reschedule should succeed');
+          test.assertEqual(rescheduleResponse.body.appointment.dateScheduled.split('T')[0], rescheduleDate, 'Date should be updated');
+          test.assertEqual(rescheduleResponse.body.appointment.timeScheduled, newTimeSlot.start_time, 'Time should be updated');
+          console.log('✅ Student can reschedule appointment');        } else {
+          console.log('⚠️ Skipping reschedule test - no available slots for reschedule date');
+        }
       });
     });
 
@@ -133,9 +191,8 @@ async function runAppointmentTests() {
       });
     });
 
-    test.describe('Time Slot Management', function() {
-      test.it('should get available time slots', async function() {
-        const testDate = '2025-06-23'; // Monday
+    test.describe('Time Slot Management', function() {      test.it('should get available time slots', async function() {
+        const testDate = DateUtils.getNextWeekday(1); // Use dynamic date
         const result = await testHelper.appointment.testTimeSlotAvailability(testDate);
         
         test.assertTrue(result.validations.success, 'Should get time slots successfully');
@@ -146,19 +203,18 @@ async function runAppointmentTests() {
       });
 
       test.it('should create appointment with time slot', async function() {
-        const testDate = '2025-06-23';
+        const testDate = DateUtils.getNextWeekday(1); // Use dynamic date
         const timeSlotsResult = await testHelper.appointment.getAvailableTimeSlots(testDate);
         
         test.assertEqual(timeSlotsResult.status, 200, 'Should get time slots');
-        
-        if (timeSlotsResult.body.availableTimeSlots && timeSlotsResult.body.availableTimeSlots.length > 0) {
+          if (timeSlotsResult.body.availableTimeSlots && timeSlotsResult.body.availableTimeSlots.length > 0) {
           const firstSlot = timeSlotsResult.body.availableTimeSlots[0];
-          
           const appointmentData = {
             symptoms: 'Test appointment with time slot',
             priorityLevel: 'medium',
-            date: testDate,
-            timeSlot: firstSlot.start_time
+            healthIssueType: 'physical',
+            dateScheduled: testDate,
+            timeScheduled: firstSlot.start_time
           };
           
           const createResult = await testHelper.appointment.createAppointmentWithTimeSlot(appointmentData);

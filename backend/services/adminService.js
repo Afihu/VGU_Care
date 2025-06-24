@@ -513,6 +513,107 @@ class AdminService extends BaseService {
     return { message: 'Abuse report deleted successfully' };
   }
 
+  // ==================== BLACKOUT DATE MANAGEMENT ====================
+
+  /**
+   * Add blackout date and cancel existing appointments
+   */
+  async addBlackoutDate(date, reason, type, adminUserId) {
+    return await this.withTransaction(async (client) => {
+      // Check if blackout date already exists
+      const existingResult = await client.query(
+        'SELECT * FROM blackout_dates WHERE date = $1',
+        [date]
+      );
+      
+      if (existingResult.rows.length > 0) {
+        throw new Error(`Blackout date for ${date} already exists`);
+      }
+
+      // Add blackout date
+      const blackoutResult = await client.query(`
+        INSERT INTO blackout_dates (date, reason, type, created_by)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `, [date, reason, type, adminUserId]);
+
+      // Cancel existing appointments on this date
+      const cancelResult = await client.query(`
+        UPDATE appointments 
+        SET status = 'cancelled'
+        WHERE DATE(date_scheduled) = $1 
+        AND status NOT IN ('cancelled', 'completed')
+        RETURNING appointment_id, user_id
+      `, [date]);
+
+      // Send notifications to affected students
+      const notificationService = require('./notificationService');
+      for (const apt of cancelResult.rows) {
+        try {
+          await notificationService.createNotification(
+            apt.user_id,
+            'appointment_cancelled',
+            'Appointment Cancelled - Holiday',
+            `Your appointment on ${date} has been cancelled due to: ${reason}. Please reschedule.`,
+            apt.appointment_id
+          );
+        } catch (notificationError) {
+          console.log(`Failed to send notification for appointment ${apt.appointment_id}: ${notificationError.message}`);
+        }
+      }
+
+      return {
+        blackoutDate: blackoutResult.rows[0],
+        cancelledCount: cancelResult.rows.length
+      };
+    });
+  }
+
+  /**
+   * Remove blackout date
+   */
+  async removeBlackoutDate(date) {
+    const result = await query(`
+      DELETE FROM blackout_dates WHERE date = $1
+      RETURNING *
+    `, [date]);
+
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Get blackout dates with optional filtering
+   */
+  async getBlackoutDates(startDate = null, endDate = null, type = null) {
+    let queryText = `
+      SELECT 
+        bd.*,
+        u.name as created_by_name
+      FROM blackout_dates bd
+      LEFT JOIN users u ON bd.created_by = u.user_id
+      WHERE 1=1
+    `;
+    const values = [];
+    let paramCount = 1;
+
+    if (startDate && endDate) {
+      queryText += ` AND bd.date BETWEEN $${paramCount} AND $${paramCount + 1}`;
+      values.push(startDate, endDate);
+      paramCount += 2;
+    }
+
+    if (type) {
+      queryText += ` AND bd.type = $${paramCount}`;
+      values.push(type);
+      paramCount++;
+    }
+
+    queryText += ' ORDER BY bd.date ASC';
+
+    const result = await query(queryText, values);
+    return result.rows;
+  }
+
   // ==================== HELPER METHODS ====================
 
   /**

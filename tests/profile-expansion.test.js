@@ -6,6 +6,7 @@
 
 const { SimpleTest, makeRequest, API_BASE_URL } = require('./testFramework');
 const TestHelper = require('./helpers/testHelper');
+const DateUtils = require('./utils/dateUtils');
 
 async function runProfileExpansionTests() {
   const test = new SimpleTest('👤 Profile Expansion Test Suite');
@@ -221,11 +222,11 @@ async function runProfileExpansionTests() {
       });
     });
 
-    test.describe('Profile Integration with Appointments', function() {
-      test.it('should consider housing location for appointment scheduling', async function() {
+    test.describe('Profile Integration with Appointments', function() {      test.it('should consider housing location for appointment scheduling', async function() {
         // Test that housing location affects appointment availability
         // This is a placeholder for when the feature is implemented
-        const result = await testHelper.appointment.testTimeSlotAvailability('2025-06-23');
+        const testDate = DateUtils.getNextWeekday(1); // Use dynamic date
+        const result = await testHelper.appointment.testTimeSlotAvailability(testDate);
         
         if (result.validations.success) {
           console.log('✅ Time slot system can integrate with housing location');
@@ -243,9 +244,11 @@ async function runProfileExpansionTests() {
           console.log('✅ Appointment system can integrate with medical staff shifts');
         } else {
           console.log('ℹ️ Shift integration with appointment assignment not yet implemented');
-        }
-      });
+        }      });
     });
+
+    // Run tests
+    await test.run();
 
   } catch (error) {
     console.error('\n💥 Profile expansion tests failed:', error.message);
@@ -253,7 +256,6 @@ async function runProfileExpansionTests() {
   } finally {
     await testHelper.cleanup();
   }
-  test.run();
 }
 
 // Run tests if this file is executed directly

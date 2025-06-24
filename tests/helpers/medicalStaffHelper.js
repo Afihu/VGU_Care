@@ -4,6 +4,7 @@
  */
 
 const { ApiTestUtils } = require('../testFramework');
+const DateUtils = require('../utils/dateUtils');
 
 class MedicalStaffHelper {
   constructor(testHelper) {
@@ -156,15 +157,14 @@ class MedicalStaffHelper {
     
     return response;
   }
-
   /**
    * Create test data for medical staff tests
    */
   async createTestAppointment() {
-    // Create an appointment that will be assigned to medical staff
+    // Create an appointment that will be assigned to medical staff - use dynamic date
+    const testDate = DateUtils.getNextWeekday(1);
     const appointment = await this.testHelper.appointmentHelper.createAppointment('student', {
-      date: '2025-06-23',
-      time: '14:00',
+      dateScheduled: testDate,
       reason: 'Medical staff test appointment'
     });
     

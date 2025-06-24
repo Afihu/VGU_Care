@@ -21,12 +21,12 @@ echo "🛡️ Running Role Privileges Tests..."
 docker-compose --profile test run --rm test node tests/privilege.test.js
 
 echo ""
-echo "📅 Running Appointment Management Tests..."
-docker-compose --profile test run --rm test node tests/appointment.test.js
+echo "👤 Running Profile Tests..."
+docker-compose --profile test run --rm test node tests/profile.test.js
 
 echo ""
-echo "🕐 Running Time Slots Tests..."
-docker-compose --profile test run --rm test node tests/time-slots.test.js
+echo "📅 Running Appointment Management Tests..."
+docker-compose --profile test run --rm test node tests/appointment.test.js
 
 echo ""
 echo "🏥 Running Medical Staff Tests..."
@@ -39,6 +39,10 @@ docker-compose --profile test run --rm test node tests/advice.test.js
 echo ""
 echo "😊 Running Mood Entry Tests..."
 docker-compose --profile test run --rm test node tests/mood.test.js
+
+echo ""
+echo "🔔 Running Notification System Tests..."
+docker-compose --profile test run --rm test node tests/notification.test.js
 
 echo ""
 echo "✨ All tests completed!"
