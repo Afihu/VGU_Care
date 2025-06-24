@@ -80,6 +80,20 @@ const api = {
 
     },
 
+    //Request Appointment API Services
+    getMedicalStaffProfile: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/medical-staff/profile';
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response); 
+    },
+
+    //Track Mood API Services
     getMoodEntries: async (token) => {
         const apiEndpoint = API_BASE_URL + '/mood-entries';
         const response = await fetch(apiEndpoint, {
@@ -92,17 +106,18 @@ const api = {
         return handleApiError(response);
     },
 
-    getMedicalStaffProfile: async (token) => {
-        const apiEndpoint = API_BASE_URL + '/medical-staff/profile';
+    createMoodEntry: async (token, moodData) => {
+        const apiEndpoint = API_BASE_URL + '/mood-entries';
         const response = await fetch(apiEndpoint, {
-            method: 'GET',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
-            }
+            },
+            body: JSON.stringify(moodData)
         });
-        return handleApiError(response);  // handles 401, 403, etc.
-    },
+        return handleApiError(response);
+    }
       
 }
 
