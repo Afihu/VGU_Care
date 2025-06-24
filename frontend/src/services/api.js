@@ -61,7 +61,6 @@ const api = {
     appointmentRetrieveService: async(token) => {
         const apiEndpoint = API_BASE_URL + '/appointments';
         
-        //error here, fix later
         var response = await fetch(apiEndpoint, {
             method: 'GET',
             headers: {
@@ -77,7 +76,48 @@ const api = {
         } catch (error) {
             throw error;
         }
+    },
 
+    studentRetrieveService: async(token) => {
+        const apiEndpoint = API_BASE_URL + '/medical-staff/students';
+
+        var response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${token}` 
+            }
+        });
+
+        try {
+           const result = handleApiError(response);
+           console.log(result);
+           
+           return result;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    reportRetrieveService: async(token) => {
+        const apiEndpoint = API_BASE_URL + '/reports';
+
+        var response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${token}` 
+            }
+        });
+
+        try {
+           const result = handleApiError(response);
+           console.log(result);
+           
+           return result;
+        } catch (error) {
+            throw error;
+        }
     },
 
     //Request Appointment API Services

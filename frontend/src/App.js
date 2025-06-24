@@ -9,6 +9,7 @@ import RequestAppointment from './pages/RequestAppointment';
 import AppointmentView from './pages/AppointmentView';
 import TrackMood from './pages/TrackMood';
 import PasswordRetrieve from './pages/PasswordRetrieve';
+import ManageStudent from './pages/ManageStudent';
 
 // Import other pages here, e.g. Home, Dashboard, etc.
 
@@ -29,8 +30,8 @@ function App() {
           <Route path="/request-appointment" element={<ProtectedRoute allowedRoles={['student']}><RequestAppointment /></ProtectedRoute>} />
           <Route path="/appointment-view" element={<ProtectedRoute><AppointmentView /></ProtectedRoute>} />
           <Route path="/track-mood" element={<ProtectedRoute allowedRoles={['student']}><TrackMood /></ProtectedRoute>} />
+          <Route path="/manage-student" element={<ProtectedRoute allowedRoles={['medical_staff']}><ManageStudent /></ProtectedRoute>} />
         </Routes>
-
       </main>
       </BrowserRouter>
     </div>
