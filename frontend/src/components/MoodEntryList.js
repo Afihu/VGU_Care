@@ -18,7 +18,7 @@ export default function MoodEntryList({ entries }) {
                         day: 'numeric'
                     });
 
-                    const time = new Date(entry.entry_date).toLocaleTimeString('en-US', {
+                    const time = new Date(entry.createdAt).toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
                         hour12: true
