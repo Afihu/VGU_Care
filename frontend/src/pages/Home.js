@@ -2,8 +2,8 @@ import React, {useState} from 'react';
 import '../css/Home.css';
 import { useNavigate } from 'react-router-dom';
 
-import image1 from '../assets/images/shrek.jpg';
-import image2 from '../assets/images/ocktor.png';
+import image1 from '../assets/images/Asian_Doctor_Patient.jpg';
+import image2 from '../assets/images/Psychotheraphy.jpg';
 import Modal from '../components/Modal';
 
 // import header_jpeg from './assets/yes.jpg';

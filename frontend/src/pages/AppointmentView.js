@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import {useNavigate} from 'react-router-dom';
 import greens from '../assets/images/Healthy_Greens.jpg';
 import '../css/AppointmentView.css';
 import api from '../services/api';
@@ -10,6 +11,7 @@ export default function AppointmentView() {
 
   // variables for session info
   const userInfo = localStorage.getItem('session-info');
+  const navigateTo = useNavigate();
   const parsed = helpers.JSONparser(userInfo);
   const userToken = parsed.token;
   const [userAppointments, setUserAppointments] = useState([]);
@@ -67,7 +69,7 @@ export default function AppointmentView() {
         {/* Status boxes */}
         <div className="appointment-status-buttons">
 
-          <button type="button" className="create-appointment-btn">
+          <button type="button" className="create-appointment-btn" onClick={() => navigateTo('/request-appointment')}>
           +
           </button>
 
