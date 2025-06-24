@@ -138,8 +138,18 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border: 1px solid #e0e0e0;
     gap: 20px;
+    cursor: pointer;
   }
-
+  .appointment-card:hover {
+    background-color: #F0F0F0; 
+    transform: translateY(-2px); /*  slight lift effect */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* add shadow */
+  }
+  .appointment-card:active {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
   .appointment-card-left {
     flex-shrink: 0;
   }
@@ -231,6 +241,12 @@
     margin-top: 20px;
   }
 
+  .appointments-container {
+    max-height: 550px;
+    overflow-y: auto;
+    padding-right: 15px;
+  }
+
   .appointment-image {
     width: 360px;
     height: 600px;
@@ -238,4 +254,79 @@
     border-radius: 20px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
   }
+
+  .modal-status {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+.status-approved, .status-scheduled {
+  background-color: #28a745;
+}
+
+.status-pending {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.status-rejected {
+  background-color: #dc3545;
+}
+
+.no-appointments {
+    padding: 40px;
+    text-align: center;
+    color: #777;
+    font-size: 18px;
+    width: 100%;
+    background-color: #f9f9f9;
+    border-radius: 15px;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.modal-button {
+  padding: 10px 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s, border-color 0.2s, transform 0.1s ease;
+}
+
+.modal-button:hover {
+    background-color: #e0e0e0;
+    border-color: #bbb;
+}
+
+.modal-button:active {
+    transform: translateY(1px);
+}
+
+.modal-button.reschedule {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+.modal-button.reschedule:hover {
+    background-color: #0056b3;
+}
+
+.modal-button.cancel-appointment {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+.modal-button.cancel-appointment:hover {
+    background-color: #c82333;
+}
   

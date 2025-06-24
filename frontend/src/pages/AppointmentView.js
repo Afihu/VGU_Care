@@ -15,12 +15,24 @@ export default function AppointmentView() {
   const [userAppointments, setUserAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [filter, setFilter] = useState('ALL'); 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   const handleAppointmentRetrieve = async (token) => {
     const response = await api.appointmentRetrieveService(token); 
     const data = await response.json(); 
     return data;
   }
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedAppointment(null);
+  }
+
+  const handleCardClick = (appointment) => {
+    setSelectedAppointment(appointment);
+    setIsModalOpen(true);
+  };
 
   // handleAppointmentRetrieve(userToken);
 
@@ -77,7 +89,9 @@ export default function AppointmentView() {
         </div>
 
         <div className='appointment-content'>
-          <AppointmentList userAppointments={filteredAppointments} />
+          <div className="appointments-container">
+            <AppointmentList userAppointments={filteredAppointments} onCardClick={handleCardClick} />
+          </div>
         </div>
 
       </div>
@@ -89,6 +103,23 @@ export default function AppointmentView() {
           className="appointment-image"
         />
       </div>
+
+      <Modal isOpen={isModalOpen} onClose={closeModal} title="Appointment Details">
+        {selectedAppointment && (
+            <div>
+                <p><strong>Status:</strong> <span className={`modal-status status-${selectedAppointment.status.toLowerCase()}`}>{selectedAppointment.status}</span></p>
+                <p><strong>Symptoms:</strong> {selectedAppointment.symptoms}</p>
+                <p><strong>Date Scheduled:</strong> {new Date(selectedAppointment.dateScheduled).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p><strong>Priority:</strong> {selectedAppointment.priorityLevel}</p>
+
+                <div className="modal-actions">
+                    <button className="modal-button reschedule">Reschedule Appointment</button>
+                    <button className="modal-button cancel-appointment">Cancel Appointment</button>
+                    <button className="modal-button" onClick={closeModal}>Close</button>
+                </div>
+            </div>
+        )}
+      </Modal>
 
     </div>
   );

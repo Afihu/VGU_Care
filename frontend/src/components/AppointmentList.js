@@ -1,7 +1,7 @@
 import React from "react";
 import '../css/AppointmentView.css';
 
-function AppointmentList({userAppointments}) {
+function AppointmentList({userAppointments, onCardClick}) {
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return new Date(dateString).toLocaleDateString("en-US", options);
@@ -22,7 +22,7 @@ function AppointmentList({userAppointments}) {
                 </div>
             ) : (
                 userAppointments.map((userAppointment) => (
-                    <div className="appointment-card" key={userAppointment.id}>
+                    <div className="appointment-card" key={userAppointment.id} onClick={() => onCardClick(userAppointment)}>
                         <div className="appointment-card-left">
                             <div className={`priority-indicator ${getPriorityClass(userAppointment.priorityLevel)}`}></div>
                         </div>
