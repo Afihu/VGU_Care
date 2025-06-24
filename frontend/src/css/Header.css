@@ -8,6 +8,33 @@
 
 }
 
+.header-left, .header-center, .header-right {
+    flex: 1; /* Each section takes up equal space */
+}
+
+.header-left {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.header-center {
+    display: flex;
+    justify-content: center;
+}
+
+.header-right {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.menu-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}
+
 .logo-image{
     max-width: 90px;
     height: auto;

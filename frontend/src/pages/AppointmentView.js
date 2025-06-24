@@ -15,6 +15,9 @@ export default function AppointmentView() {
   const navigateTo = useNavigate();
   const parsed = helpers.JSONparser(rawUserInfo);
   const userToken = parsed.token;
+  
+
+  // states
   const [userAppointments, setUserAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [filter, setFilter] = useState('ALL'); 
@@ -22,6 +25,7 @@ export default function AppointmentView() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [userInfo, setUserInfo] = useState(parsed.user);
 
+  //functions
   const handleAppointmentRetrieve = async (token) => {
     const response = await api.appointmentRetrieveService(token); 
     const data = await response.json(); 

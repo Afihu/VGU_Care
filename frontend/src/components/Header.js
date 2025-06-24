@@ -3,22 +3,43 @@ import '../css/Header.css';
 import {useLocation} from 'react-router-dom';
 import logo_image from '../assets/images/logo.png';
 import {useNavigate} from 'react-router-dom';
+import { useState } from 'react';
+import SideBar from './SideBar';
 
 function Header() {
     const navigateTo = useNavigate();
     const location = useLocation();
     const hideHeaderforPaths = ['/login']; //add more when needed
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+    const toggleSidebar = () => {
+        setSidebarOpen(!isSidebarOpen);
+    };
 
     if (hideHeaderforPaths.includes(location.pathname)) {
-       return (
-        <></>
-       )
+       return null;
     }
 
     return(
-        <header className='header' onClick={() => navigateTo('/home')}>
-            <img src={logo_image} className = 'logo-image' />
-        </header>
+        <>
+            <SideBar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+            <header className='header' onClick={() => navigateTo('/home')}>
+                {/* Left Section */}
+                <div className="header-left">
+                    <button className="menu-button" onClick={toggleSidebar}>
+                        &#9776; {/* Hamburger Icon */}
+                    </button>
+                </div>
+
+                {/* Center Section */}
+                <div className="header-center">
+                    <img src={logo_image} className='logo-image' alt="Logo" onClick={() => navigateTo('/home')} />
+                </div>
+
+                {/* Right Section (empty for now, but good for future icons) */}
+                <div className="header-right"></div>
+            </header>
+        </>
     );
 }
 
