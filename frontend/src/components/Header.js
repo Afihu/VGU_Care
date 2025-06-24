@@ -2,8 +2,10 @@ import React from 'react';
 import '../css/Header.css';
 import {useLocation} from 'react-router-dom';
 import logo_image from '../assets/images/logo.png';
+import {useNavigate} from 'react-router-dom';
 
 function Header() {
+    const navigateTo = useNavigate();
     const location = useLocation();
     const hideHeaderforPaths = ['/login']; //add more when needed
 
@@ -14,7 +16,7 @@ function Header() {
     }
 
     return(
-        <header className='header'>
+        <header className='header' onClick={() => navigateTo('/home')}>
             <img src={logo_image} className = 'logo-image' />
         </header>
     );

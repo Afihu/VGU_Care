@@ -118,7 +118,7 @@
   
   .appointment-image {
     width: 360px;
-    height: 600px;
+    height: auto;
   }
 
   .appointment-table{
@@ -140,14 +140,15 @@
     border: 1px solid #e0e0e0;
     gap: 20px;
     cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, transform 0.5s ease;
   }
   .appointment-card:hover {
-    background-color: #F0F0F0; 
-    transform: translateY(-2px); /*  slight lift effect */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* add shadow */
+    background-color: #e0e0e0;
+    border-color: #bbb;
+    transform: translateY(-3px);
   }
   .appointment-card:active {
-    transform: translateY(-1px);
+    transform: translateY(3px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
   

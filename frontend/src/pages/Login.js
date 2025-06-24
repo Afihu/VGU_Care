@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import logo_image from '../assets/images/yes.jpg';
+import logo_image from '../assets/images/logo.png';
 import eye_icon from '../assets/others/see.svg';
 import blind_icon from '../assets/others/no_see.svg';
 import {useNavigate} from 'react-router-dom'; 

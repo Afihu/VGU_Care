@@ -5,6 +5,15 @@
     border-radius: 8px;
     width: 80%;
     max-width: 1000px;
+
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    font-family: sans-serif;
+
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    border-top: none;
 }
 
 .request-appointment-title {
@@ -12,6 +21,9 @@
     margin-top: 5px;
     padding: 10px;
     font-size: 30px;
+    border-bottom: "1px solid rgba(0, 0, 0, 0.3)";
+    color: #62b3ed;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3)
 }
 
 .request-appointment-flex {
@@ -68,6 +80,11 @@
     font-size: 16px;
     border-radius: 4px;
     cursor: pointer;
+    transition: transform 0.2s ease;
+}
+.submit-button:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.1);
 }
 
 .cancel-button {
@@ -79,6 +96,11 @@
     border-radius: 4px;
     cursor: pointer;
     margin-left: auto;
+    transition: transform 0.2s ease;
+}
+.cancel-button:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.1);
 }
 
 .priority-options {

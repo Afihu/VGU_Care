@@ -59,7 +59,9 @@ export default function RequestAppointment() {
 
   return (
     <div className="request-appointment-container">
-      <h2 className="request-appointment-title">Request an Appointment</h2>
+      <div className='request-title'>
+        <h2 className="request-appointment-title">Request an Appointment</h2>
+      </div>
 
       <div className="request-appointment-flex">
 
