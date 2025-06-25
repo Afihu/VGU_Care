@@ -52,7 +52,8 @@ function LogoutButton() {
                             background: 'linear-gradient(90deg,rgba(59, 159, 85, 1) 24%, rgba(3, 107, 46, 1) 72%)',
                             borderRadius: '10px',
                             fontFamily: 'Consolas',
-                            fontSize: '1.2em'
+                            fontSize: '1.2em',
+                            cursor: 'pointer'
                         }}
                         onClick={() => handleLogout()}
                     >Logout</button>
@@ -62,7 +63,8 @@ function LogoutButton() {
                             background: 'linear-gradient(90deg,rgba(227, 104, 16, 1) 24%, rgba(194, 66, 66, 1) 72%)',                            
                             borderRadius: '10px',
                             fontFamily: 'Consolas',
-                            fontSize: '1.2em'
+                            fontSize: '1.2em',
+                            cursor: 'pointer'
                         }}
                         onClick={() => handleCloseModal()}
                     >Cancel</button>

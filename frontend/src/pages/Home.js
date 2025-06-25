@@ -55,6 +55,35 @@ function Home(){
                             <span class='track-mood-icon'></span>
                         </button>
                     </div> 
+                    
+                    ) : null
+                }
+
+                {
+                    (JSON.parse(userInfo).user.role.includes('medical_staff')) ?
+                    (
+                    <>
+                        <div class='element-flex-container' onClick={() => navigate('/manage-student')}>
+                            <button class='manage-student-label'>Manage Students</button>
+                            <button class='Button'>
+                                <span class='manage-student-icon'></span>
+                            </button>
+                        </div>
+                    </>
+                    ) : null
+                }
+
+                {
+                    (JSON.parse(userInfo).user.role.includes('student') || JSON.parse(userInfo).user.role.includes('medical_staff')) ?
+                    (
+                        <>
+                            <div className='element-flex-container'>
+                                    <button class='my-account-label'>My Account</button>
+                                    <button class='Button'>
+                                        <span class='my-account-icon'></span>
+                                    </button>
+                            </div>
+                        </>
                     ) : null
                 }
                     

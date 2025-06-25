@@ -72,7 +72,6 @@ const api = {
     appointmentRetrieveService: async(token) => {
         const apiEndpoint = API_BASE_URL + '/appointments';
         
-        //error here, fix later
         var response = await fetch(apiEndpoint, {
             method: 'GET',
             headers: {
@@ -88,9 +87,222 @@ const api = {
         } catch (error) {
             throw error;
         }
+    },    
+    
+    studentRetrieveService: async(token) => {
+        const apiEndpoint = API_BASE_URL + '/medical-staff/students';
 
+        var response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${token}` 
+            }
+        });
+
+        try {
+           await handleApiError(response);
+           const data = await response.json();
+           return data; 
+        } catch (error) {
+            throw error;
+        }
+    },
+    
+    reportRetrieveService: async(token) => {
+        const apiEndpoint = API_BASE_URL + '/abuse-reports';
+
+        var response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${token}` 
+            }
+        });
+
+        try {
+           await handleApiError(response);
+           const data = await response.json();
+           return data;
+        } catch (error) {
+            throw error;
+        }
+    },    
+    
+    tempAdviceCourierService : async(token, appointmentId, advice) => { 
+        // POST /api/advice/appointments/:appointmentId
+        // Medical staff sends advice for a specific appointment
+        const apiEndpoint = API_BASE_URL + `/advice/appointments/${appointmentId}`;
+
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ message: advice }),
+        });
+
+        try {
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },
+    
+    studentTempAdviceRetrieveService : async(token, appointmentId) => {
+        // GET /api/advice/appointments/:appointmentId
+        // student retrieves the advice for specific appointment
+        const apiEndpoint = API_BASE_URL + `/advice/appointments/${appointmentId}`;
+
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        try {
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },    
+    
+    appointmentUpdateService : async(token, appointmentId, newSymptoms, newStatus, newPriority, newDateScheduled, newTimeScheduled) => {
+        // PATCH /api/appointments/:appointmentId
+        // this function takes in new values of the appointment and the appointment id, any value 
+        // not needing to be updated will be "" but at least one field must be provided
+
+        const apiEndpoint = API_BASE_URL + `/appointments/${appointmentId}`;
+
+        // Build the update object, only including non-empty values 
+        // Please move this to the relevant files or pass the parameters directly into this function
+        const updateData = {};
+        if (newSymptoms && newSymptoms !== "") updateData.symptoms = newSymptoms;
+        if (newStatus && newStatus !== "") updateData.status = newStatus;
+        if (newPriority && newPriority !== "") updateData.priorityLevel = newPriority;       
+        if (newDateScheduled && newDateScheduled !== "") updateData.dateScheduled = newDateScheduled;   
+        if (newTimeScheduled && newTimeScheduled !== "") updateData.timeScheduled = newTimeScheduled;   
+        
+        const response = await fetch(apiEndpoint, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(updateData)
+        });
+
+        try {
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },    
+
+      user_specificAppointmentRetrieveService : async(token, userId) => {
+        
+        // GET /api/appointments/user/:userId
+        // This function takes userId of the student and returns all appointments for that student
+        // Note: Only medical staff can access this endpoint
+        
+        const apiEndpoint = API_BASE_URL + `/appointments/user/${userId}`;
+
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        try {
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },
+    
+    abuseReportCourierService : async(token, reportText, reportType, appointmentId) => {
+        // POST /api/abuse-reports/
+        // medical staff creates an abuse report and posts it, reportType can be ""
+        const apiEndpoint = API_BASE_URL + '/abuse-reports';
+
+        // Build the report object
+        const reportData = {
+            appointmentId: appointmentId,
+            description: reportText
+        };
+        
+        // Only include reportType if it's not empty
+        if (reportType && reportType !== "") {
+            reportData.reportType = reportType;
+        }
+
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(reportData)
+        });
+
+        try {
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },    
+    
+    userProfileRetrieveService : async(token) => {
+        // GET /api/users/me
+        // Retrieves the current user's profile information
+        const apiEndpoint = API_BASE_URL + '/users/me';
+
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            }
+        });
+
+        try {
+            await handleApiError(response);
+            const data = response.ok ? await response.json() : null;
+            return data;
+        } catch (error) {
+            throw error;
+        }
     },
 
+    //Request Appointment API Services
+    getMedicalStaffProfile: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/medical-staff/profile';
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response); 
+    },
+
+    //Track Mood API Services
     getMoodEntries: async (token) => {
         const apiEndpoint = API_BASE_URL + '/mood-entries';
         const response = await fetch(apiEndpoint, {
@@ -101,8 +313,22 @@ const api = {
           }
         });
         return handleApiError(response);
-    },    getMedicalStaffProfile: async (token) => {
-        const apiEndpoint = API_BASE_URL + '/medical-staff/profile';
+    },    createMoodEntry: async (token, moodData) => {
+        const apiEndpoint = API_BASE_URL + '/mood-entries';
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(moodData)
+        });
+        return handleApiError(response);
+    },
+
+    // Notification API Services
+    getNotifications: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/notifications';
         const response = await fetch(apiEndpoint, {
             method: 'GET',
             headers: {
@@ -110,61 +336,54 @@ const api = {
                 'Authorization': `Bearer ${token}`
             }
         });
-        return handleApiError(response);  // handles 401, 403, etc.
-    }
-      
-}
+        return handleApiError(response);
+    },
 
-// Generic API call function for admin services
-const apiCall = async (endpoint, options = {}) => {
-    // Get token from session-info
-    let token;
-    try {
-        const sessionInfo = localStorage.getItem('session-info');
-        if (sessionInfo) {
-            const parsed = JSON.parse(sessionInfo);
-            token = parsed.token;
-        }
-    } catch (e) {
-        console.warn('Failed to parse session-info:', e);
-    }
-    
-    if (!token) {
-        throw new Error('No authentication token found. Please log in.');
-    }
-    
-    const apiEndpoint = API_BASE_URL + endpoint;
-    
-    const defaultOptions = {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    };
-    
-    const mergedOptions = { ...defaultOptions, ...options };
-    
-    // Merge headers separately to avoid overwriting Authorization
-    if (options.headers) {
-        mergedOptions.headers = { ...defaultOptions.headers, ...options.headers };
-    }
-    
-    try {
-        const response = await fetch(apiEndpoint, mergedOptions);
-        
-        if (!response.ok) {
-            // Handle the error response
-            await handleApiError(response);
-        }
-        
-        // Only try to parse JSON if the response is ok
-        return await response.json();
-    } catch (error) {
-        console.error('API call failed:', error);
-        throw error;
-    }
-};
+    getUnreadNotificationCount: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/notifications/count';
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response);
+    },
 
-export default apiCall;
-export { api };
+    markNotificationAsRead: async (token, notificationId) => {
+        const apiEndpoint = API_BASE_URL + `/notifications/${notificationId}/read`;
+        const response = await fetch(apiEndpoint, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response);
+    },
+
+    markAllNotificationsAsRead: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/notifications/read-all';
+        const response = await fetch(apiEndpoint, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response);
+    },    deleteNotification: async (token, notificationId) => {
+        const apiEndpoint = API_BASE_URL + `/notifications/${notificationId}`;
+        const response = await fetch(apiEndpoint, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response);
+    },
+ }
+
+export default api;

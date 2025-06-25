@@ -1,0 +1,21 @@
+<p>Dear {{studentName}},</p>
+<p>We have reviewed your appointment request. Unfortunately, we need to make some adjustments to better serve your needs.</p>
+
+<div class="alert">
+  <h3>📝 Appointment Status Update:</h3>
+  <ul>
+    <li><strong>Original Request:</strong> {{symptoms}}</li>
+    <li><strong>Priority:</strong> {{priorityLevel}}</li>
+    <li><strong>Reviewed by:</strong> {{medicalStaffName}}</li>
+    {{#if reason}}<li><strong>Notes:</strong> {{reason}}</li>{{/if}}
+  </ul>
+</div>
+
+<p>Please don't worry - this doesn't mean your health concerns aren't important. Our medical staff may suggest:</p>
+<ul>
+  <li>Rescheduling for a more appropriate time slot</li>
+  <li>Recommending alternative care options</li>
+  <li>Requesting additional information about your symptoms</li>
+</ul>
+
+<p>We encourage you to contact our medical staff directly or submit a new appointment request with additional details.</p>

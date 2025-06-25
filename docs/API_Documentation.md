@@ -4,164 +4,33 @@
 
 ## 📚 Quick Reference for Frontend Developers
 
-### Essential API Endpoints (Copy-Paste Ready)
-
-```javascript
-// Base Configuration
-const API_BASE_URL = 'http://localhost:5001/api';
-
-// Get authentication token
-const getToken = () => {
-    const sessionInfo = localStorage.getItem('session-info');
-    return sessionInfo ? JSON.parse(sessionInfo).token : null;
-};
-
-// Generic API call
-const apiCall = async (endpoint, options = {}) => {
-    const token = getToken();
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-            ...options.headers,
-        },
-    });
-    
-    if (!response.ok) {
-        if (response.status === 401) {
-            localStorage.removeItem('session-info');
-            window.location.href = '/login';
-        }
-        throw new Error(`HTTP ${response.status}`);
-    }
-    return response;
-};
-```
-
-### Most Used API Calls
-
-```javascript
-// Authentication
-const login = async (email, password) => {
-    const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-    });
-    const data = await response.json();
-    localStorage.setItem('session-info', JSON.stringify(data));
-    return data;
-};
-
-// Get user appointments
-const getAppointments = async () => {
-    const response = await apiCall('/appointments');
-    return response.json();
-};
-
-// Get available time slots
-const getTimeSlots = async (date) => {
-    const response = await apiCall(`/appointments/time-slots/${date}`);
-    return response.json();
-};
-
-// Create appointment
-const createAppointment = async (symptoms, priorityLevel, date, time) => {
-    const response = await apiCall('/appointments', {
-        method: 'POST',
-        body: JSON.stringify({
-            symptoms,
-            priorityLevel,
-            dateScheduled: date,
-            timeScheduled: time
-        })
-    });
-    return response.json();
-};
-
-// Get mood entries
-const getMoodEntries = async () => {
-    const response = await apiCall('/mood-entries');
-    return response.json();
-};
-
-// Create mood entry
-const createMoodEntry = async (mood, notes, intensity) => {
-    const response = await apiCall('/mood-entries', {
-        method: 'POST',
-        body: JSON.stringify({ mood, notes, intensity })
-    });
-    return response.json();
-};
-
-// Get notifications count
-const getNotificationCount = async () => {
-    const response = await apiCall('/notifications/count');
-    return response.json();
-};
-
-// Get user profile
-const getProfile = async () => {
-    const response = await apiCall('/users/me');
-    return response.json();
-};
-```
-
-### Error Handling Template
-
-```javascript
-const handleApiCall = async (apiFunction, ...args) => {
-    try {
-        return await apiFunction(...args);
-    } catch (error) {
-        console.error('API Error:', error);
-        
-        // Show user-friendly message
-        if (error.message.includes('401')) {
-            alert('Please log in again');
-        } else if (error.message.includes('403')) {
-            alert('You do not have permission for this action');
-        } else if (error.message.includes('404')) {
-            alert('Resource not found');
-        } else {
-            alert('Something went wrong. Please try again.');
-        }
-        
-        throw error;
-    }
-};
-
-// Usage:
-const loadAppointments = async () => {
-    try {
-        const appointments = await handleApiCall(getAppointments);
-        setAppointments(appointments.appointments);
-    } catch (error) {
-        // Error already handled by handleApiCall
-    }
-};
-```
 ---
 
 ## 🔐 Authentication APIs
 
 ### Login
 - **POST** `/api/login`
-- **Body**: `{ email: "string", password: "string" }`
+- **Body**: 
+  ```json
+  {
+    "email": "string (@vgu.edu.vn domain required)",
+    "password": "string"
+  }
+  ```
+
 - **Response**: 
-```javascript
-{
-  "message": "Login successful",
-  "user": { 
-    "id": "uuid",
-    "email": "student@vgu.edu.vn", 
-    "role": "student", // Possible values: "student", "medical_staff", "admin"
-    "status": "active" // Possible values: "active", "inactive", "banned"
-  }, 
-  "token": "jwt_token_string"
-}
-```
+  ```json
+  {
+    "message": "Login successful",
+    "user": {
+        "id": "user-uuid",
+        "email": "<User Email>",
+        "role": "<medical_staff|student|admin>",
+        "status": "active|inactive|banned",
+    },
+    "token": "<JWT_TOKEN>",
+  }
+  ```
 
 ### Signup
 - **POST** `/api/signup`
@@ -193,27 +62,7 @@ const loadAppointments = async () => {
     }
   }
   ```
-- **Response**: 
-```javascript
-{
-  "message": "User account created successfully", 
-  "user": { 
-    "id": "uuid", 
-    "email": "student@vgu.edu.vn", 
-    "role": "student", // "student", "medical_staff", "admin"
-    "status": "active" // Default: "active"
-  }
-}
-```
-- **Validation**:
-  - Email must be from @vgu.edu.vn domain
-  - All fields (email, password, name, gender, age, role) are required
-  - Role must be one of: student, medical_staff, admin
-  - Housing location must be valid enum if provided
-  - Prevents duplicate email registration
-- **Error Responses**:
-  - `400`: Missing required fields, invalid email domain, invalid role, or user already exists
-  - `500`: Server error during account creation
+- **Response**: `{ message: "User account created successfully", user: { id, email, role } }`
 
 ---
 
@@ -398,11 +247,6 @@ const loadAppointments = async () => {
 }
 ```
 **Auth**: Bearer Token (All Roles)  
-**Business Rules**:
-- Monday-Friday only (weekends return empty array)
-- 20-minute time slots from 9:00 AM to 4:00 PM
-- Excludes already booked slots for the specified date
-- Does not show slots for cancelled/rejected appointments  
 
 ### Create Appointment
 **POST** `/api/appointments`
@@ -540,123 +384,274 @@ const createAppointment = async (appointmentData) => {
 ```
 **Auth**: Bearer Token (Ownership/Assignment required)  
 
+### Get Appointments by User ID
+**GET** `/api/appointments/user/:userId`
+**Body**: None (no body required)
+**Respond**:
+
+```javascript
+{
+    "appointments": [
+        {
+            "id": "93c249bc-d80f-45ff-8b15-c16ba6ec456f",
+            "userId": "41b1ce63-2e35-49db-86ba-085a60faca9c",
+            "status": "pending",
+            "dateRequested": "2025-06-25T08:57:09.367Z",
+            "dateScheduled": "2025-06-26T00:00:00.000Z",
+            "timeScheduled": "15:00:00",
+            "priorityLevel": "medium",
+            "symptoms": "Experiencing headaches and fatigue for the past week",
+            "hasAdvice": false
+        },
+        {
+            "id": "71bd45ee-d6c2-49a0-963d-1b8fa2b336e9",
+            "userId": "41b1ce63-2e35-49db-86ba-085a60faca9c",
+            "status": "pending",
+            "dateRequested": "2025-06-25T08:39:25.601Z",
+            "dateScheduled": "2025-06-26T00:00:00.000Z",
+            "timeScheduled": "14:40:00",
+            "priorityLevel": "medium",
+            "symptoms": "Experiencing headaches and fatigue for the past week",
+            "hasAdvice": false
+        },
+        {
+            "id": "8d382835-65b6-4ac4-94c3-1cc3960babd2",
+            "userId": "41b1ce63-2e35-49db-86ba-085a60faca9c",
+            "status": "pending",
+            "dateRequested": "2025-06-25T08:26:51.743Z",
+            "dateScheduled": "2025-06-27T08:26:51.743Z",
+            "timeScheduled": "10:00:00",
+            "priorityLevel": "medium",
+            "symptoms": "Headache and fever",
+            "hasAdvice": true
+        }
+    ],
+    "studentId": "41b1ce63-2e35-49db-86ba-085a60faca9c",
+    "totalCount": 3,
+    "message": "Student appointments retrieved successfully"
+}
+```
+---
+## 📋 Medical Staff Routes Usage & Body Requirements
+
+Based on the route: `/api/medical-staff/*` (all routes require medical staff authentication)
+
 ---
 
-## 🏥 Medical Staff APIs
+### 1. **GET /api/medical-staff/profile**
+**Purpose**: Get medical staff's own profile  
+**Method**: `GET`  
+**Body**: None (no body required)  
+**Response**:
+```json
+{
+  "success": true,
+  "staff": {
+    "user_id": "uuid",
+    "name": "Dr. John Smith",
+    "email": "john@example.com",
+    "gender": "male",
+    "age": 35,
+    "specialty": "Mental Health Counselor",
+    "staff_id": "uuid"
+  }
+}
+```
 
-### Get Medical Staff Profile
-- **GET** `/api/medical-staff/profile`
-- **Auth**: Bearer Token (Medical Staff only)
-- **Response**: `{ success: true, user: { name, email, role, specialty, shiftSchedule, ... } }`
+---
 
-### Update Medical Staff Profile
-- **PATCH** `/api/medical-staff/profile`
-- **Auth**: Bearer Token (Medical Staff only)
-- **Body**: `{ name?, specialty?, age?, gender?, shiftSchedule? }`
-- **Response**: `{ success: true, user: { ... } }`
+### 2. **PATCH /api/medical-staff/profile**
+**Purpose**: Update medical staff's own profile  
+**Method**: `PATCH`  
+**Body**:
+```json
+{
+  "name": "string (optional)",
+  "gender": "male|female|other (optional)",
+  "age": "integer 1-120 (optional)", 
+  "specialty": "string (optional)"
+}
+```
+**Example**:
+```json
+{
+  "name": "Dr. Jane Smith",
+  "age": 32,
+  "specialty": "Clinical Psychologist"
+}
+```
 
-### Get All Student Profiles
-- **GET** `/api/medical-staff/students`
-- **Auth**: Bearer Token (Medical Staff only)
-- **Response**: `{ success: true, students: [...], count: number }`
+---
 
-### Get Specific Student Profile
-- **GET** `/api/medical-staff/students/:studentId`
-- **Auth**: Bearer Token (Medical Staff only)
-- **Response**: `{ success: true, student: { ... } }`
+### 3. **GET /api/medical-staff/students**
+**Purpose**: Get all student profiles  
+**Method**: `GET`  
+**Body**: None (no body required)  
+**Response**:
+```json
+{
+  "success": true,
+  "students": [
+    {
+      "user_id": "uuid",
+      "name": "Student Name",
+      "email": "student@example.com",
+      "gender": "female",
+      "age": 20
+    }
+  ],
+  "count": 1
+}
+```
 
-### Get Pending Appointments (Medical Staff)
-**GET** `/api/medical-staff/appointments/pending`
-```javascript
-// Example Response:
+---
+
+### 4. **GET /api/medical-staff/students/:studentId**
+**Purpose**: Get specific student profile by ID  
+**Method**: `GET`  
+**Body**: None (no body required)  
+**URL Parameter**: `studentId` (user_id of the student)  
+**Response**:
+```json
+{
+  "success": true,
+  "student": {
+    "user_id": "uuid",
+    "name": "Student Name",
+    "email": "student@example.com",
+    "gender": "female",
+    "age": 20
+  }
+}
+```
+
+---
+
+### 5. **GET /api/medical-staff/appointments/pending**
+**Purpose**: Get all pending appointments for review  
+**Method**: `GET`  
+**Body**: None (no body required)  
+**Response**:
+```json
 {
   "appointments": [
     {
       "id": "uuid",
       "userId": "uuid",
       "status": "pending",
-      "symptoms": "Headache and fever",
+      "dateRequested": "2025-06-25T10:00:00.000Z",
+      "dateScheduled": "2025-06-26",
+      "timeScheduled": "14:20:00",
       "priorityLevel": "medium",
-      "dateScheduled": "2025-06-20T00:00:00Z",
-      "timeScheduled": "09:00:00"
+      "symptoms": "Feeling anxious about exams"
     }
   ]
 }
 ```
-**Auth**: Bearer Token (Medical Staff only)  
 
-### Approve Appointment (Medical Staff)
-**POST** `/api/medical-staff/appointments/:appointmentId/approve`
-```javascript
-// Example Response:
+---
+
+### 6. **POST /api/medical-staff/appointments/:appointmentId/approve**
+**Purpose**: Approve an appointment (optionally reschedule)  
+**Method**: `POST`  
+**URL Parameter**: `appointmentId`  
+**Body** (all optional):
+```json
 {
-  "message": "Appointment approved successfully",
-  "appointment": {
-    "id": "uuid",
-    "status": "approved"
-    // ...other details
-  }
+  "dateScheduled": "2025-06-26 (optional - YYYY-MM-DD)",
+  "timeScheduled": "14:20:00 (optional - HH:MM:SS or HH:MM)",
+  "advice": "string (optional - immediate advice message)"
 }
 ```
-**Auth**: Bearer Token (Medical Staff only)  
+**Examples**:
+```json
+// Simple approval (no rescheduling)
+{}
 
-### Reject Appointment (Medical Staff)
-**POST** `/api/medical-staff/appointments/:appointmentId/reject`
-```javascript
-// Request Body (optional):
+// Approval with rescheduling
 {
-  "reason": "Scheduling conflict"
+  "dateScheduled": "2025-06-27",
+  "timeScheduled": "15:30:00"
 }
 
-// Example Response:
+// Approval with advice
 {
-  "message": "Appointment rejected successfully",
-  "appointment": {
-    "id": "uuid",
-    "status": "rejected"
-    // ...other details
-  }
+  "advice": "Please bring any relevant medical documents to your appointment."
 }
 ```
-**Auth**: Bearer Token (Medical Staff only)  
 
-### Get Sent Advice (Medical Staff)
-**GET** `/api/medical-staff/advice/sent`
-```javascript
-// Example Response:
+---
+
+### 7. **POST /api/medical-staff/appointments/:appointmentId/reject**
+**Purpose**: Reject an appointment  
+**Method**: `POST`  
+**URL Parameter**: `appointmentId`  
+**Body**:
+```json
+{
+  "reason": "string (optional - reason for rejection)"
+}
+```
+**Examples**:
+```json
+// Simple rejection
+{}
+
+// Rejection with reason
+{
+  "reason": "Unfortunately, I'm not available at the requested time. Please reschedule for a different time slot."
+}
+```
+
+---
+
+### 8. **GET /api/medical-staff/advice/sent**
+**Purpose**: Get all advice sent by this medical staff  
+**Method**: `GET`  
+**Body**: None (no body required)  
+**Response**:
+```json
 {
   "advice": [
     {
-      "id": "uuid",
-      "appointmentId": "uuid",
-      "message": "Please rest and stay hydrated",
-      "sentAt": "2025-06-24T10:30:00Z"
+      "advice_id": "uuid",
+      "appointment_id": "uuid",
+      "message": "Try some relaxation techniques...",
+      "sent_at": "2025-06-25T10:00:00.000Z",
+      "student_name": "John Doe"
     }
-  ]
+  ],
+  "count": 1,
+  "message": "Sent advice retrieved successfully"
 }
 ```
-**Auth**: Bearer Token (Medical Staff only)  
 
-### Send Advice (Medical Staff Route)
-**POST** `/api/medical-staff/appointments/:appointmentId`
-```javascript
-// Request Body:
-{
-  "message": "Please rest and drink plenty of fluids"
-}
+---
 
-// Example Response:
+### 9. **POST /api/medical-staff/appointments/:appointmentId**
+**Purpose**: Send advice for a specific appointment  
+**Method**: `POST`  
+**URL Parameter**: `appointmentId`  
+**Body**:
+```json
 {
-  "message": "Advice sent successfully",
-  "advice": {
-    "id": "uuid",
-    "appointmentId": "uuid",
-    "message": "Please rest and drink plenty of fluids",
-    "sentAt": "2025-06-24T10:30:00Z"
-  }
+  "message": "string (required - advice message)"
 }
 ```
-**Auth**: Bearer Token (Medical Staff only)  
+**Example**:
+```json
+{
+  "message": "Try practicing deep breathing exercises for 10 minutes daily. Also, consider joining our stress management workshop next week."
+}
+```
+
+---
+
+## 🔐 Authentication Requirements
+All routes require:
+- **Authorization Header**: `Bearer <jwt_token>`
+- **Role**: `medical_staff` or `admin`
+- The JWT token must contain valid user information
 
 ---
 
@@ -715,920 +710,758 @@ const createAppointment = async (appointmentData) => {
 
 ---
 
-## 📋 Mood Tracker APIs
+## 📋 Mood Entry Routes Usage & Body Requirements
 
-### Mood Entry Management
-**POST** `/api/mood-entries`
-```javascript
-// Request Body:
-{
-  "mood": "happy",        // Required: "happy", "sad", "neutral", "anxious", "stressed"
-  "notes": "Feeling good today!"  // Optional: Additional notes
-}
+Based on the route: `/api/mood-entries/*` (all routes require authentication)
 
-// Example Response:
+---
+
+### 1. **POST /api/mood-entries/**
+**Purpose**: Create a new mood entry (students only)  
+**Method**: `POST`  
+**Authorization**: Student role required  
+**Body**:
+```json
 {
-  "moodEntry": {
-    "id": "uuid",
-    "userId": "uuid",
-    "studentId": "uuid",
-    "mood": "happy", // Possible values: "happy", "sad", "neutral", "anxious", "stressed"
-    "notes": "Feeling good today!",
-    "entryDate": "2025-06-23T10:30:00Z"
-  }
+  "mood": "happy|sad|neutral|anxious|stressed (required)",
+  "notes": "string (optional)"
 }
 ```
-- **Auth**: Bearer Token (Student role only)
-- **Response**: Created mood entry object
- 
-
-**GET** `/api/mood-entries`
-```javascript
-// Example Response:
+**Examples**:
+```json
+// Basic mood entry
 {
-  "moodEntries": [
-    {
-      "id": "uuid",
-      "userId": "uuid",
-      "studentId": "uuid",
-      "mood": "happy", // Possible values: "happy", "sad", "neutral", "anxious", "stressed"
-      "notes": "Feeling good today!",
-      "entryDate": "2025-06-23T10:30:00Z"
+  "mood": "anxious"
+}
+
+// Mood entry with notes
+{
+  "mood": "stressed",
+  "notes": "Feeling overwhelmed with upcoming exams and assignments"
+}
+```
+**Response**:
+```json
+{
+    "moodEntry": {
+        "id": "bf9aa589-0c44-4173-96ef-b5e13577c147",
+        "mood": "anxious",
+        "entry_date": "2025-06-24T21:18:20.590Z",
+        "notes": null,
+        "user_id": "b88e6bc7-4c15-46e3-9404-f06c1ce9a58d"
     }
-  ]
 }
 ```
-- **Auth**: Bearer Token (Student role only)
-- **Response**: Object containing `moodEntries` array with own mood entries
- 
 
-**PATCH** `/api/mood-entries/:entryId` or **PUT** `/api/mood-entries/:entryId`
-```javascript
-// Request Body:
+---
+
+### 2. **GET /api/mood-entries/**
+**Purpose**: Get all mood entries for the authenticated student  
+**Method**: `GET`  
+**Authorization**: Student role required  
+**Body**: None (no body required)  
+**Response**:
+```json
 {
-  "mood": "stressed",     // Optional: "happy", "sad", "neutral", "anxious", "stressed"
-  "notes": "Updated notes"  // Optional: Updated notes
+    "moodEntries": [
+        {
+            "id": "bf9aa589-0c44-4173-96ef-b5e13577c147",
+            "mood": "anxious",
+            "entry_date": "2025-06-24T21:18:20.590Z",
+            "notes": null,
+            "user_id": "b88e6bc7-4c15-46e3-9404-f06c1ce9a58d"
+        }
+    ]
+}
+```
+
+---
+
+### 3. **PATCH /api/mood-entries/:entryId**
+**Purpose**: Update a mood entry (students can only update their own)  
+**Method**: `PATCH`  
+**Authorization**: Student role required  
+**URL Parameter**: `entryId` (mood entry ID)  
+**Body** (at least one field required):
+```json
+{
+  "mood": "happy|sad|neutral|anxious|stressed (optional)",
+  "notes": "string (optional)"
+}
+```
+**Examples**:
+```json
+// Update only mood
+{
+  "mood": "neutral"
 }
 
-// Example Response:
+// Update only notes
+{
+  "notes": "Feeling better after talking to a friend"
+}
+
+// Update both
+{
+  "mood": "happy",
+  "notes": "Great day after getting good grades!"
+}
+```
+**Response**:
+```json
 {
   "moodEntry": {
-    "id": "uuid",
-    "userId": "uuid",
-    "studentId": "uuid",
-    "mood": "stressed", // Updated mood value
-    "notes": "Updated notes",
-    "entryDate": "2025-06-23T10:30:00Z"
+    "id": "entry_uuid",
+    "mood": "happy",
+    "entry_date": "2025-06-25T10:00:00.000Z",
+    "notes": "Great day after getting good grades!",
+    "user_id": "uuid"
   }
 }
 ```
-- **Auth**: Bearer Token (Student role only, ownership required)
-- **Response**: Updated mood entry object
- 
 
-**DELETE** `/api/mood-entries/:entryId`
-```javascript
-// Example Response:
+---
+
+### 4. **PUT /api/mood-entries/:entryId**
+**Purpose**: Update a mood entry (same as PATCH - alternative method)  
+**Method**: `PUT`  
+**Authorization**: Student role required  
+**URL Parameter**: `entryId` (mood entry ID)  
+**Body**: Same as PATCH method above
+**Response**: Same as PATCH method above
+
+---
+
+### 5. **DELETE /api/mood-entries/:entryId**
+**Purpose**: Delete a mood entry (students can only delete their own)  
+**Method**: `DELETE`  
+**Authorization**: Student role required  
+**URL Parameter**: `entryId` (mood entry ID)  
+**Body**: None (no body required)  
+**Response**:
+```json
 {
   "success": true,
   "message": "Mood entry deleted successfully"
 }
 ```
-- **Auth**: Bearer Token (Student role only, ownership required)
-- **Response**: Success confirmation
- 
 
-**GET** `/api/mood-entries/student/:studentUserId`
-```javascript
-// Example Response:
+---
+
+### 6. **GET /api/mood-entries/student/:studentUserId**
+**Purpose**: Get all mood entries for a specific student (medical staff only)  
+**Method**: `GET`  
+**Authorization**: Medical staff role required + must have appointment with the student  
+**URL Parameter**: `studentUserId` (user ID of the student)  
+**Body**: None (no body required)  
+**Response**:
+```json
 {
-  "moodEntries": [
-    {
-      "id": "uuid",
-      "userId": "uuid",
-      "studentId": "uuid",
-      "mood": "happy", // Possible values: "happy", "sad", "neutral", "anxious", "stressed"
-      "notes": "Feeling good today!",
-      "entryDate": "2025-06-23T10:30:00Z"
-    }
-  ]
+    "moodEntries": [
+        {
+            "id": "0e4de773-7ca3-4b08-b4e3-74c962ba1cc6",
+            "mood": "sad",
+            "entry_date": "2025-06-24T21:34:16.003Z",
+            "notes": null,
+            "user_id": "0b8ee28d-3f0b-47bd-b3ff-a8429835616e"
+        }
+    ]
 }
 ```
-- **Auth**: Bearer Token (Medical Staff only)
-- **Access**: Medical staff can only view mood entries for students they have appointments with
-- **Response**: Object containing `moodEntries` array for specified student
- 
 
-### Mood Values
+---
+
+### 🔐 Authentication & Authorization
+
+#### Authentication Requirements:
+- **Authorization Header**: `Bearer <jwt_token>`
+- Uses `requireAppointmentAccess` middleware
+
+#### Role-Based Access:
+- **Students**: Can create, read, update, and delete their own mood entries
+- **Medical Staff**: Can only read mood entries of students they have appointments with
+- **Admin**: Not explicitly mentioned in these routes
+
+---
+
+### 📊 Mood Values
 Valid mood values are:
-- `"happy"`
-- `"sad"`
-- `"neutral"`
-- `"anxious"`
-- `"stressed"`
+- `happy`
+- `sad` 
+- `neutral`
+- `anxious`
+- `stressed`
 
 ---
 
-## 🔔 Notification APIs
+### 💡 Usage Notes
 
-### Get User Notifications
-**GET** `/api/notifications`
-```javascript
-// Example Response:
-{
-  "notifications": [
-    {
-      "id": "uuid",
-      "userId": "uuid",
-      "appointmentId": "uuid", // null if not appointment-related
-      "type": "appointment_approved", // Possible values: "appointment_assigned", "appointment_approved", "appointment_rejected", "appointment_completed", "general"
-      "title": "Appointment Scheduled",
-      "message": "Your appointment has been scheduled for June 20, 2025",
-      "isRead": false, // Possible values: true, false
-      "createdAt": "2025-06-19T10:30:00Z",
-      "readAt": null // null if not read, timestamp if read
-    }
-  ]
-}
-```
-- **Auth**: Bearer Token (All roles)
-- **Access**: User-specific notifications only
- 
+1. **Student Workflow**: Students can track their daily mood and add personal notes
+2. **Medical Staff Access**: Medical staff can only view mood entries of students they have appointments with (privacy protection)
+3. **Update Flexibility**: Both PATCH and PUT methods are available for updates
+4. **Privacy**: Strict role-based access ensures mood entries remain private between students and their assigned medical staff
+---
 
-### Get Unread Count
-**GET** `/api/notifications/count`
-```javascript
-// Example Response:
-{
-  "unreadCount": 3
-}
-```
-- **Auth**: Bearer Token (All roles)
- 
+## 📋 Notification Routes Usage & Body Requirements
 
-### Mark Notification as Read
-**PATCH** `/api/notifications/:notificationId/read`
-```javascript
-// Example Response:
-{
-  "message": "Notification marked as read",
-  "notification": {
-    "id": "uuid",
-    "userId": "uuid",
-    "appointmentId": "uuid",
-    "type": "appointment_approved", // "appointment_assigned", "appointment_approved", "appointment_rejected", "appointment_completed", "general"
-    "title": "Appointment Scheduled",
-    "message": "Your appointment has been scheduled for June 20, 2025",
-    "isRead": true, // Now marked as read
-    "createdAt": "2025-06-19T10:30:00Z",
-    "readAt": "2025-06-19T11:00:00Z" // Timestamp when marked as read
-  }
-}
-```
-- **Auth**: Bearer Token (Ownership required)
- 
-
-### Mark All Notifications as Read
-**PATCH** `/api/notifications/read-all`
-```javascript
-// Example Response:
-{
-  "message": "All notifications marked as read",
-  "updatedCount": 5
-}
-```
-- **Auth**: Bearer Token (All roles)
- 
-
-### Delete Notification
-**DELETE** `/api/notifications/:notificationId`
-```javascript
-// Example Response:
-{
-  "message": "Notification deleted successfully"
-}
-```
-- **Auth**: Bearer Token (Ownership required)
- 
+Based on the route: `/api/notifications/*` (all routes require authentication)
 
 ---
 
-## 🎯 Frontend Integration Guide
+### 1. **GET /api/notifications/**
+**Purpose**: Get notifications for the authenticated user with optional filtering  
+**Method**: `GET`  
+**Authorization**: Any authenticated user  
+**Body**: None (no body required)  
+**Query Parameters** (all optional):
+- `limit` - Number of notifications to return (default: 20)
+- `offset` - Number of notifications to skip (default: 0)
+- `unreadOnly` - Return only unread notifications (default: false)
+- `type` - Filter by notification type (optional)
 
-### Authentication Flow
-```javascript
-// 1. Login
-const login = async (email, password) => {
-  const response = await fetch('/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  
-  if (response.ok) {
-    const data = await response.json();
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    return data;
-  }
-};
-
-// 2. Include token in subsequent requests
-const apiCall = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('token');
-  return fetch(`/api${endpoint}`, {
-    ...options,
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...options.headers
-    }
-  });
-};
+**Example Requests**:
+```http
+GET /api/notifications/
+GET /api/notifications/?limit=10&offset=0
+GET /api/notifications/?unreadOnly=true
+GET /api/notifications/?type=appointment&limit=5
 ```
 
-### Profile Management Integration
-```javascript
-// Get current user profile
-const getProfile = async () => {
-  const response = await apiCall('/users/me');
-  return response.json();
-};
-
-// Update profile with new fields
-const updateProfile = async (profileData) => {
-  const response = await apiCall('/users/profile', {
-    method: 'PATCH',
-    body: JSON.stringify({
-      name: profileData.name,
-      age: profileData.age,
-      roleSpecificData: {
-        // For students
-        housingLocation: profileData.housingLocation, // "dorm_1", "dorm_2", "off_campus"
-        major: profileData.major,
-        intakeYear: profileData.intakeYear,
-        
-        // For medical staff
-        specialty: profileData.specialty,
-        shiftSchedule: {
-          monday: ["09:00-17:00"],
-          tuesday: ["09:00-17:00", "18:00-22:00"],
-          // ... other days
+**Example Response**:
+```json
+{
+    "notifications": [
+        {
+            "id": "75bf93dc-87e6-4472-a6b0-313b05df4a09",
+            "userId": "c9184e81-46b4-4a1e-adf3-8fe6aac25ffa",
+            "appointmentId": "c8dceb3a-2fef-49f6-acde-1b5341590554",
+            "type": "appointment_assigned",
+            "title": "New Appointment Assigned",
+            "message": "You have been assigned a new appointment from Nguyen Van A. Symptoms: Experiencing headaches and fatigue for the past week",
+            "isRead": false,
+            "createdAt": "2025-06-25T04:08:08.489Z",
+            "readAt": null
         }
-      }
-    })
-  });
-  return response.json();
-};
-```
-
-### Appointment Booking Flow
-```javascript
-// Complete appointment booking flow
-const bookAppointment = async (appointmentData) => {
-  // 1. Get available time slots for selected date
-  const slotsResponse = await apiCall(`/appointments/time-slots/${appointmentData.date}`);
-  const { availableTimeSlots } = await slotsResponse.json();
-  
-  // 2. Show available slots to user
-  if (availableTimeSlots.length === 0) {
-    throw new Error('No available time slots for this date');
-  }
-  
-  // 3. Create appointment with selected time slot
-  const appointmentResponse = await apiCall('/appointments', {
-    method: 'POST',
-    body: JSON.stringify({
-      symptoms: appointmentData.symptoms,
-      priorityLevel: appointmentData.priorityLevel,
-      dateScheduled: appointmentData.date,
-      timeScheduled: appointmentData.selectedTime
-    })
-  });
-  
-  return appointmentResponse.json();
-};
-```
-
-### Real-time Notifications
-```javascript
-// Get unread notification count for badge
-const getUnreadCount = async () => {
-  const response = await apiCall('/notifications/count');
-  const { unreadCount } = await response.json();
-  return unreadCount;
-};
-
-// Get all notifications with pagination
-const getNotifications = async (page = 1, limit = 10) => {
-  const response = await apiCall(`/notifications?page=${page}&limit=${limit}`);
-  return response.json();
-};
-
-// Mark notification as read
-const markAsRead = async (notificationId) => {
-  const response = await apiCall(`/notifications/${notificationId}/read`, {
-    method: 'PATCH'
-  });
-  return response.json();
-};
-```
-
-### Error Handling Pattern
-```javascript
-const handleApiError = async (response) => {
-  if (!response.ok) {
-    const error = await response.json();
-    switch (response.status) {
-      case 401:
-        // Token expired or invalid
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-        break;
-      case 403:
-        // Access denied
-        throw new Error('You do not have permission to perform this action');
-      case 400:
-        // Validation error
-        throw new Error(error.error || 'Invalid input');
-      case 404:
-        throw new Error('Resource not found');
-      default:
-        throw new Error('An unexpected error occurred');
-    }
-  }
-  return response;
-};
-
-// Use with all API calls
-const safeApiCall = async (endpoint, options = {}) => {
-  const response = await apiCall(endpoint, options);
-  await handleApiError(response);
-  return response.json();
-};
+    ],
+    "count": 1,
+    "hasMore": false,
+    "message": "Notifications retrieved successfully"
+}
 ```
 
 ---
 
-### 📊 Reports & Advice APIs
-
-### Abuse Reports
-- **GET** `/api/reports` - Get accessible reports (Medical Staff + Admin)
-- **POST** `/api/reports` - Create abuse report (Medical Staff + Admin)
-- **GET** `/api/reports/:reportId` - Get specific report
-- **PATCH** `/api/reports/:reportId` - Update report
-- **DELETE** `/api/reports/:reportId` - Delete report
-- **Auth**: Bearer Token (Medical Staff + Admin only)
- 
-
-### Temporary Advice
-- **GET** `/api/advice` - Get advice (All roles can view)
-- **POST** `/api/advice` - Create advice (Medical Staff + Admin)
-- **GET** `/api/advice/:adviceId` - Get specific advice
-- **PATCH** `/api/advice/:adviceId` - Update advice (Medical Staff + Admin)
-- **DELETE** `/api/advice/:adviceId` - Delete advice (Medical Staff + Admin)
-- **Auth**: Bearer Token (Role-based access)
- 
+### 2. **GET /api/notifications/count**
+**Purpose**: Get unread notification count for the authenticated user  
+**Method**: `GET`  
+**Authorization**: Any authenticated user  
+**Body**: None (no body required)  
+**Exampl Response**:
+```json
+{
+  "unreadCount": 5,
+  "message": "Unread count retrieved successfully"
+}
+```
 
 ---
 
-## � Complete Field Specifications
-
-### User Fields
-```javascript
+### 3. **PATCH /api/notifications/:notificationId/read**
+**Purpose**: Mark a specific notification as read  
+**Method**: `PATCH`  
+**Authorization**: User can only mark their own notifications as read  
+**URL Parameter**: `notificationId` (notification UUID)  
+**Body**: None (no body required)  
+**Response**:
+```json
 {
-  "id": "uuid",
-  "email": "string (@vgu.edu.vn domain)",
-  "role": "student" | "medical_staff" | "admin",
-  "name": "string",
-  "gender": "male" | "female" | "other",
-  "age": "number (positive integer)",
-  "status": "active" | "inactive" | "banned",
-  "points": "number (integer, default: 0)",
-  "createdAt": "ISO 8601 timestamp",
-  "updatedAt": "ISO 8601 timestamp"
+    "notification": {
+        "id": "75bf93dc-87e6-4472-a6b0-313b05df4a09",
+        "isRead": true,
+        "readAt": "2025-06-25T04:13:00.151Z"
+    },
+    "message": "Notification marked as read"
 }
 ```
-
-### Student-Specific Fields
-```javascript
-{
-  "intakeYear": "number (year)",
-  "major": "string",
-  "housingLocation": "dorm_1" | "dorm_2" | "off_campus"
-}
-```
-
-### Medical Staff-Specific Fields
-```javascript
-{
-  "specialty": "string",
-  "specialtyGroup": "physical" | "mental",
-  "shiftSchedule": {
-    "monday": ["HH:MM-HH:MM"],
-    "tuesday": ["HH:MM-HH:MM"],
-    // ... other days (optional)
-  }
-}
-```
-
-### Appointment Fields
-```javascript
-{
-  "id": "uuid",
-  "userId": "uuid",
-  "medicalStaffId": "uuid | null",
-  "status": "pending" | "approved" | "rejected" | "completed" | "cancelled",
-  "dateRequested": "ISO 8601 timestamp",
-  "dateScheduled": "ISO 8601 timestamp",
-  "timeScheduled": "HH:MM:SS",
-  "priorityLevel": "low" | "medium" | "high",
-  "symptoms": "string (text)",
-  "healthIssueType": "physical" | "mental"
-}
-```
-
-### Mood Entry Fields
-```javascript
-{
-  "id": "uuid",
-  "userId": "uuid",
-  "studentId": "uuid",
-  "mood": "happy" | "sad" | "neutral" | "anxious" | "stressed",
-  "notes": "string | null",
-  "entryDate": "ISO 8601 timestamp",
-  "createdAt": "ISO 8601 timestamp",
-  "updatedAt": "ISO 8601 timestamp"
-}
-```
-
-### Notification Fields
-```javascript
-{
-  "id": "uuid",
-  "userId": "uuid",
-  "appointmentId": "uuid | null",
-  "type": "appointment_assigned" | "appointment_approved" | "appointment_rejected" | "appointment_completed" | "general",
-  "title": "string",
-  "message": "string",
-  "isRead": "boolean",
-  "createdAt": "ISO 8601 timestamp",
-  "readAt": "ISO 8601 timestamp | null"
-}
-```
-
-### Abuse Report Fields
-```javascript
-{
-  "id": "uuid",
-  "staffId": "uuid",
-  "studentId": "uuid | null",
-  "appointmentId": "uuid | null",
-  "reportType": "system_abuse" | "false_urgency" | "inappropriate_behavior" | "other",
-  "description": "string",
-  "status": "open" | "investigating" | "resolved",
-  "reportDate": "ISO 8601 timestamp"
-}
-```
-
-### Blackout Date Fields
-```javascript
-{
-  "date": "YYYY-MM-DD",
-  "reason": "string",
-  "type": "holiday" | "maintenance" | "staff_training" | "emergency",
-  "createdBy": "uuid",
-  "createdAt": "ISO 8601 timestamp"
-}
-```
-
-### Time Slot Fields
-```javascript
-{
-  "startTime": "HH:MM:SS",
-  "endTime": "HH:MM:SS",
-  "startTimeFormatted": "HH:MM",
-  "endTimeFormatted": "HH:MM"
-}
-```
-
-### Validation Rules
-- **Email**: Must end with `@vgu.edu.vn`
-- **Age**: Must be positive integer
-- **Housing Location**: Students only, defaults to `off_campus`
-- **Specialty Group**: Medical staff only, defaults to `physical`
-- **Shift Schedule**: Time format `HH:MM-HH:MM`, start time must be before end time
-- **Appointment Time**: 20-minute slots, Monday-Friday, 9:00 AM - 4:00 PM (excluding 12:00-1:00 PM lunch)
-- **Priority Level**: Required for appointments
-- **Health Issue Type**: Required for appointments, determines medical staff assignment
-- **Mood**: Must be one of the 5 defined values
-- **Status Fields**: All status enums are strictly validated
 
 ---
 
-## �🔒 Authentication & Authorization
-
-### Required Headers
-```javascript
-Authorization: "Bearer <jwt_token>"
-Content-Type: "application/json" // For POST/PATCH requests
+### 4. **PATCH /api/notifications/read-all**
+**Purpose**: Mark all notifications as read for the authenticated user  
+**Method**: `PATCH`  
+**Authorization**: Any authenticated user  
+**Body**: None (no body required)  
+**Response**:
+```json
+{
+  "updatedCount": 7,
+  "message": "7 notifications marked as read"
+}
 ```
 
-### User Roles
-- **`student`**: Limited access to own data
-- **`medical_staff`**: Access to student data and assignments
-- **`admin`**: Full system access
-
-### Error Responses
-```javascript
-// Authentication Required
-401: { error: "Authentication required" }
-
-// Insufficient Privileges  
-403: { error: "Access denied" }
-
-// Not Found
-404: { error: "Resource not found" }
-
-// Validation Error
-400: { error: "Validation error message" }
-
-// Server Error
-500: { error: "Internal server error" }
-```
 ---
 
-## �️ Frontend API Integration Guide
-
-### Common Mistakes and How to Fix Them
-
-#### ❌ **Mistake 1: Invalid String Concatenation**
-```javascript
-// WRONG - This creates NaN
-const apiEndpoint = + 'http://localhost:5001/api/appointments';
-
-// CORRECT
-const apiEndpoint = 'http://localhost:5001/api/appointments';
-// OR with base URL
-const API_BASE_URL = 'http://localhost:5001/api';
-const apiEndpoint = API_BASE_URL + '/appointments';
-```
-
-#### ❌ **Mistake 2: Wrong Port Number**
-```javascript
-// WRONG - Documentation specifies port 5001
-const url = 'http://localhost:5000/api/appointments';
-
-// CORRECT
-const url = 'http://localhost:5001/api/appointments';
-```
-
-#### ❌ **Mistake 3: Headers Configuration Errors**
-```javascript
-// WRONG - Multiple issues
-header: {  // Should be "headers" (plural)
-    'Content-Type': 'application.json',  // Wrong MIME type
-    'Auth': 'Bearer ${token}'  // Wrong header name + template literal issue
-}
-
-// CORRECT
-headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`  // Use backticks for template literals
+### 5. **DELETE /api/notifications/:notificationId**
+**Purpose**: Delete a specific notification  
+**Method**: `DELETE`  
+**Authorization**: User can only delete their own notifications  
+**URL Parameter**: `notificationId` (notification UUID)  
+**Body**: None (no body required)  
+**Response**:
+```json
+{
+    "message": "Notification deleted successfully"
 }
 ```
 
-#### ❌ **Mistake 4: Missing Token Management**
-```javascript
-// WRONG - Hardcoded or missing token
-const token = 'some-token';
+---
 
-// CORRECT - Get token from localStorage
-const getToken = () => {
-    const sessionInfo = localStorage.getItem('session-info');
-    if (sessionInfo) {
-        try {
-            const parsed = JSON.parse(sessionInfo);
-            return parsed.token;
-        } catch (error) {
-            console.warn('Invalid session info');
-            return null;
-        }
-    }
-    return null;
-};
+## 🔔 Notification Types
+
+The system supports various notification types:
+- `appointment_approved` - When an appointment is approved
+- `appointment_rejected` - When an appointment is rejected
+- `appointment_cancelled` - When an appointment is cancelled
+- `appointment_assigned` - When new appointment is assigned to the doctor
+- `general` - General notifications (e.g., system updates, reminders)
+
+---
+
+## 🔐 Authentication & Authorization
+
+### Authentication Requirements:
+- **Authorization Header**: `Bearer <jwt_token>`
+- Uses standard `authMiddleware`
+
+### Privacy Protection:
+- Users can only access their own notifications
+- UUID validation ensures security
+- No cross-user data leakage
+
+---
+
+## 📊 Pagination & Filtering
+
+### Query Parameters:
+- **limit**: Control number of results (useful for pagination)
+- **offset**: Skip results for pagination
+- **unreadOnly**: Filter to show only unread notifications
+- **type**: Filter by specific notification type
+
+### Pagination Example:
+```javascript
+// Get first 10 notifications
+GET /api/notifications/?limit=10&offset=0
+
+// Get next 10 notifications
+GET /api/notifications/?limit=10&offset=10
+
+// Get only unread notifications
+GET /api/notifications/?unreadOnly=true&limit=5
 ```
 
-#### ❌ **Mistake 5: No Error Handling**
-```javascript
-// WRONG - No error handling
-const response = await fetch(url);
-const data = await response.json();
+---
 
-// CORRECT - Proper error handling
-const response = await fetch(url);
-if (!response.ok) {
-    if (response.status === 401) {
-        localStorage.removeItem('session-info');
-        window.location.href = '/login';
-        return;
-    }
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+## 💡 Usage Notes
+
+1. **Real-time Updates**: Notifications are created automatically by the system for various events
+2. **User Privacy**: Each user can only see their own notifications
+3. **Read Status Tracking**: System tracks when notifications are read
+4. **Bulk Operations**: Users can mark all notifications as read at once
+5. **Flexible Filtering**: Support for filtering by read status and notification type
+6. **Pagination Support**: Handle large numbers of notifications efficiently
+7. **Metadata**: Notifications include relevant metadata (appointment IDs, staff names, etc.)
+
+## 🔄 Typical Workflow
+
+1. **Receive Notifications**: System automatically creates notifications for user events
+2. **Check Count**: Frontend can check unread count for badge display
+3. **List Notifications**: User views their notifications with filtering/pagination
+4. **Mark as Read**: User reads notifications (individually or all at once)
+5. **Delete**: User can delete notifications they no longer need
+---
+
+## 📋 Advice Routes Usage & Body Requirements
+
+Based on the route: `/api/advice/*` (all routes require authentication)
+
+---
+
+### 1. **POST /api/advice/appointments/:appointmentId**
+**Purpose**: Send advice for a specific appointment (medical staff only)  
+**Method**: `POST`  
+**Authorization**: Medical staff role required  
+**URL Parameter**: `appointmentId` (appointment UUID)  
+**Body**:
+```json
+{
+  "message": "string (required - advice message)"
 }
-const data = await response.json();
 ```
-
-### **Complete Working Examples**
-
-#### **1. Get Appointments (Corrected)**
-```javascript
-const fetchAppointments = async () => {
-    try {
-        // Get token from localStorage
-        const sessionInfo = localStorage.getItem('session-info');
-        if (!sessionInfo) {
-            throw new Error('No authentication token found');
-        }
-        
-        const { token } = JSON.parse(sessionInfo);
-        
-        const response = await fetch('http://localhost:5001/api/appointments', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            if (response.status === 401) {
-                localStorage.removeItem('session-info');
-                window.location.href = '/login';
-                return;
-            }
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('Appointments:', data.appointments);
-        console.log('User role:', data.userRole);
-        console.log('Access level:', data.accessLevel);
-        
-        return data.appointments;
-        
-    } catch (error) {
-        console.error('Error fetching appointments:', error);
-        throw error;
+**Example**:
+```json
+{
+  "message": "Try practicing deep breathing exercises for 10 minutes daily. Consider joining our stress management workshop next week. If symptoms persist, please schedule a follow-up appointment."
+}
+```
+**Response**:
+```json
+{
+    "message": "Advice sent successfully",
+    "advice": {
+        "id": "70104d47-2bd4-4382-b802-b10faa0119a6",
+        "appointmentId": "f6594821-d17c-4ae2-a27e-fec64d0fc24a",
+        "message": "Try practicing deep breathing exercises for 10 minutes daily. Consider joining our stress management workshop next week. If symptoms persist, please schedule a follow-up appointment.",
+        "dateSent": "2025-06-24T21:42:28.006Z"
     }
-};
+}
 ```
 
-#### **2. Create Appointment with Time Slot Validation**
-```javascript
-const createAppointment = async (appointmentData) => {
-    try {
-        const token = getToken();
-        if (!token) throw new Error('No authentication token');
+---
 
-        // First, check available time slots
-        const slotsResponse = await fetch(
-            `http://localhost:5001/api/appointments/time-slots/${appointmentData.date}`,
-            {
-                headers: { 'Authorization': `Bearer ${token}` }
-            }
-        );
-
-        if (!slotsResponse.ok) {
-            throw new Error('Failed to fetch available time slots');
-        }
-
-        const slotsData = await slotsResponse.json();
-        
-        if (slotsData.availableTimeSlots.length === 0) {
-            throw new Error('No available time slots for the selected date');
-        }
-
-        // Create the appointment
-        const response = await fetch('http://localhost:5001/api/appointments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                symptoms: appointmentData.symptoms,
-                priorityLevel: appointmentData.priorityLevel,
-                dateScheduled: appointmentData.date,
-                timeScheduled: appointmentData.selectedTime
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create appointment');
-        }
-
-        const data = await response.json();
-        return data.appointment;
-
-    } catch (error) {
-        console.error('Error creating appointment:', error);
-        throw error;
-    }
-};
-```
-
-#### **3. Generic API Call Helper Function**
-```javascript
-const apiCall = async (endpoint, options = {}) => {
-    const token = getToken();
-    const baseURL = 'http://localhost:5001/api';
-    
-    const config = {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-            ...options.headers,
+### 2. **GET /api/advice/appointments/:appointmentId**
+**Purpose**: Get advice for a specific appointment  
+**Method**: `GET`  
+**Authorization**: 
+- Students can view advice for their own appointments
+- Medical staff can view advice they sent
+**URL Parameter**: `appointmentId` (appointment UUID)  
+**Body**: None (no body required)  
+**Response**:
+```json
+{
+    "advice": [
+        {
+            "id": "70104d47-2bd4-4382-b802-b10faa0119a6",
+            "message": "Try practicing deep breathing exercises for 10 minutes daily. Consider joining our stress management workshop next week. If symptoms persist, please schedule a follow-up appointment.",
+            "dateSent": "2025-06-24T21:42:28.006Z",
+            "appointmentId": "f6594821-d17c-4ae2-a27e-fec64d0fc24a",
+            "symptoms": "Experiencing headaches and fatigue for the past week",
+            "staffName": "New Doctor Name"
         },
-    };
-
-    try {
-        const response = await fetch(`${baseURL}${endpoint}`, config);
-        
-        if (!response.ok) {
-            if (response.status === 401) {
-                localStorage.removeItem('session-info');
-                window.location.href = '/login';
-                throw new Error('Authentication required');
-            }
-            
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP ${response.status}`);
+        {
+            "id": "4dae1ea3-5c1e-4ac9-9712-153a37e2bfbb",
+            "message": "Try practicing deep breathing exercises for 10 minutes daily. Also, consider joining our stress management workshop next week.",
+            "dateSent": "2025-06-24T21:10:17.639Z",
+            "appointmentId": "f6594821-d17c-4ae2-a27e-fec64d0fc24a",
+            "symptoms": "Experiencing headaches and fatigue for the past week",
+            "staffName": "New Doctor Name"
         }
-        
-        return response;
-    } catch (error) {
-        console.error(`API call failed: ${endpoint}`, error);
-        throw error;
+    ],
+    "message": "Advice retrieved successfully"
+}
+```
+
+---
+
+### 3. **PUT /api/advice/appointments/:appointmentId**
+**Purpose**: Update advice for a specific appointment (medical staff only)  
+**Method**: `PUT`  
+**Authorization**: Medical staff role required (can only update advice they sent. If there are multiple pieces of advice, all will be updated with the same message)  
+**URL Parameter**: `appointmentId` (appointment UUID)  
+**Body**:
+```json
+{
+  "message": "string (required - updated advice message)"
+}
+```
+**Example**:
+```json
+{
+  "message": "Updated: Try practicing deep breathing exercises for 15 minutes daily instead of 10. Also, I recommend scheduling weekly check-ins for the next month."
+}
+```
+**Response**:
+```json
+{
+    "message": "Advice updated successfully",
+    "advice": {
+        "id": "4dae1ea3-5c1e-4ac9-9712-153a37e2bfbb",
+        "appointmentId": "f6594821-d17c-4ae2-a27e-fec64d0fc24a",
+        "message": "Updated: Try practicing deep breathing exercises for 15 minutes daily instead of 10. Also, I recommend scheduling weekly check-ins for the next month.",
+        "dateSent": "2025-06-24T21:47:03.667Z"
     }
-};
-
-// Usage examples:
-const getAppointments = async () => {
-    const response = await apiCall('/appointments');
-    return response.json();
-};
-
-const createMoodEntry = async (moodData) => {
-    const response = await apiCall('/mood-entries', {
-        method: 'POST',
-        body: JSON.stringify(moodData)
-    });
-    return response.json();
-};
+}
 ```
 
-### 🔧 **React Hook Integration Examples**
+---
 
-#### **useAppointments Hook**
-```javascript
-import { useState, useEffect } from 'react';
-
-const useAppointments = () => {
-    const [appointments, setAppointments] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    const fetchAppointments = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const response = await apiCall('/appointments');
-            const data = await response.json();
-            setAppointments(data.appointments || []);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const createAppointment = async (appointmentData) => {
-        try {
-            const response = await apiCall('/appointments', {
-                method: 'POST',
-                body: JSON.stringify(appointmentData)
-            });
-            const data = await response.json();
-            await fetchAppointments(); // Refresh list
-            return data;
-        } catch (err) {
-            setError(err.message);
-            throw err;
-        }
-    };
-
-    useEffect(() => {
-        fetchAppointments();
-    }, []);
-
-    return {
-        appointments,
-        loading,
-        error,
-        createAppointment,
-        refetch: fetchAppointments
-    };
-};
-
-// Usage in component:
-const AppointmentList = () => {
-    const { appointments, loading, error, createAppointment } = useAppointments();
-
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
-
-    return (
-        <div>
-            {appointments.map(appointment => (
-                <div key={appointment.id}>
-                    <h3>{appointment.symptoms}</h3>
-                    <p>Status: {appointment.status}</p>
-                    <p>Date: {appointment.dateScheduled}</p>
-                </div>
-            ))}
-        </div>
-    );
-};
+### 4. **GET /api/advice/student**
+**Purpose**: Get all advice received by the current student  
+**Method**: `GET`  
+**Authorization**: Student role required  
+**Body**: None (no body required)  
+**Response**:
+```json
+{
+  "advice": [
+    {
+      "id": "4dae1ea3-5c1e-4ac9-9712-153a37e2bfbb",
+      "message": "Try practicing deep breathing exercises for 10 minutes daily. Also, consider joining our stress management workshop next week.",
+      "dateSent": "2025-06-24T21:10:17.639Z",
+      "appointmentId": "f6594821-d17c-4ae2-a27e-fec64d0fc24a",
+      "symptoms": "Experiencing headaches and fatigue for the past week",
+      "staffName": "New Doctor Name"
+    }
+  ],
+  "count": 1,
+  "message": "Advice retrieved successfully"
+}
 ```
 
-#### **useTimeSlots Hook**
-```javascript
-const useTimeSlots = (selectedDate) => {
-    const [timeSlots, setTimeSlots] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+---
 
-    const fetchTimeSlots = async (date) => {
-        if (!date) return;
-        
-        try {
-            setLoading(true);
-            setError(null);
-            const response = await apiCall(`/appointments/time-slots/${date}`);
-            const data = await response.json();
-            setTimeSlots(data.availableTimeSlots || []);
-        } catch (err) {
-            setError(err.message);
-            setTimeSlots([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (selectedDate) {
-            fetchTimeSlots(selectedDate);
-        }
-    }, [selectedDate]);
-
-    return { timeSlots, loading, error };
-};
-
-// Usage in component:
-const AppointmentBooking = () => {
-    const [selectedDate, setSelectedDate] = useState('');
-    const [selectedTime, setSelectedTime] = useState('');
-    const { timeSlots, loading } = useTimeSlots(selectedDate);
-
-    return (
-        <div>
-            <input 
-                type="date" 
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-            />
-            
-            {loading ? (
-                <p>Loading available times...</p>
-            ) : (
-                <select 
-                    value={selectedTime}
-                    onChange={(e) => setSelectedTime(e.target.value)}
-                >
-                    <option value="">Select time</option>
-                    {timeSlots.map(slot => (
-                        <option key={slot.start_time} value={slot.start_time}>
-                            {slot.startTimeFormatted} - {slot.endTimeFormatted}
-                        </option>
-                    ))}
-                </select>
-            )}
-        </div>
-    );
-};
+### 5. **GET /api/advice/sent**
+**Purpose**: Get all advice sent by the current medical staff  
+**Method**: `GET`  
+**Authorization**: Medical staff role required  
+**Body**: None (no body required)  
+**Response**:
+```json
+{
+  "advice": [
+    {
+      "advice_id": "uuid",
+      "appointment_id": "uuid",
+      "sent_to": "uuid",
+      "student_name": "John Doe",
+      "message": "Try practicing deep breathing exercises...",
+      "sent_at": "2025-06-25T10:00:00.000Z",
+      "appointment_date": "2025-06-26",
+      "appointment_time": "14:20:00"
+    },
+    {
+      "advice_id": "uuid", 
+      "appointment_id": "uuid",
+      "sent_to": "uuid",
+      "student_name": "Jane Smith",
+      "message": "Consider joining our stress management workshop...",
+      "sent_at": "2025-06-24T14:00:00.000Z",
+      "appointment_date": "2025-06-25",
+      "appointment_time": "11:00:00"
+    }
+  ],
+  "count": 2,
+  "message": "Sent advice retrieved successfully"
+}
 ```
+
+---
+
+### 🔐 Authentication & Authorization
+
+#### Authentication Requirements:
+- **Authorization Header**: `Bearer <jwt_token>`
+- Uses standard `authMiddleware`
+
+#### Role-Based Access:
+- **Medical Staff**: Can send, update, and view advice they sent
+- **Students**: Can only view advice they received
+- **Admin**: Access not explicitly defined in these routes
+
+---
+
+### 🔄 Advice Workflow
+
+1. **Medical Staff Sends Advice**: After reviewing an appointment, medical staff can send personalized advice
+2. **Student Receives Advice**: Students can view all advice they've received from their appointments
+3. **Medical Staff Updates**: Medical staff can update advice they previously sent
+4. **Medical Staff Reviews**: Medical staff can see all advice they've sent to track their guidance
+
+---
+
+### 💡 Usage Notes
+
+1. **Advice Linkage**: All advice is linked to specific appointments for context
+2. **Privacy Protection**: Students can only see advice for their appointments, medical staff can only update their own advice
+3. **Real-time Communication**: Provides a way for medical staff to give guidance outside of appointments
+4. **Update Capability**: Medical staff can refine their advice after sending it
+5. **Tracking**: Both students and medical staff can track advice history
+6. **Message Validation**: All advice messages are trimmed and validated to ensure meaningful content
+
+---
+
+## 📋 Abuse Report Routes Usage & Body Requirements
+
+Based on the route: `/api/abuse-reports/*` (all routes require authentication)
+
+---
+
+### 1. **POST /api/abuse-reports/**
+**Purpose**: Create a new abuse report (medical staff only)  
+**Method**: `POST`  
+**Authorization**: Medical staff role required  
+**Body**:
+```json
+{
+  "appointmentId": "string (UUID, required)",
+  "description": "string (required)",
+  "reportType": "system_abuse|false_urgency|inappropriate_behavior|other (optional - default: system_abuse)"
+}
+```
+**Examples**:
+```json
+// Basic abuse report
+{
+  "appointmentId": "f6594821-d17c-4ae2-a27e-fec64d0fc24a",
+  "description": "Student has been consistently booking appointments and not showing up, wasting medical resources."
+}
+
+// Abuse report with type
+{
+  "appointmentId": "f6594821-d17c-4ae2-a27e-fec64d0fc24a",
+  "description": "Student appears to be using the system to book multiple appointments without valid medical concerns.",
+  "reportType": "system_abuse"
+}
+```
+**Response**:
+```json
+{
+    "success": true,
+    "message": "Abuse report submitted successfully",
+    "report": {
+        "id": "c551961e-7c7f-42b8-b668-97541470f368",
+        "appointmentId": "4f747468-3f70-4e5c-8946-66dca40607fe",
+        "description": "Student has been consistently booking appointments and not showing up, wasting medical resources.",
+        "reportType": "system_abuse",
+        "reportDate": "2025-06-25T05:20:19.002Z",
+        "status": "open"
+    }
+}
+```
+
+---
+
+### 2. **GET /api/abuse-reports/my**
+**Purpose**: Get all abuse reports created by the current medical staff  
+**Method**: `GET`  
+**Authorization**: Medical staff role required  
+**Body**: None (no body required)  
+**Response**:
+```json
+{
+    "success": true,
+    "message": "Abuse reports retrieved successfully",
+    "reports": [
+        {
+            "id": "c551961e-7c7f-42b8-b668-97541470f368",
+            "reportDate": "2025-06-25T05:20:19.002Z",
+            "description": "Student has been consistently booking appointments and not showing up, wasting medical resources.",
+            "status": "open",
+            "reportType": "system_abuse",
+            "appointmentId": "4f747468-3f70-4e5c-8946-66dca40607fe",
+            "studentId": "bb8a1c22-b7d5-46c5-b000-29501da50966",
+            "studentName": "Nguyen Van A",
+            "studentEmail": "student1@vgu.edu.vn",
+            "appointmentSymptoms": "Headache and fever",
+            "appointmentPriority": "medium"
+        }
+    ],
+    "count": 1
+}
+```
+
+---
+
+### 3. **PATCH /api/abuse-reports/:reportId**
+**Purpose**: Update an abuse report (medical staff can only update their own)  
+**Method**: `PATCH`  
+**Authorization**: Medical staff role required  
+**URL Parameter**: `reportId` (abuse report ID)  
+**Body**:
+```json
+{
+  "description": "string (optional - updated description)"
+}
+```
+**Examples**:
+```json
+// Update description
+{
+  "description": "Updated: Student has been consistently booking appointments and not showing up. After review, this appears to be a pattern of system abuse affecting other students' access to care."
+}
+```
+**Response**:
+```json
+{
+    "success": true,
+    "message": "Abuse report updated successfully",
+    "report": {
+        "report_id": "c551961e-7c7f-42b8-b668-97541470f368",
+        "description": "Updated: Student has been consistently booking appointments and not showing up. After review, this appears to be a pattern of system abuse affecting other students' access to care.",
+        "report_date": "2025-06-25T05:20:19.002Z",
+        "status": "open"
+    }
+}
+```
+
+---
+
+### 🔐 Authentication & Authorization
+
+#### Authentication Requirements:
+- **Authorization Header**: `Bearer <jwt_token>`
+- Uses `authMiddleware` and `requireRole('medical_staff')`
+
+#### Role-Based Access:
+- **Medical Staff**: Can create, read, and update their own abuse reports
+- **Students**: No access to abuse report routes
+- **Admin**: Has separate admin routes for managing all abuse reports
+
+---
+
+### 🔄 Typical Workflow
+
+1. **Complete Appointment**: Medical staff completes an appointment with a student
+2. **Identify Abuse**: Staff identifies potential system abuse (no-shows, fake symptoms, etc.)
+3. **Create Report**: Staff creates an abuse report linked to the specific appointment
+4. **Review Reports**: Staff can view all their submitted reports
+5. **Update if Needed**: Staff can update report descriptions if additional information becomes available
+6. **Administrative Review**: Administrators can review all reports through separate admin routes
+
+---
+
+### 📝 Technical Notes for Frontend Developers
+1. **Authentication**: JWT tokens expire in 24 hours - implement refresh logic
+2. **Base URL**: All APIs use `/api` prefix (e.g., `/api/appointments`)
+3. **Error Handling**: Use status codes 401, 403, 400, 404, 500 for proper UX
+4. **Role Management**: Three roles - `student`, `medical_staff`, `admin`
+5. **Profile Fields**: New fields `housingLocation` (students) and `shiftSchedule` (medical staff)
+6. **Appointment Logic**: 20-minute slots, 9AM-4PM, Monday-Friday only
+7. **Auto-Assignment**: Appointments automatically assigned to least busy medical staff
+8. **Notifications**: Poll `/notifications/count` for unread badge updates
+9. **Time Slots**: Always check availability before showing booking options
+10. **Validation**: Frontend should match backend validation (housing enums, time formats)
+
+---
+
+### 📋 **Integration Checklist**
+
+- ✅ **Use correct base URL**: `http://localhost:5001/api`
+- ✅ **Include Bearer token**: `Authorization: Bearer ${token}`
+- ✅ **Use proper headers**: `Content-Type: application/json`
+- ✅ **Handle 401 errors**: Redirect to login and clear storage
+- ✅ **Validate responses**: Check `response.ok` before parsing JSON
+- ✅ **Use template literals**: Backticks for `${variable}` interpolation
+- ✅ **Check time slot availability**: Before creating appointments
+- ✅ **Implement loading states**: Show loading indicators during API calls
+- ✅ **Handle errors gracefully**: Show user-friendly error messages
+- ✅ **Use React hooks**: For data fetching and state management
+
+### 🚨 **Common Pitfalls to Avoid**
+
+1. **String concatenation with +**: `+ 'http://...'` creates NaN
+2. **Wrong header names**: `Auth` instead of `Authorization`
+3. **Missing plurals**: `header` instead of `headers`
+4. **Template literal syntax**: Single quotes instead of backticks
+5. **Port number confusion**: Using 5000 instead of 5001
+6. **Missing error handling**: Not checking `response.ok`
+7. **Token management**: Not refreshing expired tokens
+8. **Time slot validation**: Creating appointments without checking availability
+
+---
+
+## �🚀 Frontend Development Recommendations
 
 ### State Management Suggestions
 ```javascript

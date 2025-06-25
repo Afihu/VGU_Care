@@ -56,11 +56,9 @@ const requireStudentOwnership = (userIdParam = 'userId') => {
     // Admin and medical staff can access any student data
     if (req.user.role === 'admin' || req.user.role === 'medical_staff') {
       return next();
-    }
-
-    // Students can only access their own data
+    }    // Students can only access their own data
     if (req.user.role === 'student') {
-      const requestedUserId = parseInt(req.params[userIdParam]);
+      const requestedUserId = req.params[userIdParam];
       
       if (req.user.userId === requestedUserId) {
         return next();

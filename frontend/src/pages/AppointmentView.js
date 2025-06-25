@@ -11,16 +11,22 @@ import LogoutButton from '../components/LogoutButton.js';
 export default function AppointmentView() {
 
   // variables for session info
-  const userInfo = localStorage.getItem('session-info');
+  const rawUserInfo = localStorage.getItem('session-info');
   const navigateTo = useNavigate();
-  const parsed = helpers.JSONparser(userInfo);
+  const parsed = helpers.JSONparser(rawUserInfo);
   const userToken = parsed.token;
+  
+
+  // states
   const [userAppointments, setUserAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [filter, setFilter] = useState('ALL'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTemAdviceModalOpen, setIsTemAdviceModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [userInfo, setUserInfo] = useState(parsed.user);
 
+  //functions
   const handleAppointmentRetrieve = async (token) => {
     const response = await api.appointmentRetrieveService(token); 
     const data = await response.json(); 
@@ -32,10 +38,18 @@ export default function AppointmentView() {
     setSelectedAppointment(null);
   }
 
+  const closeTemAdviceModal = () => {
+    setIsTemAdviceModalOpen(false);
+  }
+
   const handleCardClick = (appointment) => {
     setSelectedAppointment(appointment);
     setIsModalOpen(true);
   };
+
+  const handleProvideTempAdvice = (appointmentId) => {
+    navigateTo(`/provide-advice/:${appointmentId}`);
+  }
 
   // handleAppointmentRetrieve(userToken);
 
@@ -112,13 +126,62 @@ export default function AppointmentView() {
             <div>
                 <p><strong>Status:</strong> <span className={`modal-status status-${selectedAppointment.status.toLowerCase()}`}>{selectedAppointment.status}</span></p>
                 <p><strong>Symptoms:</strong> {selectedAppointment.symptoms}</p>
+                <p><strong>Date Requested:</strong> {new Date(selectedAppointment.dateRequested).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 <p><strong>Date Scheduled:</strong> {new Date(selectedAppointment.dateScheduled).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p><strong>Time Scheduled:</strong> {selectedAppointment.timeScheduled}</p>
                 <p><strong>Priority:</strong> {selectedAppointment.priorityLevel}</p>
+                {
+                  (userInfo.role == 'medical_staff') ?
+                  (
+                    <>
+                      <p><strong>Student Name:</strong> {selectedAppointment.studentName}</p>
+                      <p><strong>Student Email:</strong> {selectedAppointment.studentEmail}</p>  
+                    </>
+                  ) : null
+                }
 
                 <div className="modal-actions">
-                    <button className="modal-button reschedule">Reschedule Appointment</button>
-                    <button className="modal-button cancel-appointment">Cancel Appointment</button>
+                    {
+                      (selectedAppointment.status == 'pending' && userInfo.role == 'medical_staff') ? 
+                      (
+                        <button className="modal-button accept" onClick={() => setIsTemAdviceModalOpen(true)}>Accept Appointment</button>
+                      ) : null
+                    }
+
+                    {
+                      (userInfo.role == 'student') ?
+                      (
+                        <button className="modal-button reschedule">Reschedule Appointment</button>
+                      ) : null
+                    }
+
+                    {
+                      (userInfo.role == 'student' && selectedAppointment.hasAdvice) ?
+                      (
+                        <button className="modal-button see-advice">See Provisional Advice</button>
+                      ) : null
+                    }
+
+                    {
+                      (userInfo.role == 'student') ?
+                      (
+                        <button className="modal-button cancel-appointment">Cancel Appointment</button>
+                      ) : <button className="modal-button cancel-appointment">Reject Appointment</button>
+                    }
+                        
                     <button className="modal-button" onClick={closeModal}>Close</button>
+                </div>
+            </div>
+        )}
+      </Modal>
+
+      <Modal isOpen={isTemAdviceModalOpen} onClose={closeTemAdviceModal} title="Would You Like to Provide Provisional Advice?">
+        {selectedAppointment && (
+            <div>
+                <div className="modal-actions">
+                  <button className="modal-button yes" onClick={() => handleProvideTempAdvice(selectedAppointment.id)}>Yes</button>      
+                  <button className="modal-button no" onClick={() => closeModal}>No</button>
+                  <button className="modal-button close" onClick={() => closeModal}>Close</button>
                 </div>
             </div>
         )}

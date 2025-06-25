@@ -314,6 +314,15 @@
     transform: translateY(1px);
 }
 
+.modal-button.accept {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+.modal-button.accept:hover {
+  background-color: green;
+}
+
 .modal-button.reschedule {
     background-color: #007bff;
     color: white;
@@ -341,4 +350,44 @@
   bottom: 20px;       /* 10 pixels from the bottom edge of .parent-container */
   right: 110px;
 }
-  
+
+
+.modal-button.yes {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+  cursor: pointer;
+}
+.modal-button.yes:hover {
+  background-color: green;
+}
+
+.modal-button.no {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+    cursor: pointer;
+}
+.modal-button.no:hover {
+    background-color: #c82333;
+}
+ 
+.modal-button.close {
+    background-color: grey;
+    color: white;
+    border-color: #a5a4a4;
+    cursor: pointer;
+}
+.modal-button.close:hover {
+    background-color: grey;
+}
+
+.modal-button.see-advice{
+  background-color: orange;
+    color: white;
+    border-color: #c48c23;
+    cursor: pointer;
+}
+.modal-button.close:hover {
+    background-color: grey;
+}

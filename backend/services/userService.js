@@ -189,6 +189,18 @@ class UserService extends BaseService {
     const saltRounds = 12;
     return await bcrypt.hash(password, saltRounds);
   }
+
+  async getUsersByRole(role) {
+    if (role === 'student') {
+      const result = await query(UserQueryBuilder.buildStudentsOnlyQuery());
+      return result.rows.map(row => UserQueryBuilder.transformUserRow(row));
+    } else if (role === 'medical_staff') {
+      const result = await query(UserQueryBuilder.buildMedicalStaffOnlyQuery());
+      return result.rows.map(row => UserQueryBuilder.transformUserRow(row));
+    } else {
+      throw new Error(`Unsupported role: ${role}`);
+    }
+  }
 }
 
 module.exports = new UserService();

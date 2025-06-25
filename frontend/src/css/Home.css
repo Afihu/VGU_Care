@@ -106,6 +106,64 @@
 }
 
 
+.manage-student-label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: larger;
+    width: 100%;
+    height: 50px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.5);
+    background-color: green;
+}
+.manage-student-icon {
+    display: block; 
+    width: 1.8em;   /* Icon width, e.g., 2 times the button's font-size */
+    height: 1.8em;  /* Icon height, same deal*/
+
+    -webkit-mask-image: url('../assets/others/student-man-icon.svg'); 
+  mask-image: url('../assets/others/student-man-icon.svg'); 
+
+    -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  mask-position: center;
+    -webkit-mask-size: contain;
+  mask-size: contain;
+
+  background-color: green;
+}
+
+.my-account-label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: larger;
+    width: 100%;
+    height: 50px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.5);
+    background-color: blue;
+}
+.my-account-icon {
+    display: block; 
+    width: 1.8em;   /* Icon width, e.g., 2 times the button's font-size */
+    height: 1.8em;  /* Icon height, same deal*/
+
+    -webkit-mask-image: url('../assets/others/account-icon.svg'); 
+  mask-image: url('../assets/others/account-icon.svg'); 
+
+    -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  mask-position: center;
+    -webkit-mask-size: contain;
+  mask-size: contain;
+
+  background-color: blue;
+}
+
 .track-mood-label {
     font-family: Arial, Helvetica, sans-serif;
     font-size: larger;

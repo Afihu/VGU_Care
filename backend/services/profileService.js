@@ -13,7 +13,7 @@ class ProfileService extends BaseService {
   async updateProfile(userId, profileData) {
     this._validateProfileData(profileData);
     
-    const { name, gender, age, roleSpecificData } = profileData;
+    const { name, gender, age, address, roleSpecificData } = profileData;
     
     // Get current user to know their role
     const currentUser = await userService.getUserById(userId);
@@ -28,10 +28,16 @@ class ProfileService extends BaseService {
         await userService.updateUser(userId, { name, gender, age });
       }
 
+      // Add address validation
+      if (address !== undefined && !['dorm_1', 'dorm_2', 'off_campus'].includes(address)) {
+        throw new Error('Address must be dorm_1, dorm_2, or off_campus');
+      }
+      
       // Update role-specific data
       if (roleSpecificData) {
-        if (currentUser.role === 'student') {
-          await userService.updateStudentData(userId, roleSpecificData);
+        if (currentUser.role === 'student' && address !== undefined) {
+          const updatedRoleData = { ...roleSpecificData, housingLocation: address };
+          await userService.updateStudentData(userId, updatedRoleData);
         } else if (currentUser.role === 'medical_staff') {
           await userService.updateMedicalStaffData(userId, roleSpecificData);
         }

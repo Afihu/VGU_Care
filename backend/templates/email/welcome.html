@@ -1,0 +1,40 @@
+<p>Dear {{userName}},</p>
+<p>Welcome to VGU Care - the comprehensive healthcare management system for VGU students and staff!</p>
+
+<div class="success">
+  <h3>🎉 Your Account is Ready</h3>
+  <p>Your account has been successfully created with <strong>{{userRole}}</strong> privileges.</p>
+</div>
+
+{{#if isStudent}}
+<p>As a student, you can:</p>
+<ul>
+  <li>Book medical appointments online</li>
+  <li>Track your mood and wellness</li>
+  <li>Receive medical advice from qualified staff</li>
+  <li>View your appointment history</li>
+</ul>
+{{/if}}
+
+{{#if isMedicalStaff}}
+<p>As medical staff, you can:</p>
+<ul>
+  <li>Review and approve student appointments</li>
+  <li>Provide temporary medical advice</li>
+  <li>Monitor student wellness and mood tracking</li>
+  <li>Manage your schedule and availability</li>
+</ul>
+{{/if}}
+
+{{#if isAdmin}}
+<p>As an administrator, you have full access to:</p>
+<ul>
+  <li>User management and system oversight</li>
+  <li>Appointment and schedule management</li>
+  <li>System reporting and analytics</li>
+  <li>Abuse report investigation</li>
+</ul>
+{{/if}}
+
+<p>To get started, log into your account using the credentials you created during registration.</p>
+<p>If you have any questions or need assistance, don't hesitate to contact our support team.</p>

@@ -53,11 +53,18 @@
     width: 100%;
     margin-left: 100px;
     font-family: sans-serif;
+
+    /* make it scrollable */
+    max-height: 545px;
+    overflow-y: auto;
+    padding-right: 1px; /* space for scrollbar */
+    border: 1px solid #ffffff;
+    border-radius: 12px;
 }
 
 .entry-card{
     width: 80%;
-    padding: 20px;
+    padding: 10px;
     background-color: #4739df;
     border-radius: 15px;
     margin-top: 20px;
@@ -73,11 +80,4 @@
     border-radius: 15px;
     height: 80px;
     border-color: rgb(211, 213, 214);
-}
-
-.success-message{
-    color: #0b851a;
-    font-size: 18px;
-    margin-top: 12px;
-    text-align: left;
 }

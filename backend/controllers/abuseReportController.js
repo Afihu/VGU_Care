@@ -16,6 +16,16 @@ exports.createReport = async (req, res) => {
       });
     }
 
+    // Validate report type
+    const validReportTypes = ['system_abuse', 'false_urgency', 'inappropriate_behavior', 'other'];
+    if (!validReportTypes.includes(reportType)) {
+      return res.status(400).json({ 
+        error: 'Invalid report type',
+        message: `Report type must be one of: ${validReportTypes.join(', ')}`,
+        provided: reportType
+      });
+    }
+
     // Get appointment details to find the student
     const { query } = require('../config/database');
     const appointmentResult = await query(
