@@ -8,7 +8,12 @@ const loginUser = async (req, res) => {
   try {
     // Use authService.authenticate instead of duplicating logic
     const authResult = await authService.authenticate(email, password);
-      console.log('[LOGIN SUCCESS] Email:', email);    res.json({ 
+    // Deny access if user is banned
+    if (authResult.user.status === 'banned') {
+      console.log(`[LOGIN DENIED] Banned user: ${email}`);
+      return res.status(403).json({ message: 'Account is banned.' });
+    }
+    console.log('[LOGIN SUCCESS] Email:', email);    res.json({ 
       message: 'Login successful', 
       user: { 
         id: authResult.user.id,
