@@ -4,12 +4,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import logo_image from '../assets/images/logo.png';
 import SideBar from './SideBar';
 import NotificationBell from './NotificationBell';
+import helpers from '../utils/helpers';
 
 function Header() {
     const navigateTo = useNavigate();
     const location = useLocation();
-    const [userRole, setUserRole] = useState('');
-    const hideHeaderforPaths = ['/login']; //add more when needed
+    const hideHeaderforPaths = ['/login']; //add more when needed 
     const [isSidebarOpen, setSidebarOpen] = useState(false);
 
     const toggleSidebar = () => {
@@ -23,7 +23,7 @@ function Header() {
     return(
         <>
             <SideBar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-            <header className='header' onClick={() => navigateTo('/home')}>
+            <header className='header'>
                 {/* Left Section */}
                 <div className="header-left">
                     <button className="menu-button" onClick={toggleSidebar}>

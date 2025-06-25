@@ -72,6 +72,15 @@
     transform: translateY(-2px); /*  slight lift effect */
     box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* add shadow */
   }
+
+  .button-cancelled {
+    background: linear-gradient(90deg, #6b7280, #4b5563);
+  }
+
+/* Add to your .status styles */
+  .status-cancelled {
+    background-color: #6b7280;
+  }
   
   .appointment-button {
     padding: 12px 28px;
@@ -390,4 +399,11 @@
 }
 .modal-button.close:hover {
     background-color: grey;
+}
+
+.modal-button.ok{
+  background-color: lightblue;
+    color: white;
+    border-color: lightblue;
+    cursor: pointer;
 }

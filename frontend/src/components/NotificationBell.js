@@ -2,11 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import api from '../services/api';
 import '../css/NotificationBell.css';
+import helpers from '../utils/helpers';
 
 const NotificationBell = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);    const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
+
+    const rawUserInfo = localStorage.getItem('session-info');
+    const parsed = helpers.JSONparser(rawUserInfo);
+    const userRole = parsed.user.role;
+
+    const hideNotificationforUsers = ['student', 'admin'];
 
     // Get token from localStorage
     const getToken = () => {
@@ -139,6 +146,9 @@ const NotificationBell = () => {
         const interval = setInterval(fetchUnreadCount, 30000);
         return () => clearInterval(interval);
     }, []);
+
+    if(hideNotificationforUsers.includes(userRole)) return null;
+    
 
     return (
         <>
