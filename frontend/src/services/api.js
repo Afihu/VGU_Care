@@ -99,7 +99,7 @@ const api = {
     },
     
     reportRetrieveService: async(token) => {
-        const apiEndpoint = API_BASE_URL + '/reports';
+        const apiEndpoint = API_BASE_URL + '/abuse-reports';
 
         var response = await fetch(apiEndpoint, {
             method: 'GET',
@@ -116,6 +116,51 @@ const api = {
         } catch (error) {
             throw error;
         }
+    },
+
+    tempAdviceCourierService : async(token, appointmentID, advice) => { 
+        //fix this
+        const apiEndpoint = API_BASE_URL + `/advice/appointments/${appointmentID}`;
+
+        var response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ 'message': advice }),
+        });
+
+        try {
+           await handleApiError(response);
+           const data = await response.json();
+           return data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    studentTempAdviceRetrieveService : async(appointmentId) => {
+        // GET /api/advice/appointments/:appointmentId
+        // student retrieves the advice for specific appointment
+
+    },
+
+    appointmentUpdateService : async(appointmentId, newSymptoms, newStatus, newPriority, newDateScheduled, newTimeScheduled) => {
+        // PATCH /api/appointments/:appointmentId
+        // this function takes in new values of the appointment and the appointment id, any value 
+        //not needing to be updated will be "" 
+    },
+
+    user_specificAppointmentRetrieveService : async(studentId, token) => {
+        // There should be an api call by medical staff to retrieve all appointments specific 
+        //to a student (currently there is none)
+        // This function calls a GET request and returns all appointments of a specific studentId
+    },
+
+    abuseReportCourierService : async(token, reportText, reportType, apppointmentId) => {
+        // POST /api/abuse-reports/
+        // medical staff creates an abuse report and posts it, reportType can be ""
     },
 
     //Request Appointment API Services
