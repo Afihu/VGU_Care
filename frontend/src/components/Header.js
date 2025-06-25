@@ -6,11 +6,12 @@ import {useNavigate} from 'react-router-dom';
 import { useState } from 'react';
 import SideBar from './SideBar';
 import NotificationBell from './NotificationBell';
+import helpers from '../utils/helpers';
 
 function Header() {
     const navigateTo = useNavigate();
     const location = useLocation();
-    const hideHeaderforPaths = ['/login']; //add more when needed
+    const hideHeaderforPaths = ['/login']; //add more when needed 
     const [isSidebarOpen, setSidebarOpen] = useState(false);
 
     const toggleSidebar = () => {
