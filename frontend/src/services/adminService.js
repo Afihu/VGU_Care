@@ -1,5 +1,5 @@
 // services/adminService.js
-import apiCall from './api'; // wrapper with token & headers
+import api from './api'; // Import the default export
 
 // ==================== USER MANAGEMENT ====================
 
@@ -8,7 +8,7 @@ import apiCall from './api'; // wrapper with token & headers
  * Admin privilege: View all student profiles
  */
 export const getAllStudents = async () => {
-  const response = await apiCall('/admin/users/students');
+  const response = await api.apiCall('/admin/users/students');
   return response; // apiCall already returns parsed JSON
 };
 
@@ -17,7 +17,7 @@ export const getAllStudents = async () => {
  * Admin privilege: View all medical staff profiles
  */
 export const getAllMedicalStaff = async () => {
-  const response = await apiCall('/admin/users/medical-staff');
+  const response = await api.apiCall('/admin/users/medical-staff');
   return response; // apiCall already returns parsed JSON
 };
 
@@ -26,7 +26,7 @@ export const getAllMedicalStaff = async () => {
  * Admin privilege: Manage user roles and permissions
  */
 export const updateUserRole = async (userId, role, roleSpecificData = {}) => {
-  const response = await apiCall(`/admin/users/${userId}/role`, {
+  const response = await api.apiCall(`/admin/users/${userId}/role`, {
     method: 'PATCH',
     body: JSON.stringify({ role, roleSpecificData })
   });
@@ -38,7 +38,7 @@ export const updateUserRole = async (userId, role, roleSpecificData = {}) => {
  * Admin privilege: Manage user permissions
  */
 export const updateUserStatus = async (userId, status) => {
-  const response = await apiCall(`/admin/users/${userId}/status`, {
+  const response = await api.apiCall(`/admin/users/${userId}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status })
   });
@@ -50,7 +50,7 @@ export const updateUserStatus = async (userId, status) => {
  * Admin privilege: Update user information
  */
 export const updateUserName = async (userId, name) => {
-  const response = await apiCall(`/admin/users/${userId}/name`, {
+  const response = await api.apiCall(`/admin/users/${userId}/name`, {
     method: 'PATCH',
     body: JSON.stringify({ name })
   });
@@ -64,7 +64,7 @@ export const updateUserName = async (userId, name) => {
  * Admin privilege: View appointments for all students
  */
 export const getAllAppointments = async () => {
-  const response = await apiCall('/admin/appointments');
+  const response = await api.apiCall('/admin/appointments');
   return response;
 };
 
@@ -73,7 +73,7 @@ export const getAllAppointments = async () => {
  * Admin privilege: Create appointments for all students
  */
 export const createAppointmentForUser = async (userId, appointmentData) => {
-  const response = await apiCall(`/admin/appointments/users/${userId}`, {
+  const response = await api.apiCall(`/admin/appointments/users/${userId}`, {
     method: 'POST',
     body: JSON.stringify(appointmentData)
   });
@@ -85,7 +85,7 @@ export const createAppointmentForUser = async (userId, appointmentData) => {
  * Admin privilege: Update appointments for all students
  */
 export const updateAppointment = async (appointmentId, updateData) => {
-  const response = await apiCall(`/admin/appointments/${appointmentId}`, {
+  const response = await api.apiCall(`/admin/appointments/${appointmentId}`, {
     method: 'PATCH',
     body: JSON.stringify(updateData)
   });
@@ -99,7 +99,7 @@ export const updateAppointment = async (appointmentId, updateData) => {
  * Admin privilege: View mood tracker entries for all students
  */
 export const getAllMoodEntries = async () => {
-  const response = await apiCall('/admin/mood-entries');
+  const response = await api.apiCall('/admin/mood-entries');
   return response;
 };
 
@@ -108,7 +108,7 @@ export const getAllMoodEntries = async () => {
  * Admin privilege: Create mood tracker entries for all students
  */
 export const createMoodEntryForUser = async (userId, moodData) => {
-  const response = await apiCall(`/admin/mood-entries/users/${userId}`, {
+  const response = await api.apiCall(`/admin/mood-entries/users/${userId}`, {
     method: 'POST',
     body: JSON.stringify(moodData)
   });
@@ -120,7 +120,7 @@ export const createMoodEntryForUser = async (userId, moodData) => {
  * Admin privilege: Update mood tracker entries for all students
  */
 export const updateMoodEntry = async (entryId, updateData) => {
-  const response = await apiCall(`/admin/mood-entries/${entryId}`, {
+  const response = await api.apiCall(`/admin/mood-entries/${entryId}`, {
     method: 'PATCH',
     body: JSON.stringify(updateData)
   });
@@ -134,7 +134,7 @@ export const updateMoodEntry = async (entryId, updateData) => {
  * Admin privilege: View temporary advice for all students
  */
 export const getAllTemporaryAdvice = async () => {
-  const response = await apiCall('/admin/temporary-advice');
+  const response = await api.apiCall('/admin/temporary-advice');
   return response;
 };
 
@@ -143,7 +143,7 @@ export const getAllTemporaryAdvice = async () => {
  * Admin privilege: Create temporary advice for all students
  */
 export const createTemporaryAdvice = async (appointmentId, adviceData) => {
-  const response = await apiCall(`/admin/temporary-advice/appointments/${appointmentId}`, {
+  const response = await api.apiCall(`/admin/temporary-advice/appointments/${appointmentId}`, {
     method: 'POST',
     body: JSON.stringify(adviceData)
   });
@@ -155,7 +155,7 @@ export const createTemporaryAdvice = async (appointmentId, adviceData) => {
  * Admin privilege: Update temporary advice for all students
  */
 export const updateTemporaryAdvice = async (adviceId, updateData) => {
-  const response = await apiCall(`/admin/temporary-advice/${adviceId}`, {
+  const response = await api.apiCall(`/admin/temporary-advice/${adviceId}`, {
     method: 'PATCH',
     body: JSON.stringify(updateData)
   });
@@ -167,7 +167,7 @@ export const updateTemporaryAdvice = async (adviceId, updateData) => {
  * Admin privilege: Delete temporary advice for all students
  */
 export const deleteTemporaryAdvice = async (adviceId) => {
-  const response = await apiCall(`/admin/temporary-advice/${adviceId}`, {
+  const response = await api.apiCall(`/admin/temporary-advice/${adviceId}`, {
     method: 'DELETE'
   });
   return response;
@@ -180,7 +180,7 @@ export const deleteTemporaryAdvice = async (adviceId) => {
  * Admin privilege: View abuse reports for all users
  */
 export const getAllAbuseReports = async () => {
-  const response = await apiCall('/admin/abuse-reports');
+  const response = await api.apiCall('/admin/abuse-reports');
   return response;
 };
 
@@ -189,7 +189,7 @@ export const getAllAbuseReports = async () => {
  * Admin privilege: Create abuse reports for all users
  */
 export const createAbuseReport = async (reportData) => {
-  const response = await apiCall('/admin/abuse-reports', {
+  const response = await api.apiCall('/admin/abuse-reports', {
     method: 'POST',
     body: JSON.stringify(reportData)
   });
@@ -201,7 +201,7 @@ export const createAbuseReport = async (reportData) => {
  * Admin privilege: Update abuse reports for all users
  */
 export const updateAbuseReport = async (reportId, updateData) => {
-  const response = await apiCall(`/admin/abuse-reports/${reportId}`, {
+  const response = await api.apiCall(`/admin/abuse-reports/${reportId}`, {
     method: 'PATCH',
     body: JSON.stringify(updateData)
   });
@@ -213,7 +213,7 @@ export const updateAbuseReport = async (reportId, updateData) => {
  * Admin privilege: Delete abuse reports for all users
  */
 export const deleteAbuseReport = async (reportId) => {
-  const response = await apiCall(`/admin/abuse-reports/${reportId}`, {
+  const response = await api.apiCall(`/admin/abuse-reports/${reportId}`, {
     method: 'DELETE'
   });
   return response;
@@ -228,7 +228,7 @@ export const deleteAbuseReport = async (reportId) => {
 export const getBlackoutDates = async (queryParams = {}) => {
   const params = new URLSearchParams(queryParams);
   const url = `/admin/blackout-dates${params.toString() ? `?${params.toString()}` : ''}`;
-  const response = await apiCall(url);
+  const response = await api.apiCall(url);
   return response;
 };
 
@@ -237,7 +237,7 @@ export const getBlackoutDates = async (queryParams = {}) => {
  * Admin privilege: Add blackout dates to prevent appointment booking
  */
 export const addBlackoutDate = async (dateData) => {
-  const response = await apiCall('/admin/blackout-dates', {
+  const response = await api.apiCall('/admin/blackout-dates', {
     method: 'POST',
     body: JSON.stringify(dateData)
   });
@@ -249,7 +249,7 @@ export const addBlackoutDate = async (dateData) => {
  * Admin privilege: Remove blackout dates to restore appointment booking
  */
 export const removeBlackoutDate = async (date) => {
-  const response = await apiCall(`/admin/blackout-dates/${date}`, {
+  const response = await api.apiCall(`/admin/blackout-dates/${date}`, {
     method: 'DELETE'
   });
   return response;

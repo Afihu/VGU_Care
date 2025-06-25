@@ -89,6 +89,7 @@ function Login() {
         setMessage(`Login successful!`);
         console.log('Login successful:', data);
         localStorage.setItem('session-info', JSON.stringify(data));
+        localStorage.setItem('token', data.token);
         navigateTo('/home');
       } else {
         setMessage(data.message || 'Login failed');

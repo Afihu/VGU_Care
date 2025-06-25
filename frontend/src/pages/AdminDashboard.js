@@ -7,7 +7,8 @@ import { getAllStudents, getAllMedicalStaff, updateUserRole, updateUserStatus, u
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('students');  const [students, setStudents] = useState([]);
+  const [activeTab, setActiveTab] = useState('students');  
+  const [students, setStudents] = useState([]);
   const [medicalStaff, setMedicalStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

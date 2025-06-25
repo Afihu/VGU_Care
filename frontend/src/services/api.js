@@ -35,7 +35,33 @@ const handleApiError = async (response) => {
     return response;
 };
 
+export const apiCall = async (endpoint, options = {}) => {
+    const token = localStorage.getItem('token');
+
+    const defaultOptions = {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+    };
+
+    const fetchOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...(options.headers || {}),
+        },
+    };
+
+    const response = await fetch(API_BASE_URL + endpoint, fetchOptions);
+    await handleApiError(response);
+    return response.json();
+};
+
 const api = {
+    apiCall, // include named export inside default api object
     authService : async(email, password) => {
         const apiEndpoint = API_BASE_URL + '/login';
         const response = await fetch(apiEndpoint, {
