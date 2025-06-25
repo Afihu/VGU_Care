@@ -76,9 +76,10 @@ const api = {
         } catch (error) {
             throw error;
         }
-    },    studentRetrieveService: async(token) => {
+    },    
+    
+    studentRetrieveService: async(token) => {
         const apiEndpoint = API_BASE_URL + '/medical-staff/students';
-        console.log('🔥 UPDATED API SERVICE - Making request to:', apiEndpoint); // Unique identifier
 
         var response = await fetch(apiEndpoint, {
             method: 'GET',
@@ -88,19 +89,16 @@ const api = {
             }
         });
 
-        console.log('🔥 UPDATED - Response status:', response.status);
-        console.log('🔥 UPDATED - Response ok:', response.ok);
-
         try {
            await handleApiError(response);
            const data = await response.json();
-           console.log('🔥 UPDATED - Parsed data successfully:', data);
-           return data; // Return the parsed JSON directly
+           return data; 
         } catch (error) {
-            console.error('🔥 UPDATED - API Error:', error);
             throw error;
         }
-    },reportRetrieveService: async(token) => {
+    },
+    
+    reportRetrieveService: async(token) => {
         const apiEndpoint = API_BASE_URL + '/reports';
 
         var response = await fetch(apiEndpoint, {
@@ -114,7 +112,7 @@ const api = {
         try {
            await handleApiError(response);
            const data = await response.json();
-           return data; // Return the parsed JSON directly
+           return data;
         } catch (error) {
             throw error;
         }

@@ -23,45 +23,30 @@ function ManageStudent() {
     // functions
     const handleStudentRetrieve = async(token) => {
         const data = await api.studentRetrieveService(token);
-        return data; // Data is already parsed JSON from the service
+        return data; 
     };    
     
     const handleReportRetrieve = async(token) => {
         const data = await api.reportRetrieveService(token);
-        return data; // Data is already parsed JSON from the service
+        return data; 
     };    
     
     useEffect(() => {
         const fetchStudents = async() => {
           try {
-            // console.log('User token:', userToken); // Debug log
-            // console.log('Parsed user info:', parsed); // Debug log
-            
-            // console.log('About to call handleStudentRetrieve...'); // Debug log
-            let data = await handleStudentRetrieve(userToken); //returns an array of students
-            console.log('handleStudentRetrieve completed, data:', data); // Debug log
-            
-            // Temporarily disable reports to isolate the issue
-            // let reportData = await handleReportRetrieve(userToken);
-            
-            // console.log('API Response:', data); // Debug log
+            let data = await handleStudentRetrieve(userToken); 
             
             if(data && data.students){
                 setStudentData(data);
                 setFilteredStudents(data.students);
-                console.log('Students data set successfully'); // Debug log
             } else {
                 console.error('Invalid data structure received:', data);
             }
 
-            // if(reportData) {
-            //     setReportData(reportData);
-            // }
 
           } catch (error) {
             console.error("Failed to fetch student list: ", error);
-            console.error("Error stack:", error.stack); // More detailed error info
-            // You could also set an error state here to show an error message to the user
+            console.error("Error stack:", error.stack);
           }
         }
         fetchStudents();
@@ -72,6 +57,7 @@ function ManageStudent() {
         console.log('students: ', studentData);
         console.log("reports: ", reportData);        
     }, []);
+    
     useEffect(() => {
         if (!studentData.students) return;
         
