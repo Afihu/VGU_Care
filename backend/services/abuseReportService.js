@@ -128,13 +128,12 @@ class AbuseReportService {
 
     return result.rows[0];
   }
-
   /**
    * Check if user can report on appointment
    */
     async canReportOnAppointment(appointmentId, userId, userType) {
     if (userType === 'medical_staff') {
-        // Check if medical staff is assigned AND appointment is completed
+        // Check if medical staff is assigned to the appointment
         const result = await query(`
         SELECT a.appointment_id, a.status 
         FROM appointments a
@@ -142,7 +141,6 @@ class AbuseReportService {
             AND a.medical_staff_id = (
             SELECT staff_id FROM medical_staff WHERE user_id = $2
             )
-            AND a.status = 'completed'
         `, [appointmentId, userId]);
         
         return result.rows.length > 0;
