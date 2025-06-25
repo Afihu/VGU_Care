@@ -43,3 +43,12 @@
     margin: 0 auto;
     cursor: pointer;
 }
+
+.sidebar-hover-area {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 15px; 
+  height: 100vh;
+  z-index: 999; 
+}

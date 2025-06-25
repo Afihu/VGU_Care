@@ -11,6 +11,26 @@ function Header() {
     const location = useLocation();
     const hideHeaderforPaths = ['/login']; //add more when needed 
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [closeTimer, setCloseTimer] = useState(null);
+
+    const handleMouseEnter = () => {
+        clearTimeout(closeTimer); // Cancel any pending close timer
+        setSidebarOpen(true);
+    };
+
+    const handleMouseLeave = () => {
+        // Set a timer to close the sidebar after a short delay
+        const timer = setTimeout(() => {
+            setSidebarOpen(false);
+        }, 300); // 300ms delay
+        setCloseTimer(timer);
+    };
+
+    useEffect(() => {
+    return () => {
+        clearTimeout(closeTimer);
+    };
+    }, [closeTimer]);
 
     const toggleSidebar = () => {
         setSidebarOpen(!isSidebarOpen);
@@ -22,7 +42,13 @@ function Header() {
 
     return(
         <>
-            <SideBar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+            <div className="sidebar-hover-area" onMouseEnter={handleMouseEnter}></div>
+            <SideBar 
+                isOpen={isSidebarOpen} 
+                toggleSidebar={toggleSidebar} 
+                onMouseEnter={handleMouseEnter} 
+                onMouseLeave={handleMouseLeave}
+            />
             <header className='header'>
                 {/* Left Section */}
                 <div className="header-left">
