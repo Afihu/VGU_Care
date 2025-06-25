@@ -105,24 +105,50 @@ class EmailService extends BaseService {  constructor() {
         return { success: false, error: 'Invalid email domain' };
       }
 
-      const mailOptions = {
-        from: `${this.appName} <${this.fromEmail}>`,
-        to: to,
-        subject: `[${this.appName}] ${subject}`,
-        html: htmlContent,
-        text: textContent || this.stripHtml(htmlContent)
-      };
+      // Use SendGrid directly if configured
+      if (process.env.EMAIL_PROVIDER === 'sendgrid' && process.env.SENDGRID_API_KEY) {
+        console.log(`[EMAIL DEBUG] Using SendGrid API directly`);
+        
+        const msg = {
+          to: to,
+          from: `${this.appName} <${this.fromEmail}>`,
+          subject: `[${this.appName}] ${subject}`,
+          html: htmlContent,
+          text: textContent || this.stripHtml(htmlContent)
+        };
 
-      console.log(`[EMAIL DEBUG] Sending email with options:`, {
-        from: mailOptions.from,
-        to: mailOptions.to,
-        subject: mailOptions.subject
-      });
+        console.log(`[EMAIL DEBUG] SendGrid message:`, {
+          to: msg.to,
+          from: msg.from,
+          subject: msg.subject
+        });
 
-      const result = await this.transporter.sendMail(mailOptions);
-      
-      console.log(`[EMAIL SENT] To: ${to}, Subject: ${subject}, MessageId: ${result.messageId}`);
-      return { success: true, messageId: result.messageId };
+        const result = await sgMail.send(msg);
+        console.log(`[EMAIL SENT] SendGrid response:`, result[0].statusCode);
+        return { success: true, messageId: result[0].headers['x-message-id'] };
+      } else {
+        // Fallback to nodemailer
+        console.log(`[EMAIL DEBUG] Using nodemailer transporter`);
+        
+        const mailOptions = {
+          from: `${this.appName} <${this.fromEmail}>`,
+          to: to,
+          subject: `[${this.appName}] ${subject}`,
+          html: htmlContent,
+          text: textContent || this.stripHtml(htmlContent)
+        };
+
+        console.log(`[EMAIL DEBUG] Sending email with options:`, {
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject
+        });
+
+        const result = await this.transporter.sendMail(mailOptions);
+        
+        console.log(`[EMAIL SENT] To: ${to}, Subject: ${subject}, MessageId: ${result.messageId}`);
+        return { success: true, messageId: result.messageId };
+      }
 
     } catch (error) {
       console.error(`[EMAIL ERROR] Failed to send to ${to}:`, error.message);
@@ -135,6 +161,11 @@ class EmailService extends BaseService {  constructor() {
   /**
    * Check if email is enabled (useful for development/testing)
    */  isEmailEnabled() {
+    // In production, always return true but handle failures gracefully
+    if (process.env.NODE_ENV === 'production') {
+      return process.env.EMAIL_ENABLED !== 'false';
+    }
+    
     return process.env.EMAIL_ENABLED !== 'false' && 
            (
              (process.env.EMAIL_PROVIDER === 'sendgrid' && process.env.SENDGRID_API_KEY) ||
