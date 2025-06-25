@@ -26,7 +26,7 @@ export default function RequestAppointment() {
           console.warn('No token found');
           return;
         }        // Fetch available medical staff
-        const response = await fetch('http://localhost:5001/api/appointments/medical-staff', {
+        const response = await fetch('https://vgu-care-backend-production.up.railway.app/api/appointments/medical-staff', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -87,7 +87,7 @@ export default function RequestAppointment() {
     if (selectedMedicalStaff && selectedMedicalStaff !== 'auto-assign') {
       appointmentData.medical_staff_id = selectedMedicalStaff;
     }try {
-      const response = await fetch('http://localhost:5001/api/appointments', {
+      const response = await fetch('https://vgu-care-backend-production.up.railway.app/api/appointments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

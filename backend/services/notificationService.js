@@ -222,13 +222,37 @@ class NotificationService extends BaseService {
     }
     message += ' Please contact medical staff for further assistance.';
     
-    return await this.createNotification(
+    // Create in-app notification
+    const notification = await this.createNotification(
       studentUserId, 
       'appointment_rejected', 
       title, 
       message, 
       appointmentId
     );
+
+    // Send email notification to student
+    try {
+      const emailService = new EmailService();
+      const studentDetails = await this.getStudentFromAppointment(appointmentId);
+      if (studentDetails) {
+        // Fetch appointment details for email template
+        const appointmentDetails = await query(`
+          SELECT symptoms, priority_level as "priorityLevel" FROM appointments WHERE appointment_id = $1
+        `, [appointmentId]);
+        await emailService.sendAppointmentRejectedEmail(
+          studentDetails.email,
+          studentDetails.name,
+          appointmentDetails.rows[0] || {},
+          medicalStaffName,
+          reason
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send appointment rejection email to student:', error.message);
+    }
+
+    return notification;
   }
 
   /**

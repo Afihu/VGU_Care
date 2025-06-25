@@ -11,14 +11,26 @@ const NotificationBell = () => {
 
     const rawUserInfo = localStorage.getItem('session-info');
     const parsed = helpers.JSONparser(rawUserInfo);
-    const userRole = parsed.user.role;
+    const userRole = parsed?.user?.role;
 
     const hideNotificationforUsers = ['student', 'admin'];
 
+    // Early return if no user data
+    if (!parsed || !parsed.user || !userRole) {
+        return null;
+    }
+
     // Get token from localStorage
     const getToken = () => {
-        const sessionInfo = localStorage.getItem('session-info');
-        return sessionInfo ? JSON.parse(sessionInfo).token : null;
+        try {
+            const sessionInfo = localStorage.getItem('session-info');
+            if (!sessionInfo) return null;
+            const parsedSession = JSON.parse(sessionInfo);
+            return parsedSession?.token || null;
+        } catch (error) {
+            console.error('Error parsing session info:', error);
+            return null;
+        }
     };    // Fetch notifications
     const fetchNotifications = async () => {
         const token = getToken();

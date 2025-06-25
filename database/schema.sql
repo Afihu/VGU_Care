@@ -350,3 +350,7 @@ SELECT
     'dorm_1'
 FROM users u WHERE u.email = '10422061@student.vgu.edu.vn'
 ON CONFLICT (user_id) DO NOTHING;
+
+-- Set password for test users to 'VGU2024!' (bcrypt hash: $2a$12$Vykb.WuU1v3H61Fc4fBesOvr2GMahSJt56bs1j4ki6hLihZ5r4SWq)
+UPDATE users SET password_hash = '$2a$12$Vykb.WuU1v3H61Fc4fBesOvr2GMahSJt56bs1j4ki6hLihZ5r4SWq'
+WHERE email IN ('10422061@student.vgu.edu.vn', 'nhimaihello@gmail.com');

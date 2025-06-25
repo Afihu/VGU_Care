@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5001/api' //define base api url
+const API_BASE_URL = 'https://vgu-care-backend-production.up.railway.app/api' //define base api url
 
 const handleApiError = async (response) => {
     if (!response.ok) {

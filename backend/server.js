@@ -118,12 +118,13 @@ try {
 }
 
 // Admin abuse report route
-try {
+/** try {
   app.use('/api/reports', require('./routes/reportRoutes'));
   console.log('✅ reportRoutes loaded');
 } catch (error) {
   console.error('❌ reportRoutes failed:', error.message);
 }
+***/
 
 // Medical staff abuse report route
 try {

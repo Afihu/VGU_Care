@@ -1,7 +1,5 @@
 // Frontend API Configuration
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? process.env.REACT_APP_API_URL || 'https://vgu-care-backend-production.up.railway.app'
-  : 'http://localhost:5001';
+const API_BASE_URL = 'https://vgu-care-backend-production.up.railway.app';
 
 export default API_BASE_URL;
 

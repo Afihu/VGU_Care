@@ -5,7 +5,7 @@ import eye_icon from '../assets/others/see.svg';
 import blind_icon from '../assets/others/no_see.svg';
 import {useNavigate} from 'react-router-dom'; 
 
-const API_BASE_URL = 'http://localhost:5001/api';
+const API_BASE_URL = 'https://vgu-care-backend-production.up.railway.app/api';
 
 function Login() {
 
