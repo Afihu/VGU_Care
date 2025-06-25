@@ -45,7 +45,7 @@ const SideBar = ({ isOpen, toggleSidebar, onMouseEnter, onMouseLeave }) => {
                         </div>
                         <div className="profile-info">
                             <span className="profile-name">{user.name}</span>
-                            <span className="profile-email">{user.email}</span>
+                            <span className="profile-mail">{user.email}</span>
                         </div>
                     </div>
                 </div>

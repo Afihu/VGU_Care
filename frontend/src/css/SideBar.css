@@ -97,9 +97,9 @@
     text-overflow: ellipsis;
 }
 
-.profile-email {
+.profile-mail {
     font-size: 14px;
-    color: #6b7280;
+    color: black;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
