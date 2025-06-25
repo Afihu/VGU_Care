@@ -37,9 +37,9 @@ function ManageStudent() {
         const fetchStudents = async() => {
           try {
             let data = await handleStudentRetrieve(userToken); //returns an array of students
-            let reportData = await handleStudentRetrieve(userToken);
+            let reportData = await handleReportRetrieve(userToken);
             if(data && data.students){
-                setStudentData(data.students);
+                setStudentData(data);
                 setFilteredStudents(data.students);
             }
 
@@ -56,6 +56,11 @@ function ManageStudent() {
 
     }, [userToken]);
 
+    useEffect(() => {
+        console.log('students: ', studentData);
+        console.log("reports: ", reportData);        
+    }, []);
+
 
     useEffect(() => {
         console.log(reportData);
@@ -67,10 +72,6 @@ function ManageStudent() {
         setFilteredStudents(results);
     }, [searchTerm, studentData]);
 
-    // useEffect(() => {
-    //     console.log('here', studentData);
-    //     console.log("data: ", filteredStudents);        
-    // }, []);
 
     const openModal = (student) => {
         setSelectedStudent(student);
