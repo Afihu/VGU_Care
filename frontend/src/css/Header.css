@@ -25,6 +25,7 @@
 .header-right {
     display: flex;
     justify-content: flex-end;
+    padding-right: 15px;
 }
 
 .menu-button {

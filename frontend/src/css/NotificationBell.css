@@ -1,0 +1,195 @@
+/* Notification Bell Styles */
+.notification-bell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.notification-bell:hover {
+    background-color: #f3f4f6;
+}
+
+.bell-icon {
+    font-size: 20px;
+    color: #374151;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background-color: #ef4444;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0 4px;
+}
+
+/* Modal Content Styles */
+.notification-modal-content {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.no-notifications {
+    text-align: center;
+    color: #6b7280;
+    padding: 40px 20px;
+    font-style: italic;
+}
+
+.notification-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.mark-all-read-btn {
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.mark-all-read-btn:hover:not(:disabled) {
+    background-color: #4338ca;
+}
+
+.mark-all-read-btn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Notifications List */
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.notification-item.unread {
+    background-color: #eef2ff;
+    border-color: #c7d2fe;
+}
+
+.notification-item:hover {
+    background-color: #f9fafb;
+}
+
+.notification-item.unread:hover {
+    background-color: #e0e7ff;
+}
+
+.notification-content {
+    flex: 1;
+    margin-right: 15px;
+}
+
+.notification-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.notification-description {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+}
+
+.notification-timestamp {
+    font-size: 12px;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* Notification Actions */
+.notification-actions-item {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.mark-read-btn, .delete-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.mark-read-btn {
+    background-color: #10b981;
+    color: white;
+}
+
+.mark-read-btn:hover {
+    background-color: #059669;
+}
+
+.delete-btn {
+    background-color: #ef4444;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #dc2626;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .notification-modal-content {
+        max-height: 400px;
+    }
+    
+    .notification-item {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .notification-actions-item {
+        align-self: flex-end;
+    }
+    
+    .notification-content {
+        margin-right: 0;
+    }
+}

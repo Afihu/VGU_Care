@@ -142,9 +142,7 @@ const api = {
           }
         });
         return handleApiError(response);
-    },
-
-    createMoodEntry: async (token, moodData) => {
+    },    createMoodEntry: async (token, moodData) => {
         const apiEndpoint = API_BASE_URL + '/mood-entries';
         const response = await fetch(apiEndpoint, {
             method: 'POST',
@@ -153,6 +151,67 @@ const api = {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(moodData)
+        });
+        return handleApiError(response);
+    },
+
+    // Notification API Services
+    getNotifications: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/notifications';
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response);
+    },
+
+    getUnreadNotificationCount: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/notifications/count';
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response);
+    },
+
+    markNotificationAsRead: async (token, notificationId) => {
+        const apiEndpoint = API_BASE_URL + `/notifications/${notificationId}/read`;
+        const response = await fetch(apiEndpoint, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response);
+    },
+
+    markAllNotificationsAsRead: async (token) => {
+        const apiEndpoint = API_BASE_URL + '/notifications/read-all';
+        const response = await fetch(apiEndpoint, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return handleApiError(response);
+    },
+
+    deleteNotification: async (token, notificationId) => {
+        const apiEndpoint = API_BASE_URL + `/notifications/${notificationId}`;
+        const response = await fetch(apiEndpoint, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
         });
         return handleApiError(response);
     }

@@ -5,6 +5,7 @@ import logo_image from '../assets/images/logo.png';
 import {useNavigate} from 'react-router-dom';
 import { useState } from 'react';
 import SideBar from './SideBar';
+import NotificationBell from './NotificationBell';
 
 function Header() {
     const navigateTo = useNavigate();
@@ -34,10 +35,10 @@ function Header() {
                 {/* Center Section */}
                 <div className="header-center">
                     <img src={logo_image} className='logo-image' alt="Logo" onClick={() => navigateTo('/home')} />
+                </div>                {/* Right Section (empty for now, but good for future icons) */}
+                <div className="header-right">
+                    <NotificationBell />
                 </div>
-
-                {/* Right Section (empty for now, but good for future icons) */}
-                <div className="header-right"></div>
             </header>
         </>
     );
