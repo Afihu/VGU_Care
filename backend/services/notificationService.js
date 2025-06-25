@@ -233,23 +233,35 @@ class NotificationService extends BaseService {
 
     // Send email notification to student
     try {
+      console.log(`[EMAIL DEBUG] Starting email notification for appointment rejection`);
       const emailService = new EmailService();
       const studentDetails = await this.getStudentFromAppointment(appointmentId);
+      console.log(`[EMAIL DEBUG] Student details:`, studentDetails);
+      
       if (studentDetails) {
         // Fetch appointment details for email template
         const appointmentDetails = await query(`
           SELECT symptoms, priority_level as "priorityLevel" FROM appointments WHERE appointment_id = $1
         `, [appointmentId]);
-        await emailService.sendAppointmentRejectedEmail(
+        
+        console.log(`[EMAIL DEBUG] Appointment details:`, appointmentDetails.rows[0]);
+        console.log(`[EMAIL DEBUG] Sending rejection email to: ${studentDetails.email}`);
+        
+        const emailResult = await emailService.sendAppointmentRejectedEmail(
           studentDetails.email,
           studentDetails.name,
           appointmentDetails.rows[0] || {},
           medicalStaffName,
           reason
         );
+        
+        console.log(`[EMAIL DEBUG] Email send result:`, emailResult);
+      } else {
+        console.log(`[EMAIL DEBUG] No student details found for appointment ${appointmentId}`);
       }
     } catch (error) {
       console.error('Failed to send appointment rejection email to student:', error.message);
+      console.error('Email error stack:', error.stack);
     }
 
     return notification;

@@ -7,23 +7,29 @@ import LogoutButton from "../components/LogoutButton";
 function ProfilePage() {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchUserProfile = async () => {
             const rawUserInfo = localStorage.getItem('session-info');
             const parsed = helpers.JSONparser(rawUserInfo);
-            const retrievedToken = parsed?.token || "";
+            
+            // Try to get token from session-info first, then fallback to direct token storage
+            let retrievedToken = parsed?.token || localStorage.getItem('token') || "";
+            
             if (retrievedToken) {
                 try {
                     const data = await api.userProfileRetrieveService(retrievedToken);
                     setProfile(data.user);
                 } catch (error) {
                     console.error('Profile fetch error:', error);
+                    setError(error.message || 'Failed to load profile');
                 } finally {
                     setLoading(false);
                 }
             } else {
-                console.warn('No token provided');
+                console.warn('No authentication token found');
+                setError('No authentication token found. Please log in again.');
                 setLoading(false);
             }
         };
@@ -37,6 +43,10 @@ function ProfilePage() {
 
     if (loading) {
         return <div className="profile-page"><p>Loading profile...</p></div>;
+    }
+
+    if (error) {
+        return <div className="profile-page"><p>Error: {error}</p></div>;
     }
 
     if (!profile) {

@@ -563,14 +563,20 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
       const staffNameResult = await query('SELECT name FROM users u JOIN medical_staff ms ON u.user_id = ms.user_id WHERE ms.user_id = $1', [medicalStaffUserId]);
       const medicalStaffName = staffNameResult.rows[0]?.name || 'Medical Staff';
       
+      console.log(`[DEBUG] Sending rejection notification to student ${appointment.userId} for appointment ${appointment.id}`);
+      console.log(`[DEBUG] Medical staff: ${medicalStaffName}, Reason: ${reason}`);
+      
       await notificationService.notifyStudentAppointmentRejected(
         appointment.userId, 
         appointment.id, 
         medicalStaffName, 
         reason
       );
+      
+      console.log(`[DEBUG] Rejection notification sent successfully`);
     } catch (notificationError) {
-      console.log(`[DEBUG] Failed to send rejection notification: ${notificationError.message}`);
+      console.error(`[DEBUG] Failed to send rejection notification: ${notificationError.message}`);
+      console.error(`[DEBUG] Notification error stack:`, notificationError.stack);
       // Continue without failing the rejection
     }
     

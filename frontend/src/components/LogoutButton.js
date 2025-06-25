@@ -89,7 +89,7 @@ function LogoutButton() {
             </Modal>
 
             <div>
-                <button class='logout-button' onClick={() => openLogoutModal()}>Log Out</button>
+                <button className='logout-button' onClick={() => openLogoutModal()}>Log Out</button>
             </div>
         </div>
         

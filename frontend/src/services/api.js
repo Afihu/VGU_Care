@@ -306,7 +306,7 @@ const api = {
 
         try {
             await handleApiError(response);
-            const data = response.ok ? await response.json() : null;
+            const data = await response.json();
             return data;
         } catch (error) {
             throw error;

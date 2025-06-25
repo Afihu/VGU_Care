@@ -70,16 +70,22 @@ class EmailService extends BaseService {  constructor() {
    * Send email with error handling and logging
    */  async sendEmail(to, subject, htmlContent, textContent = null) {
     try {
+      console.log(`[EMAIL DEBUG] sendEmail called with to: ${to}, subject: ${subject}`);
+      
       if (!this.isEmailEnabled()) {
         console.log(`[EMAIL DISABLED] Would send email to ${to}: ${subject}`);
         return { success: true, disabled: true };
       }
+
+      console.log(`[EMAIL DEBUG] Email is enabled, proceeding with validation`);
 
       // Validate email format
       if (!this.validateEmailFormat(to)) {
         console.error(`[EMAIL ERROR] Invalid email format: ${to}`);
         return { success: false, error: 'Invalid email format' };
       }
+
+      console.log(`[EMAIL DEBUG] Email format is valid`);
 
       // Optional: Check email domain (can be slow, so make it optional)
       if (process.env.EMAIL_VALIDATE_DOMAIN === 'true') {
@@ -92,6 +98,8 @@ class EmailService extends BaseService {  constructor() {
 
       // Check if email domain exists
       const isDomainValid = await this.validateEmailDomain(to);
+      console.log(`[EMAIL DEBUG] Domain validation result: ${isDomainValid}`);
+      
       if (!isDomainValid) {
         console.error(`[EMAIL ERROR] Invalid email domain: ${to}`);
         return { success: false, error: 'Invalid email domain' };
@@ -105,6 +113,12 @@ class EmailService extends BaseService {  constructor() {
         text: textContent || this.stripHtml(htmlContent)
       };
 
+      console.log(`[EMAIL DEBUG] Sending email with options:`, {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject
+      });
+
       const result = await this.transporter.sendMail(mailOptions);
       
       console.log(`[EMAIL SENT] To: ${to}, Subject: ${subject}, MessageId: ${result.messageId}`);
@@ -112,6 +126,7 @@ class EmailService extends BaseService {  constructor() {
 
     } catch (error) {
       console.error(`[EMAIL ERROR] Failed to send to ${to}:`, error.message);
+      console.error(`[EMAIL ERROR] Stack trace:`, error.stack);
       // Don't throw error - email failures shouldn't break the main flow
       return { success: false, error: error.message };
     }
@@ -357,7 +372,9 @@ class EmailService extends BaseService {  constructor() {
   async validateEmailDomain(email) {
     try {
       const domain = email.split('@')[1];
-        // In test environment, use stricter validation with whitelist
+      console.log(`[EMAIL VALIDATION] Validating domain: ${domain} for email: ${email}`);
+      
+      // In test environment, use stricter validation with whitelist
       if (process.env.NODE_ENV === 'test') {
         const allowedTestEmails = [
           '10422061@student.vgu.edu.vn',
@@ -372,11 +389,23 @@ class EmailService extends BaseService {  constructor() {
         }
       }
       
+      // Skip DNS validation in production for now to avoid blocking emails
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`[EMAIL VALIDATION] Skipping DNS validation in production for ${domain}`);
+        return true;
+      }
+      
       const dns = require('dns').promises;
       await dns.resolveMx(domain);
+      console.log(`[EMAIL VALIDATION] Domain ${domain} validated successfully`);
       return true;
     } catch (error) {
       console.log(`[EMAIL VALIDATION] Domain check failed for ${email}: ${error.message}`);
+      // In production, don't fail on DNS errors - just log and continue
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`[EMAIL VALIDATION] Allowing email despite DNS error in production`);
+        return true;
+      }
       return false;
     }
   }  /**
