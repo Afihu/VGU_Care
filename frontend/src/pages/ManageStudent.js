@@ -37,7 +37,7 @@ function ManageStudent() {
             let data = await handleStudentRetrieve(userToken); 
             
             if(data && data.students){
-                setStudentData(data);
+                setStudentData(data.students);
                 setFilteredStudents(data.students);
             } else {
                 console.error('Invalid data structure received:', data);
@@ -54,10 +54,10 @@ function ManageStudent() {
     }, [userToken]);
 
     useEffect(() => {
-        console.log('students: ', studentData);
-        console.log("reports: ", reportData);        
-    }, []);
-    
+        console.log('students: ', studentData);  
+    }, [studentData]);
+
+
     useEffect(() => {
         if (!studentData.students) return;
         

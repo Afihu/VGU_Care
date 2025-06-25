@@ -22,6 +22,7 @@ export default function AppointmentView() {
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [filter, setFilter] = useState('ALL'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTemAdviceModalOpen, setIsTemAdviceModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [userInfo, setUserInfo] = useState(parsed.user);
 
@@ -37,10 +38,18 @@ export default function AppointmentView() {
     setSelectedAppointment(null);
   }
 
+  const closeTemAdviceModal = () => {
+    setIsTemAdviceModalOpen(false);
+  }
+
   const handleCardClick = (appointment) => {
     setSelectedAppointment(appointment);
     setIsModalOpen(true);
   };
+
+  const handleProvideTempAdvice = (appointmentId) => {
+    navigateTo(`/provide-advice/:${appointmentId}`);
+  }
 
   // handleAppointmentRetrieve(userToken);
 
@@ -61,7 +70,7 @@ export default function AppointmentView() {
   useEffect(() => {
     if (filter === 'ALL') {
       setFilteredAppointments(userAppointments);
-      console.log(userInfo);
+      console.log(userAppointments);
     } else {
       const filtered = userAppointments.filter(app => app.status.toUpperCase() === filter);
       setFilteredAppointments(filtered);
@@ -135,7 +144,7 @@ export default function AppointmentView() {
                     {
                       (selectedAppointment.status == 'pending' && userInfo.role == 'medical_staff') ? 
                       (
-                        <button className="modal-button accept">Accept Appointment</button>
+                        <button className="modal-button accept" onClick={() => setIsTemAdviceModalOpen(true)}>Accept Appointment</button>
                       ) : null
                     }
 
@@ -147,6 +156,13 @@ export default function AppointmentView() {
                     }
 
                     {
+                      (userInfo.role == 'student' && selectedAppointment.hasAdvice) ?
+                      (
+                        <button className="modal-button see-advice">See Provisional Advice</button>
+                      ) : null
+                    }
+
+                    {
                       (userInfo.role == 'student') ?
                       (
                         <button className="modal-button cancel-appointment">Cancel Appointment</button>
@@ -154,6 +170,18 @@ export default function AppointmentView() {
                     }
                         
                     <button className="modal-button" onClick={closeModal}>Close</button>
+                </div>
+            </div>
+        )}
+      </Modal>
+
+      <Modal isOpen={isTemAdviceModalOpen} onClose={closeTemAdviceModal} title="Would You Like to Provide Provisional Advice?">
+        {selectedAppointment && (
+            <div>
+                <div className="modal-actions">
+                  <button className="modal-button yes" onClick={() => handleProvideTempAdvice(selectedAppointment.id)}>Yes</button>      
+                  <button className="modal-button no" onClick={() => closeModal}>No</button>
+                  <button className="modal-button close" onClick={() => closeModal}>Close</button>
                 </div>
             </div>
         )}
