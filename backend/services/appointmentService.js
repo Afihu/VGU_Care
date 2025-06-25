@@ -1,7 +1,7 @@
 const { query } = require("../config/database");
 const BaseService = require("./baseService");
 const notificationService = require("./notificationService");
-const emailService = require("./emailService");
+const EmailService = require("./emailService");
 
 class AppointmentService extends BaseService {  async getAppointmentsByUserId(userId) {
     const result = await query(
@@ -253,72 +253,101 @@ class AppointmentService extends BaseService {  async getAppointmentsByUserId(us
     const updatedAppointment = result.rows[0];
     console.log('[DEBUG] updateAppointment - Updated appointment:', JSON.stringify(updatedAppointment, null, 2));
 
-    // AUTOMATIC SYMPTOM UPDATE NOTIFICATION
-    // If symptoms were updated, automatically notify the assigned medical staff
-    if (symptoms !== undefined) {
-      try {
-        console.log('[AUTO-NOTIFICATION] Symptoms updated - sending notification to medical staff...');
-        
-        // Get complete appointment details with student and medical staff information
-        const appointmentDetailsResult = await query(`
-          SELECT 
-            a.appointment_id,
-            a.symptoms,
-            a.priority_level,
-            a.date_scheduled,
-            a.time_scheduled,
-            a.status,
-            u.name as student_name,
-            u.email as student_email,
-            ms_user.name as medical_staff_name,
-            ms_user.email as medical_staff_email
-          FROM appointments a
-          JOIN users u ON a.user_id = u.user_id
-          LEFT JOIN medical_staff ms ON a.medical_staff_id = ms.staff_id
-          LEFT JOIN users ms_user ON ms.user_id = ms_user.user_id
-          WHERE a.appointment_id = $1
-        `, [appointmentId]);
+    // AUTOMATIC NOTIFICATIONS FOR UPDATES
+    // Handle both symptom updates and status changes
+    try {
+      // Get complete appointment details with student and medical staff information
+      const appointmentDetailsResult = await query(`
+        SELECT 
+          a.appointment_id,
+          a.symptoms,
+          a.priority_level,
+          a.date_scheduled,
+          a.time_scheduled,
+          a.status,
+          u.name as student_name,
+          u.email as student_email,
+          ms_user.name as medical_staff_name,
+          ms_user.email as medical_staff_email,
+          ms_user.user_id as medical_staff_user_id
+        FROM appointments a
+        JOIN users u ON a.user_id = u.user_id
+        LEFT JOIN medical_staff ms ON a.medical_staff_id = ms.staff_id
+        LEFT JOIN users ms_user ON ms.user_id = ms_user.user_id
+        WHERE a.appointment_id = $1
+      `, [appointmentId]);
 
-        if (appointmentDetailsResult.rows.length > 0) {
-          const appointmentDetails = appointmentDetailsResult.rows[0];
+      if (appointmentDetailsResult.rows.length > 0) {
+        const appointmentDetails = appointmentDetailsResult.rows[0];
+        
+        // SYMPTOM UPDATE NOTIFICATION
+        if (symptoms !== undefined && appointmentDetails.medical_staff_email) {
+          console.log('[AUTO-NOTIFICATION] Symptoms updated - sending notification to medical staff...');
+          console.log(`[AUTO-NOTIFICATION] Sending symptom update notification to ${appointmentDetails.medical_staff_name} (${appointmentDetails.medical_staff_email})`);
           
-          // Only send notification if medical staff is assigned
-          if (appointmentDetails.medical_staff_email) {
-            console.log(`[AUTO-NOTIFICATION] Sending symptom update notification to ${appointmentDetails.medical_staff_name} (${appointmentDetails.medical_staff_email})`);
-            
-            // Create EmailService instance for sending notification
-            const EmailService = require('./emailService');
-            const emailSender = new EmailService();
-            
-            // Send symptom update notification email to medical staff
-            const symptomUpdateResult = await emailSender.sendSymptomUpdateNotificationEmail(
-              appointmentDetails.medical_staff_email,
-              appointmentDetails.medical_staff_name,
-              {
-                appointmentId: appointmentDetails.appointment_id,
-                symptoms: appointmentDetails.symptoms,
-                priorityLevel: appointmentDetails.priority_level,
-                dateScheduled: appointmentDetails.date_scheduled,
-                timeScheduled: appointmentDetails.time_scheduled,
-                status: appointmentDetails.status
-              },
-              appointmentDetails.student_name,
-              appointmentDetails.student_email
-            );
-            
-            if (symptomUpdateResult.success) {
-              console.log('[AUTO-NOTIFICATION] Symptom update notification sent successfully');
-            } else {
-              console.log('[AUTO-NOTIFICATION] Failed to send symptom update notification:', symptomUpdateResult.error);
-            }
+          // Create EmailService instance for sending notification
+          const emailSender = new EmailService();
+          
+          // Send symptom update notification email to medical staff
+          const symptomUpdateResult = await emailSender.sendSymptomUpdateNotificationEmail(
+            appointmentDetails.medical_staff_email,
+            appointmentDetails.medical_staff_name,
+            {
+              appointmentId: appointmentDetails.appointment_id,
+              symptoms: appointmentDetails.symptoms,
+              priorityLevel: appointmentDetails.priority_level,
+              dateScheduled: appointmentDetails.date_scheduled,
+              timeScheduled: appointmentDetails.time_scheduled,
+              status: appointmentDetails.status
+            },
+            appointmentDetails.student_name,
+            appointmentDetails.student_email
+          );
+          
+          if (symptomUpdateResult.success) {
+            console.log('[AUTO-NOTIFICATION] Symptom update notification sent successfully');
           } else {
-            console.log('[AUTO-NOTIFICATION] No medical staff assigned - skipping symptom update notification');
+            console.log('[AUTO-NOTIFICATION] Failed to send symptom update notification:', symptomUpdateResult.error);
           }
         }
-      } catch (error) {
-        // Don't let email failures break the appointment update
-        console.error('[AUTO-NOTIFICATION] Error sending symptom update notification:', error.message);
+
+        // STATUS CHANGE NOTIFICATION
+        if (status !== undefined) {
+          console.log(`[AUTO-NOTIFICATION] Status changed to '${status}' - sending notifications...`);
+          
+          if (status === 'rejected') {
+            // Send rejection notification to student
+            console.log(`[AUTO-NOTIFICATION] Sending rejection notification to student ${appointmentDetails.student_name} (${appointmentDetails.student_email})`);
+            
+            // Send in-app notification
+            await notificationService.notifyStudentAppointmentRejected(
+              updatedAppointment.userId,
+              appointmentId,
+              appointmentDetails.medical_staff_name || 'Medical Staff',
+              null // No specific reason provided in generic update
+            );
+            
+            console.log('[AUTO-NOTIFICATION] Rejection notification sent successfully');
+            
+          } else if (status === 'approved') {
+            // Send approval notification to student
+            console.log(`[AUTO-NOTIFICATION] Sending approval notification to student ${appointmentDetails.student_name} (${appointmentDetails.student_email})`);
+            
+            // Send in-app notification
+            await notificationService.notifyStudentAppointmentApproved(
+              updatedAppointment.userId,
+              appointmentId,
+              appointmentDetails.medical_staff_name || 'Medical Staff',
+              appointmentDetails.date_scheduled
+            );
+            
+            console.log('[AUTO-NOTIFICATION] Approval notification sent successfully');
+          }
+        }
       }
+    } catch (error) {
+      // Don't let notification failures break the appointment update
+      console.error('[AUTO-NOTIFICATION] Error sending notifications:', error.message);
     }
     
     return updatedAppointment;
