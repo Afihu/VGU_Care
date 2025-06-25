@@ -14,21 +14,40 @@ function ProvideTempAdvice() {
 
     const [adviceText, setAdviceText] = useState('');
     const [savedAdvice, setSavedAdvice] = useState(''); // To show confirmation
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Handle confirming the advice
-    const handleConfirm = (userToken, appointmentId) => {
-        console.log('Advice for student: ', adviceText);
+    const handleConfirm = async (userToken, appointmentId) => {
+        if (isSubmitting) return; // Prevent double clicks
+        setIsSubmitting(true);
 
-        // alert('Advice has been saved!'); 
-        setSavedAdvice(adviceText);
-        const response = api.tempAdviceCourierService(userToken, appointmentId, adviceText);
-        if (response.status == 201) {
-            alert('success');
-        } else {
-            console.log('oh shit oh fuck', response);
+        try {
+            // Step 1: Send the provisional advice
+            const adviceResponse = await api.tempAdviceCourierService(userToken, appointmentId, adviceText);
+            
+            // Step 2: If advice is sent, update the appointment status
+            if (adviceResponse && adviceResponse.message === "Advice sent successfully") {
+                await api.appointmentUpdateService(
+                    userToken,
+                    appointmentId,
+                    "",         
+                    "approved", 
+                    "",         
+                    "",         
+                    ""          
+                );
+
+                alert("Advice has been sent and the appointment is approved!");
+                navigate('/appointment-view');
+            } else {
+                 throw new Error("Failed to get a success message from the advice service.");
+            }
+        } catch (error) {
+            console.error("Failed to confirm advice and update status:", error);
+            alert("There was an error processing the request. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
-
-        // navigate('/appointment-view');
     };
 
     const handleDiscard = () => {

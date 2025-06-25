@@ -391,3 +391,10 @@
 .modal-button.close:hover {
     background-color: grey;
 }
+
+.modal-button.ok{
+  background-color: lightblue;
+    color: white;
+    border-color: lightblue;
+    cursor: pointer;
+}

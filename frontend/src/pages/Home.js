@@ -65,7 +65,7 @@ function Home(){
                     (JSON.parse(userInfo).user.role.includes('student') || JSON.parse(userInfo).user.role.includes('medical_staff')) ?
                     (
                         <>
-                            <div className='element-flex-container'>
+                            <div className='element-flex-container' onClick={() => navigate('/profile')}>
                                     <button class='my-account-label'>My Account</button>
                                     <button class='Button'>
                                         <span class='my-account-icon'></span>

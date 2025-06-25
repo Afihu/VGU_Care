@@ -25,6 +25,9 @@ export default function AppointmentView() {
   const [isTemAdviceModalOpen, setIsTemAdviceModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [userInfo, setUserInfo] = useState(parsed.user);
+  const [isSeeAdviceModalOpen, setIsSeeAdviceModalOpen] = useState(false);
+  const [adviceList, setAdviceList] = useState([]);; // New state for advice text
+
 
   //functions
   const handleAppointmentRetrieve = async (token) => {
@@ -42,14 +45,34 @@ export default function AppointmentView() {
     setIsTemAdviceModalOpen(false);
   }
 
+  const closeSeeAdviceModal = () => {
+    setIsSeeAdviceModalOpen(false);
+    setAdviceList('');
+  }
+
   const handleCardClick = (appointment) => {
     setSelectedAppointment(appointment);
     setIsModalOpen(true);
   };
 
   const handleProvideTempAdvice = (appointmentId) => {
-    navigateTo(`/provide-advice/:${appointmentId}`);
+    navigateTo(`/provide-advice/${appointmentId}`);
   }
+
+  const handleSeeAdvice = async () => {
+    if (!selectedAppointment) return;
+    try {
+        const data = await api.studentTempAdviceRetrieveService(userToken, selectedAppointment.id);
+        if (data && data.advice) { // Check for the advice array
+            setAdviceList(data.advice); // Store the whole array
+            closeModal();
+            setIsSeeAdviceModalOpen(true);
+        }
+    } catch (error) {
+        console.error("Failed to retrieve advice:", error);
+        alert("Could not retrieve advice for this appointment.");
+    }
+  };
 
   // handleAppointmentRetrieve(userToken);
 
@@ -158,7 +181,7 @@ export default function AppointmentView() {
                     {
                       (userInfo.role == 'student' && selectedAppointment.hasAdvice) ?
                       (
-                        <button className="modal-button see-advice">See Provisional Advice</button>
+                        <button className="modal-button see-advice" onClick={handleSeeAdvice}>See Provisional Advice</button>
                       ) : null
                     }
 
@@ -185,6 +208,26 @@ export default function AppointmentView() {
                 </div>
             </div>
         )}
+      </Modal>
+
+      <Modal isOpen={isSeeAdviceModalOpen} onClose={closeSeeAdviceModal} title="Provisional Advice">
+        <div className="advice-list-container">
+            {adviceList.length > 0 ? (
+                adviceList.map(item => (
+                    <div key={item.id} className="advice-item">
+                        <p className="advice-message">{item.message}</p>
+                        <p className="advice-meta">
+                            From: {item.staffName} on {new Date(item.dateSent).toLocaleDateString()}
+                        </p>
+                    </div>
+                ))
+            ) : (
+                <p>No advice has been provided for this appointment yet.</p>
+            )}
+            <div className="modal-actions">
+                <button className="modal-button ok" onClick={closeSeeAdviceModal}>OK</button>
+            </div>
+        </div>
       </Modal>
 
       <LogoutButton/>

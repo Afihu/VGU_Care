@@ -170,8 +170,6 @@ const api = {
 
         const apiEndpoint = API_BASE_URL + `/appointments/${appointmentId}`;
 
-        // Build the update object, only including non-empty values 
-        // Please move this to the relevant files or pass the parameters directly into this function
         const updateData = {};
         if (newSymptoms && newSymptoms !== "") updateData.symptoms = newSymptoms;
         if (newStatus && newStatus !== "") updateData.status = newStatus;

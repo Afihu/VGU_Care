@@ -215,9 +215,7 @@ function Login() {
                   cursor: 'pointer',
                   margin: '7px 0px 0px'
                 }}
-
-                onClick={() => navigateTo('/password-retrieve')}
-              > Forgot password?
+              > Forgot password? Please contact admin for IT support
               </p>
             </div>
 
