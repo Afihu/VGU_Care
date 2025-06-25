@@ -1,0 +1,118 @@
+.profile-page {
+    background-color: #f9fafb;
+    min-height: 100vh;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.profile-container {
+    width: 100%;
+    max-width: 900px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    overflow: hidden;
+}
+
+.profile-header {
+    background-color: #4f46e5; /* Main purple background */
+    color: #e0e7ff; /* Changed: Softer, light indigo text color for better blending */
+    padding: 30px;
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.profile-avatar-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #4338ca; /* Changed: A slightly darker, solid purple for better contrast */
+    color: #c7d2fe; /* Changed: A brighter indigo for the initials */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 3px solid #6366f1; /* Changed: A lighter border to make the avatar pop */
+}
+
+.profile-header-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-name {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    color: #ffffff; /* Keep the main name white for emphasis */
+}
+
+.profile-email {
+    font-size: 16px;
+    opacity: 0.9; 
+    color: whitesmoke;
+    margin: 5px 0 10px 0;
+}
+
+.status-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    width: fit-content;
+}
+
+.status-badge.status-active {
+    background-color: #22c55e;
+    color: #f0fdf4;
+}
+
+.status-badge.status-inactive {
+    background-color: #ef4444;
+    color: #fef2f2;
+}
+
+.profile-details {
+    padding: 30px;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-label {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 16px;
+    color: #374151;
+    font-weight: 600;
+}
