@@ -188,12 +188,6 @@
 }
 ```
 **Auth**: Bearer Token (All Roles)  
-**Business Rules**:
-- Monday-Friday only (weekends return empty array)
-- 20-minute time slots from 9:00 AM to 4:00 PM
-- Excludes already booked slots for the specified date
-- Does not show slots for cancelled/rejected appointments  
-**Status**: ✅ **Implemented & Tested**
 
 ### Create Appointment
 **POST** `/api/appointments`
@@ -327,6 +321,53 @@ const createAppointment = async (appointmentData) => {
 **Auth**: Bearer Token (Ownership/Assignment required)  
 **Status**: ✅ **Implemented**
 
+### Get Appointments by User ID
+**GET** `/api/appointments/user/:userId`
+**Body**: None (no body required)
+**Respond**:
+
+```javascript
+{
+    "appointments": [
+        {
+            "id": "93c249bc-d80f-45ff-8b15-c16ba6ec456f",
+            "userId": "41b1ce63-2e35-49db-86ba-085a60faca9c",
+            "status": "pending",
+            "dateRequested": "2025-06-25T08:57:09.367Z",
+            "dateScheduled": "2025-06-26T00:00:00.000Z",
+            "timeScheduled": "15:00:00",
+            "priorityLevel": "medium",
+            "symptoms": "Experiencing headaches and fatigue for the past week",
+            "hasAdvice": false
+        },
+        {
+            "id": "71bd45ee-d6c2-49a0-963d-1b8fa2b336e9",
+            "userId": "41b1ce63-2e35-49db-86ba-085a60faca9c",
+            "status": "pending",
+            "dateRequested": "2025-06-25T08:39:25.601Z",
+            "dateScheduled": "2025-06-26T00:00:00.000Z",
+            "timeScheduled": "14:40:00",
+            "priorityLevel": "medium",
+            "symptoms": "Experiencing headaches and fatigue for the past week",
+            "hasAdvice": false
+        },
+        {
+            "id": "8d382835-65b6-4ac4-94c3-1cc3960babd2",
+            "userId": "41b1ce63-2e35-49db-86ba-085a60faca9c",
+            "status": "pending",
+            "dateRequested": "2025-06-25T08:26:51.743Z",
+            "dateScheduled": "2025-06-27T08:26:51.743Z",
+            "timeScheduled": "10:00:00",
+            "priorityLevel": "medium",
+            "symptoms": "Headache and fever",
+            "hasAdvice": true
+        }
+    ],
+    "studentId": "41b1ce63-2e35-49db-86ba-085a60faca9c",
+    "totalCount": 3,
+    "message": "Student appointments retrieved successfully"
+}
+```
 ---
 ## 📋 Medical Staff Routes Usage & Body Requirements
 

@@ -563,3 +563,42 @@ exports.getAvailableMedicalStaff = async (req, res) => {
   }
 };
 
+/**
+ * Get appointments for a specific user (student) - Medical staff only
+ * Route: GET /api/appointments/:userId
+ * Access: Medical staff only
+ */
+exports.getAppointmentsByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userRole = req.appointmentAccess.role;
+    
+    // Only medical staff can access this endpoint
+    if (userRole !== 'medical_staff') {
+      return res.status(403).json({ 
+        error: 'Access denied. Only medical staff can retrieve appointments for specific students.' 
+      });
+    }
+    
+    // Validate userId parameter
+    if (!userId) {
+      return res.status(400).json({ 
+        error: 'User ID is required' 
+      });
+    }
+    
+    // Get appointments for the specified student
+    const appointments = await appointmentService.getAppointmentsByUserId(userId);
+    
+    res.json({ 
+      appointments,
+      studentId: userId,
+      totalCount: appointments.length,
+      message: 'Student appointments retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Get appointments by user ID error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+

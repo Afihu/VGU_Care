@@ -116,71 +116,163 @@ const api = {
         } catch (error) {
             throw error;
         }
-    },
+    },    
+    
+    tempAdviceCourierService : async(token, appointmentId, advice) => { 
+        // POST /api/advice/appointments/:appointmentId
+        // Medical staff sends advice for a specific appointment
+        const apiEndpoint = API_BASE_URL + `/advice/appointments/${appointmentId}`;
 
-    tempAdviceCourierService : async(token, appointmentID, advice) => { 
-        //fix this
-        const apiEndpoint = API_BASE_URL + `/advice/appointments/${appointmentID}`;
-
-        var response = await fetch(apiEndpoint, {
+        const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
-                'Content-Type' : 'application/json',
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ 'message': advice }),
+            body: JSON.stringify({ message: advice }),
         });
 
         try {
-           await handleApiError(response);
-           const data = await response.json();
-           return data;
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
         } catch (error) {
             throw error;
         }
     },
-
-    studentTempAdviceRetrieveService : async(appointmentId) => {
+    
+    studentTempAdviceRetrieveService : async(token, appointmentId) => {
         // GET /api/advice/appointments/:appointmentId
         // student retrieves the advice for specific appointment
+        const apiEndpoint = API_BASE_URL + `/advice/appointments/${appointmentId}`;
 
-    },
-
-    appointmentUpdateService : async(appointmentId, newSymptoms, newStatus, newPriority, newDateScheduled, newTimeScheduled) => {
-        // PATCH /api/appointments/:appointmentId
-        // this function takes in new values of the appointment and the appointment id, any value 
-        //not needing to be updated will be "" 
-    },
-
-    user_specificAppointmentRetrieveService : async(studentId, token) => {
-        // There should be an api call by medical staff to retrieve all appointments specific 
-        //to a student (currently there is none)
-        // This function calls a GET request and returns all appointments of a specific studentId
-    },
-
-    abuseReportCourierService : async(token, reportText, reportType, apppointmentId) => {
-        // POST /api/abuse-reports/
-        // medical staff creates an abuse report and posts it, reportType can be ""
-    },
-
-    userProfileRetrieveService : async(token) => {
-
-        // GET /api/users/me
-        // doesnt work, so fix it
-        const apiEndpoint = API_BASE_URL + '/users/me';
-
-        var response = await fetch(apiEndpoint, {
+        const response = await fetch(apiEndpoint, {
             method: 'GET',
             headers: {
-                'Content-Type' : 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        try {
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },    
+    
+    appointmentUpdateService : async(token, appointmentId, newSymptoms, newStatus, newPriority, newDateScheduled, newTimeScheduled) => {
+        // PATCH /api/appointments/:appointmentId
+        // this function takes in new values of the appointment and the appointment id, any value 
+        // not needing to be updated will be "" but at least one field must be provided
+
+        const apiEndpoint = API_BASE_URL + `/appointments/${appointmentId}`;
+
+        // Build the update object, only including non-empty values 
+        // Please move this to the relevant files or pass the parameters directly into this function
+        const updateData = {};
+        if (newSymptoms && newSymptoms !== "") updateData.symptoms = newSymptoms;
+        if (newStatus && newStatus !== "") updateData.status = newStatus;
+        if (newPriority && newPriority !== "") updateData.priorityLevel = newPriority;       
+        if (newDateScheduled && newDateScheduled !== "") updateData.dateScheduled = newDateScheduled;   
+        if (newTimeScheduled && newTimeScheduled !== "") updateData.timeScheduled = newTimeScheduled;   
+        
+        const response = await fetch(apiEndpoint, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(updateData)
+        });
+
+        try {
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },    
+
+      user_specificAppointmentRetrieveService : async(token, userId) => {
+        
+        // GET /api/appointments/user/:userId
+        // This function takes userId of the student and returns all appointments for that student
+        // Note: Only medical staff can access this endpoint
+        
+        const apiEndpoint = API_BASE_URL + `/appointments/user/${userId}`;
+
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        try {
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },
+    
+    abuseReportCourierService : async(token, reportText, reportType, appointmentId) => {
+        // POST /api/abuse-reports/
+        // medical staff creates an abuse report and posts it, reportType can be ""
+        const apiEndpoint = API_BASE_URL + '/abuse-reports';
+
+        // Build the report object
+        const reportData = {
+            appointmentId: appointmentId,
+            description: reportText
+        };
+        
+        // Only include reportType if it's not empty
+        if (reportType && reportType !== "") {
+            reportData.reportType = reportType;
+        }
+
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(reportData)
+        });
+
+        try {
+            await handleApiError(response);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },    
+    
+    userProfileRetrieveService : async(token) => {
+        // GET /api/users/me
+        // Retrieves the current user's profile information
+        const apiEndpoint = API_BASE_URL + '/users/me';
+
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}` 
             }
         });
 
         try {
-           await handleApiError(response);
-           const data = await response.json();
-           return data;
+            await handleApiError(response);
+            const data = response.ok ? await response.json() : null;
+            return data;
         } catch (error) {
             throw error;
         }
@@ -270,9 +362,7 @@ const api = {
             }
         });
         return handleApiError(response);
-    },
-
-    deleteNotification: async (token, notificationId) => {
+    },    deleteNotification: async (token, notificationId) => {
         const apiEndpoint = API_BASE_URL + `/notifications/${notificationId}`;
         const response = await fetch(apiEndpoint, {
             method: 'DELETE',
@@ -282,8 +372,7 @@ const api = {
             }
         });
         return handleApiError(response);
-    }
-      
-}
+    },
+ }
 
 export default api;

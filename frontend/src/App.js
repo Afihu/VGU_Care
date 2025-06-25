@@ -11,6 +11,7 @@ import TrackMood from './pages/TrackMood';
 import PasswordRetrieve from './pages/PasswordRetrieve';
 import ManageStudent from './pages/ManageStudent';
 import ProvideTempAdvice from './pages/ProvideTempAdvice';
+import ProfilePage from './pages/ProfilePage';
 
 // Import other pages here, e.g. Home, Dashboard, etc.
 
@@ -23,7 +24,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/password-retrieve" element={<PasswordRetrieve />} />
-          
+          <Route path="/profile" element={<ProfilePage />} />
           {/* Add other routes here */}
 
           {/* All routes below are protected. If you want any route to be protected, just add the tag<ProtectedRoute> </ProtectedRoute>*/}

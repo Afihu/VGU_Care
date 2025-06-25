@@ -1,46 +1,44 @@
 import { useState, useEffect } from "react";
 import {useNavigate} from 'react-router-dom';
-import '../css/ProfilePage.css';
+// import '../css/ProfilePage.css';
 import api from "../services/api";
 import helpers from "../utils/helpers";
 
 function ProfilePage() {
-
-    const [userToken, setUserToken] = useState('');
-
-    const handleRetrieveUserToken = () => {
-        const rawUserInfo = localStorage.getItem('session-info');
-        const parsed = helpers.JSONparser(rawUserInfo);
-        const retrievedToken = parsed.token;
-        setUserToken(JSON.stringify(retrievedToken));
-    }
-
-    const handleProfileRetrieve = () => {
-        const response = api.userProfileRetrieveService(userToken);
-        if (response.status == 201) {
-            alert('success');
-            console.log(response);
-        } else {
-            console.log('oh no', response);
-        }
-    }
+    const [userToken, setUserToken] = useState("");
+    const [profile, setProfile] = useState(null);
 
     useEffect(() => {
-        const fetchUserProfile = async() => {
-            handleRetrieveUserToken();
-            handleProfileRetrieve();
-        }
+        // Retrieve token and fetch profile in one async function
+        const fetchUserProfile = async () => {
+            const rawUserInfo = localStorage.getItem('session-info');
+            const parsed = helpers.JSONparser(rawUserInfo);
+            const retrievedToken = parsed?.token || "";
+            setUserToken(retrievedToken);
+            if (retrievedToken) {
+                try {
+                    const data = await api.userProfileRetrieveService(retrievedToken);
+                    setProfile(data);
+                    console.log('Profile:', data);
+                } catch (error) {
+                    console.error('Profile fetch error:', error);
+                }
+            } else {
+                console.warn('No token provided');
+            }
+        };
         fetchUserProfile();
     }, []);
 
     useEffect(() => {
-        console.log("user:", userToken);
+        console.log("userToken:", userToken);
     }, [userToken]);
 
-
-    return(
-        <></>
-    )
+    return (
+        <>
+            {/* Optionally render profile info here */}
+        </>
+    );
 }
 
 export default ProfilePage;
