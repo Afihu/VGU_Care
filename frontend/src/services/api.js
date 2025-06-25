@@ -163,6 +163,29 @@ const api = {
         // medical staff creates an abuse report and posts it, reportType can be ""
     },
 
+    userProfileRetrieveService : async(token) => {
+
+        // GET /api/users/me
+        // doesnt work, so fix it
+        const apiEndpoint = API_BASE_URL + '/users/me';
+
+        var response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${token}` 
+            }
+        });
+
+        try {
+           await handleApiError(response);
+           const data = await response.json();
+           return data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     //Request Appointment API Services
     getMedicalStaffProfile: async (token) => {
         const apiEndpoint = API_BASE_URL + '/medical-staff/profile';
