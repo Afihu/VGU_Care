@@ -9,6 +9,7 @@ import Modal from '../components/Modal.js';
 import LogoutButton from '../components/LogoutButton.js';
 
 export default function AppointmentView() {
+
   const rawUserInfo = localStorage.getItem('session-info');
   const navigateTo = useNavigate();
   const parsed = helpers.JSONparser(rawUserInfo);
@@ -21,6 +22,7 @@ export default function AppointmentView() {
   const [isTemAdviceModalOpen, setIsTemAdviceModalOpen] = useState(false);
   const [isSeeAdviceModalOpen, setIsSeeAdviceModalOpen] = useState(false);
   const [isCancelConfirmModalOpen, setIsCancelConfirmModalOpen] = useState(false);
+  const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false); // New state for reject confirmation
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [adviceList, setAdviceList] = useState([]);
   const [userInfo, setUserInfo] = useState(parsed.user);
@@ -42,6 +44,7 @@ export default function AppointmentView() {
     setAdviceList([]);
   };
   const closeCancelConfirmModal = () => setIsCancelConfirmModalOpen(false);
+  const closeRejectConfirmModal = () => setIsRejectConfirmModalOpen(false); // New close handler
 
   const handleCardClick = (appointment) => {
     setSelectedAppointment(appointment);
@@ -54,7 +57,7 @@ export default function AppointmentView() {
 
   const handleRescheduleClick = () => {
     if (!selectedAppointment) return;
-    if ((selectedAppointment.status === 'cancelled') || (selectedAppointment.status === 'rejected') ) {
+    if ((selectedAppointment.status === 'cancelled') || (selectedAppointment.status === 'rejected')) {
         navigateTo('/request-appointment');
     } else {
         navigateTo(`/reschedule/${selectedAppointment.id}`);
@@ -80,7 +83,7 @@ export default function AppointmentView() {
     if (!selectedAppointment) return;
     try {
         await api.appointmentUpdateService(userToken, selectedAppointment.id, "", "cancelled", "", "", "");
-        const updatedAppointments = userAppointments.map(app => 
+        const updatedAppointments = userAppointments.map(app =>
             app.id === selectedAppointment.id ? { ...app, status: 'cancelled' } : app
         );
         setUserAppointments(updatedAppointments);
@@ -90,6 +93,23 @@ export default function AppointmentView() {
     } catch (error) {
         console.error("Failed to cancel appointment:", error);
         alert("There was an error cancelling the appointment.");
+    }
+  };
+
+  const handleConfirmReject = async () => {
+    if (!selectedAppointment) return;
+    try {
+        await api.appointmentUpdateService(userToken, selectedAppointment.id, "", "rejected", "", "", "");
+        const updatedAppointments = userAppointments.map(app =>
+            app.id === selectedAppointment.id ? { ...app, status: 'rejected' } : app
+        );
+        setUserAppointments(updatedAppointments);
+        alert("Appointment has been rejected.");
+        closeModal();
+        closeRejectConfirmModal();
+    } catch (error) {
+        console.error("Failed to reject appointment:", error);
+        alert("There was an error rejecting the appointment.");
     }
   };
 
@@ -115,6 +135,7 @@ export default function AppointmentView() {
       setFilteredAppointments(filtered);
     }
   }, [filter, userAppointments]);
+
 
   return (
     <div className="appointment-view">
@@ -164,8 +185,8 @@ export default function AppointmentView() {
                     )}
                     {(userInfo.role === 'student' && selectedAppointment.status !== 'cancelled') ? (
                         <button className="modal-button cancel-appointment" onClick={() => setIsCancelConfirmModalOpen(true)}>Cancel Appointment</button>
-                    ) : (userInfo.role === 'medical_staff' && selectedAppointment.status !== 'cancelled') ? (
-                        <button className="modal-button cancel-appointment">Reject Appointment</button>
+                    ) : (userInfo.role === 'medical_staff' && selectedAppointment.status === 'pending') ? (
+                        <button className="modal-button cancel-appointment" onClick={() => setIsRejectConfirmModalOpen(true)}>Reject Appointment</button>
                     ) : null}
                     <button className="modal-button" onClick={closeModal}>Close</button>
                 </div>
@@ -192,6 +213,14 @@ export default function AppointmentView() {
           </div>
       </Modal>
 
+      <Modal isOpen={isRejectConfirmModalOpen} onClose={closeRejectConfirmModal} title="Confirm Rejection">
+          <p>Are you sure you want to reject this appointment?</p>
+          <div className="modal-actions">
+              <button className="modal-button yes" onClick={handleConfirmReject}>Yes</button>
+              <button className="modal-button no" onClick={closeRejectConfirmModal}>No</button>
+          </div>
+      </Modal>
+
       <Modal isOpen={isSeeAdviceModalOpen} onClose={closeSeeAdviceModal} title="Provisional Advice">
         <div className="advice-list-container">
             {adviceList.length > 0 ? (
@@ -211,7 +240,7 @@ export default function AppointmentView() {
             </div>
         </div>
       </Modal>
-      
+
       <LogoutButton/>
     </div>
   );
