@@ -10,36 +10,35 @@ export default function TrackMood() {
 
     const [mood, setMood] = useState('');
     const [note, setNote] = useState('');
-    const [saved, setSaved] = useState(false);
     const [entries, setEntries] = useState([]);
 
-    useEffect(() => {
-        const fetchMoodEntries = async () => {
-            try {
-                const sessionInfo = JSON.parse(localStorage.getItem('session-info'));
-                const token = sessionInfo?.token;
+    const fetchMoodEntries = async () => {
+        try {
+            const sessionInfo = JSON.parse(localStorage.getItem('session-info'));
+            const token = sessionInfo?.token;
 
-                if (!token) {
-                    console.warn('No token found in session-info');
-                    return;
-                }
+            if (!token) {
+                console.warn('No token found in session-info');
+                return;
+            }
 
-                const response = await api.getMoodEntries(token);
-                const data = await response.json();
+            const response = await api.getMoodEntries(token);
+            const data = await response.json();
 
-                if (Array.isArray(data.moodEntries)) {
-                    setEntries(data.moodEntries);
-                } else {
-                    console.warn('Invalid mood entry response format:', data);
-                    setEntries([]);
-                }
-            } catch (error) {
-                console.error('Failed to fetch mood entries:', error);
+            if (Array.isArray(data.moodEntries)) {
+                setEntries(data.moodEntries);
+            } else {
+                console.warn('Invalid mood entry response format:', data);
                 setEntries([]);
             }
-        };
+        } catch (error) {
+            console.error('Failed to fetch mood entries:', error);
+            setEntries([]);
+        }
+    };
 
-        fetchMoodEntries();
+    useEffect(() => {
+        fetchMoodEntries(); // Load on first render
     }, []);
 
     const handleSubmit = async (e) => {
@@ -54,14 +53,18 @@ export default function TrackMood() {
             const sessionInfo = JSON.parse(localStorage.getItem('session-info'));
             const token = sessionInfo?.token;
 
-            const response = await api.createMoodEntry(token, { mood: mood.toLowerCase(), notes: note });
+            const response = await api.createMoodEntry(token, {
+                mood: mood.toLowerCase(),
+                notes: note
+            });
+
             const data = await response.json();
 
             if (data?.moodEntry) {
-                console.log('Mood entry saved');
                 alert('Mood saved successfully!');
-                setSaved(true);
-                navigate('/home');
+                setMood('');
+                setNote('');
+                fetchMoodEntries(); // 🔄 Refresh list without navigating
             } else {
                 alert('Mood submission failed.');
             }
@@ -99,13 +102,11 @@ export default function TrackMood() {
 
                         <button type="submit" className="save-button">Save Mood</button>
                     </form>
-
-                    {saved && <p className="success-message">Mood saved successfully</p>}
                 </div>
 
                 <MoodEntryList entries={entries} />
             </div>
-        <LogoutButton />
+            <LogoutButton />
         </div>
     );
 }
