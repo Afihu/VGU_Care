@@ -24,7 +24,7 @@ function Header() {
     return(
         <>
             <SideBar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-            <header className='header' onClick={() => navigateTo('/home')}>
+            <header className='header'>
                 {/* Left Section */}
                 <div className="header-left">
                     <button className="menu-button" onClick={toggleSidebar}>
