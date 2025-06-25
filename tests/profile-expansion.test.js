@@ -195,7 +195,7 @@ async function runProfileExpansionTests() {
       });
 
       test.it('should prevent cross-role profile updates', async function() {
-        // Try to update medical staff profile as student
+        // Try to update medical staff profile as student;
         const response = await makeRequest(`${API_BASE_URL}/api/medical-staff/profile`, 'PUT', { specialty: 'Hacked' }, {
           'Authorization': `Bearer ${testHelper.auth.getToken('student')}`
         });

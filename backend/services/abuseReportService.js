@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const emailService = require('./emailService');
 
 class AbuseReportService {
   /**
@@ -42,15 +43,40 @@ class AbuseReportService {
         throw new Error('Medical staff not found');
       }
       staffId = staffResult.rows[0].staff_id;
-    }
-
-    const result = await query(`
+    }    const result = await query(`
       INSERT INTO abuse_reports (staff_id, student_id, description, report_type, appointment_id)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING report_id, staff_id, student_id, report_date, description, status, report_type, appointment_id
     `, [staffId, studentDbId, description, reportType, appointmentId]);
 
-    return result.rows[0];
+    const report = result.rows[0];
+
+    // Send email notification to admin
+    try {
+      // Get reporter and student details for email
+      const reporterResult = await query('SELECT name, email FROM users WHERE user_id = $1', [reporterId]);
+      const studentDetailsResult = await query('SELECT name FROM users WHERE user_id = $1', [studentId]);
+      
+      const reporterName = reporterResult.rows[0]?.name || 'Unknown';
+      const studentName = studentDetailsResult.rows[0]?.name || 'Unknown Student';
+      
+      // Send to admin email
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@vgucare.edu.vn';
+      await emailService.sendAbuseReportNotificationEmail(
+        adminEmail,
+        {
+          reportType,
+          description
+        },
+        reporterName,
+        studentName
+      );
+    } catch (emailError) {
+      console.error('Failed to send abuse report email notification:', emailError.message);
+      // Don't fail the report creation if email fails
+    }
+
+    return report;
   }
 
   /**

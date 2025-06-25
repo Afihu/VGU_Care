@@ -35,8 +35,8 @@ Write-Host "💬 Running Advice System Tests..." -ForegroundColor Yellow
 docker-compose --profile test run --rm test node tests/advice.test.js
 
 Write-Host ""
-Write-Host "😊 Running Mood Entry Tests..." -ForegroundColor Yellow
-docker-compose --profile test run --rm test node tests/mood.test.js
+Write-Host "📧 Running Email Service Tests..." -ForegroundColor Yellow
+docker-compose --profile test run --rm test node tests/email.test.js
 
 Write-Host ""
 Write-Host "🔔 Running Notification System Tests..." -ForegroundColor Yellow

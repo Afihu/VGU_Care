@@ -1,0 +1,42 @@
+<p>Dear {{staffName}},</p>
+<p><strong>Important:</strong> One of your assigned patients has updated their symptoms and may require immediate attention.</p>
+
+<div class="alert">
+  <h3>📋 Patient Information:</h3>
+  <ul>
+    <li><strong>Patient:</strong> {{studentName}}</li>
+    <li><strong>Patient Email:</strong> {{studentEmail}}</li>
+    <li><strong>Appointment ID:</strong> {{appointmentId}}</li>
+    <li><strong>Current Status:</strong> {{status}}</li>
+    <li><strong>Priority Level:</strong> {{priorityLevel}}</li>
+  </ul>
+</div>
+
+<div class="alert">
+  <h3>📅 Appointment Schedule:</h3>
+  <ul>
+    <li><strong>Date:</strong> {{appointmentDate}}</li>
+    <li><strong>Time:</strong> {{appointmentTime}}</li>
+  </ul>
+</div>
+
+<div class="urgent">
+  <h3>🔴 Updated Symptoms:</h3>
+  <p style="font-weight: bold; background-color: #ffffff; padding: 15px; border-radius: 3px; margin: 10px 0; color: #721c24;">
+    {{symptoms}}
+  </p>
+</div>
+
+<div class="actions">
+  <h3>📋 Recommended Actions:</h3>
+  <ul>
+    <li><strong>Review symptom changes immediately</strong> - Compare with initial symptoms</li>
+    <li><strong>Assess urgency level</strong> - Consider if priority should be increased</li>
+    <li><strong>Contact patient if needed</strong> - For clarification or immediate advice</li>
+    <li><strong>Update appointment scheduling</strong> - If urgent care is required</li>
+    <li><strong>Provide medical guidance</strong> - Through the VGU Care system</li>
+  </ul>
+</div>
+
+<p>This is an automated notification sent when patients update their symptoms. Please review this case promptly and take appropriate medical action.</p>
+<p>Log into the VGU Care system to view the complete appointment details and respond to the patient.</p>
