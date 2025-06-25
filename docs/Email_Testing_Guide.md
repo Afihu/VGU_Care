@@ -41,13 +41,13 @@ node tests/email.test.js
 
 ## Expected Results
 
-✅ **2 emails sent:**
+**2 emails sent:**
 - **Medical Staff:** Symptom update notification
 - **Student:** Appointment approval notification
 
-✅ **Console output:** Detailed test progress with ✅/❌ status
+ **Console output:** Detailed test progress with ✅/❌ status
 
-✅ **Database:** All data properly stored and cleaned up
+ **Database:** All data properly stored and cleaned up
 
 ## Troubleshooting
 

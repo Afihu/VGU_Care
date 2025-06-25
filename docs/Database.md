@@ -88,7 +88,7 @@ Based on our ERD diagram, the following is the detailed rundown of the VGU Care 
 
 ## Recent Schema Updates (June 2025)
 
-### Profile Expansion Features ✨
+### Profile Expansion Features 
 
 #### Student Housing Location
 ```sql

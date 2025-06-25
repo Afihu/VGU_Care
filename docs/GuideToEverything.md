@@ -488,7 +488,7 @@ docker-compose up --build
 ```
 
 ## Nuclear Options
-⚠️ **WARNING: This will destroy ALL data and completely reset the system!**
+ **WARNING: This will destroy ALL data and completely reset the system!**
 
 Use this when:
 - Multiple services are corrupted
@@ -511,7 +511,7 @@ docker-compose rm -f -v
 docker rmi $(docker images "vgu_care*" -q) 2>/dev/null || true
 docker rmi $(docker images "vgu-care*" -q) 2>/dev/null || true
 
-# 4. Remove ALL VGU Care volumes (⚠️ THIS DELETES ALL DATA!)
+# 4. Remove ALL VGU Care volumes ( THIS DELETES ALL DATA!)
 docker volume rm vgu_care_db_data 2>/dev/null || true
 docker volume rm vgu_care_uploads 2>/dev/null || true
 docker volume rm $(docker volume ls | grep vgu_care | awk '{print $2}') 2>/dev/null || true
@@ -549,7 +549,7 @@ docker-compose ps
 
 ### One-Line Nuclear Command:
 ```bash
-# ⚠️ NUCLEAR OPTION - Use with extreme caution!
+#  NUCLEAR OPTION - Use with extreme caution!
 docker stop $(docker ps -q) 2>/dev/null; docker-compose down --remove-orphans; docker-compose rm -f -v; docker rmi $(docker images "vgu_care*" -q) 2>/dev/null; docker volume rm $(docker volume ls | grep vgu_care | awk '{print $2}') 2>/dev/null; docker system prune -af --volumes; docker-compose build --no-cache; docker-compose up -d
 ```
 
