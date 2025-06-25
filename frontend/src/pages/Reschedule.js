@@ -14,11 +14,12 @@ function Reschedule() {
 
     const [newDate, setNewDate] = useState('');
     const [newTime, setNewTime] = useState('');
+    const [newSymptoms, setNewSymptoms] = useState(''); 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleReschedule = async () => {
-        if (!newDate && !newTime) {
-            alert("Please provide at least a new date or time.");
+        if (!newDate && !newTime && !newSymptoms) {
+            alert("Please provide at least one change: a new date, time, or updated symptoms.");
             return;
         }
         setIsSubmitting(true);
@@ -27,13 +28,13 @@ function Reschedule() {
             await api.appointmentUpdateService(
                 userToken,
                 appointmentId,
-                "", // newSymptoms
-                "", // newStatus
-                "", // newPriority
+                newSymptoms, 
+                "",   // newStatus
+                "",          
                 newDate,
                 newTime
             );
-            alert("Your appointment has been successfully rescheduled and is pending approval.");
+            alert("Your appointment has been successfully updated and is pending approval.");
             navigate('/appointment-view');
 
         } catch (error) {
@@ -48,12 +49,25 @@ function Reschedule() {
         <div className="reschedule-page">
             <div className="reschedule-container">
                 <div className="reschedule-header">
-                    <h1 className="reschedule-title">Reschedule Appointment</h1>
-                    <p className="reschedule-subtitle">Please select a new date and/or time for your appointment.</p>
+                    <h1 className="reschedule-title">Update Appointment</h1>
+                    <p className="reschedule-subtitle">You can update your symptoms, select a new date and time, or both.</p>
                 </div>
 
                 <div className="form-section">
-                    <label htmlFor="date-input">Select Date</label>
+                    <label htmlFor="symptoms-input">Update Symptoms (optional)</label>
+                    <textarea
+                        id="symptoms-input"
+                        className="reschedule-textarea"
+                        placeholder="Enter your updated symptoms..."
+                        value={newSymptoms}
+                        onChange={(e) => setNewSymptoms(e.target.value)}
+                        disabled={isSubmitting}
+                        rows="4"
+                    ></textarea>
+                </div>
+
+                <div className="form-section">
+                    <label htmlFor="date-input">Select New Date (optional)</label>
                     <input
                         id="date-input"
                         type="date"
@@ -65,7 +79,7 @@ function Reschedule() {
                 </div>
 
                 <div className="form-section">
-                    <label htmlFor="time-input">Select Time</label>
+                    <label htmlFor="time-input">Select New Time (optional)</label>
                     <input
                         id="time-input"
                         type="time"
@@ -92,7 +106,7 @@ function Reschedule() {
                         onClick={handleReschedule}
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? 'Submitting...' : 'Confirm Reschedule'}
+                        {isSubmitting ? 'Submitting...' : 'Confirm Changes'}
                     </button>
                     <button 
                         className="reschedule-button cancel"

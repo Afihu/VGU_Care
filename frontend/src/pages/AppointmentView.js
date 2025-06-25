@@ -178,7 +178,7 @@ export default function AppointmentView() {
                         <button className="modal-button accept" onClick={() => setIsTemAdviceModalOpen(true)}>Accept Appointment</button>
                     )}
                     {(userInfo.role === 'student') && (
-                        <button className="modal-button reschedule" onClick={handleRescheduleClick}>Reschedule Appointment</button>
+                        <button className="modal-button reschedule" onClick={handleRescheduleClick}>Modify Appointment</button>
                     )}
                     {(userInfo.role === 'student' && selectedAppointment.hasAdvice) && (
                         <button className="modal-button see-advice" onClick={handleSeeAdvice}>See Provisional Advice</button>

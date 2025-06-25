@@ -99,6 +99,17 @@
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
+.reschedule-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+    font-family: inherit;
+    resize: vertical;
+}
+
 .reschedule-button:active {
     transform: translateY(1px);
 }
