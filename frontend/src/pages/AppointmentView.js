@@ -9,7 +9,6 @@ import Modal from '../components/Modal.js';
 import LogoutButton from '../components/LogoutButton.js';
 
 export default function AppointmentView() {
-
   const rawUserInfo = localStorage.getItem('session-info');
   const navigateTo = useNavigate();
   const parsed = helpers.JSONparser(rawUserInfo);
@@ -21,7 +20,7 @@ export default function AppointmentView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTemAdviceModalOpen, setIsTemAdviceModalOpen] = useState(false);
   const [isSeeAdviceModalOpen, setIsSeeAdviceModalOpen] = useState(false);
-  const [isCancelConfirmModalOpen, setIsCancelConfirmModalOpen] = useState(false); // New state for cancel confirmation
+  const [isCancelConfirmModalOpen, setIsCancelConfirmModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [adviceList, setAdviceList] = useState([]);
   const [userInfo, setUserInfo] = useState(parsed.user);
@@ -44,7 +43,6 @@ export default function AppointmentView() {
   };
   const closeCancelConfirmModal = () => setIsCancelConfirmModalOpen(false);
 
-
   const handleCardClick = (appointment) => {
     setSelectedAppointment(appointment);
     setIsModalOpen(true);
@@ -52,7 +50,16 @@ export default function AppointmentView() {
 
   const handleProvideTempAdvice = (appointmentId) => {
     navigateTo(`/provide-advice/${appointmentId}`);
-  }
+  };
+
+  const handleRescheduleClick = () => {
+    if (!selectedAppointment) return;
+    if ((selectedAppointment.status === 'cancelled') || (selectedAppointment.status === 'rejected') ) {
+        navigateTo('/request-appointment');
+    } else {
+        navigateTo(`/reschedule/${selectedAppointment.id}`);
+    }
+  };
 
   const handleSeeAdvice = async () => {
     if (!selectedAppointment) return;
@@ -71,16 +78,12 @@ export default function AppointmentView() {
 
   const handleConfirmCancel = async () => {
     if (!selectedAppointment) return;
-
     try {
         await api.appointmentUpdateService(userToken, selectedAppointment.id, "", "cancelled", "", "", "");
-        
-        // Update local state to reflect the change immediately
         const updatedAppointments = userAppointments.map(app => 
             app.id === selectedAppointment.id ? { ...app, status: 'cancelled' } : app
         );
         setUserAppointments(updatedAppointments);
-        
         alert("Appointment has been cancelled.");
         closeModal();
         closeCancelConfirmModal();
@@ -113,7 +116,6 @@ export default function AppointmentView() {
     }
   }, [filter, userAppointments]);
 
-
   return (
     <div className="appointment-view">
       <div className="appointment-main-column">
@@ -131,7 +133,6 @@ export default function AppointmentView() {
           </div>
         </div>
       </div>
-
       <div className="appointment-image-container">
         <img src={greens} alt="Healthy Greens" className="appointment-image" />
       </div>
@@ -145,34 +146,27 @@ export default function AppointmentView() {
                 <p><strong>Date Scheduled:</strong> {new Date(selectedAppointment.dateScheduled).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 <p><strong>Time Scheduled:</strong> {selectedAppointment.timeScheduled}</p>
                 <p><strong>Priority:</strong> {selectedAppointment.priorityLevel}</p>
-                {
-                  (userInfo.role === 'medical_staff') &&
+                {(userInfo.role === 'medical_staff') && (
                     <>
                       <p><strong>Student Name:</strong> {selectedAppointment.studentName}</p>
                       <p><strong>Student Email:</strong> {selectedAppointment.studentEmail}</p>
                     </>
-                }
-
+                )}
                 <div className="modal-actions">
-                    {
-                      (selectedAppointment.status === 'pending' && userInfo.role === 'medical_staff') &&
+                    {(selectedAppointment.status === 'pending' && userInfo.role === 'medical_staff') && (
                         <button className="modal-button accept" onClick={() => setIsTemAdviceModalOpen(true)}>Accept Appointment</button>
-                    }
-                    {
-                      (userInfo.role === 'student') &&
-                        <button className="modal-button reschedule">Reschedule Appointment</button>
-                    }
-                    {
-                      (userInfo.role === 'student' && selectedAppointment.hasAdvice) &&
+                    )}
+                    {(userInfo.role === 'student') && (
+                        <button className="modal-button reschedule" onClick={handleRescheduleClick}>Reschedule Appointment</button>
+                    )}
+                    {(userInfo.role === 'student' && selectedAppointment.hasAdvice) && (
                         <button className="modal-button see-advice" onClick={handleSeeAdvice}>See Provisional Advice</button>
-                    }
-                    {
-                      (userInfo.role === 'student' && selectedAppointment.status !== 'cancelled') ?
+                    )}
+                    {(userInfo.role === 'student' && selectedAppointment.status !== 'cancelled') ? (
                         <button className="modal-button cancel-appointment" onClick={() => setIsCancelConfirmModalOpen(true)}>Cancel Appointment</button>
-                        : (userInfo.role === 'medical_staff' && selectedAppointment.status !== 'cancelled') ?
+                    ) : (userInfo.role === 'medical_staff' && selectedAppointment.status !== 'cancelled') ? (
                         <button className="modal-button cancel-appointment">Reject Appointment</button>
-                        : null
-                    }
+                    ) : null}
                     <button className="modal-button" onClick={closeModal}>Close</button>
                 </div>
             </div>
@@ -217,7 +211,7 @@ export default function AppointmentView() {
             </div>
         </div>
       </Modal>
-
+      
       <LogoutButton/>
     </div>
   );
