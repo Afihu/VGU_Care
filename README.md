@@ -28,7 +28,6 @@ The app aims to provide a platform for medical personnels and students to commun
 - **[API Documentation](docs/API_Documentation.md)** - Detailed API endpoints and usage
 - **[Database Documentation](docs/Database.md)** - Database schema, migrations, and management
 - **[Test Refactoring Summary](docs/TEST_REFACTORING_SUMMARY.md)** - Information about the test suite structure
-- **[Backend Logs](docs/Backend_logs.md)** - Backend development and feature logs
 
 ## 🏗️ Architecture
 
