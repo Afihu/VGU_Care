@@ -411,30 +411,21 @@ class AdminService extends BaseService {
    * Get all abuse reports across the system
    */
   async getAllAbuseReports() {
-    const result = await query(`
-      SELECT 
-        ar.report_id, ar.report_date, ar.description, ar.status,
-        ms.staff_id, staff_user.name as staff_name, staff_user.email as staff_email,
-        ar.student_id, student_user.name as student_name, student_user.email as student_email
-      FROM abuse_reports ar
-      JOIN medical_staff ms ON ar.staff_id = ms.staff_id
-      JOIN users staff_user ON ms.user_id = staff_user.user_id
-      LEFT JOIN students s ON ar.student_id = s.student_id
-      LEFT JOIN users student_user ON s.user_id = student_user.user_id
-      ORDER BY ar.report_date DESC
-    `);
-
+    const result = await query(
+      `SELECT
+         report_id, staff_id, student_id, report_date, description, status, appointment_id, report_type
+       FROM abuse_reports
+       ORDER BY report_date DESC`
+    );
     return result.rows.map(row => ({
-      id: row.report_id,
+      reportId: row.report_id,
       staffId: row.staff_id,
-      staffName: row.staff_name,
-      staffEmail: row.staff_email,
       studentId: row.student_id,
-      studentName: row.student_name,
-      studentEmail: row.student_email,
       reportDate: row.report_date,
       description: row.description,
-      status: row.status
+      status: row.status,
+      appointmentId: row.appointment_id,
+      reportType: row.report_type
     }));
   }
 

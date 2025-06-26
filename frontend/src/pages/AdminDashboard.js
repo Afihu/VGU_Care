@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../css/AdminDashboard.css';
 import AdminDataTable from '../components/AdminDataTable';
 import Modal from '../components/Modal';
-import { getAllStudents, getAllMedicalStaff, updateUserRole, updateUserStatus, updateUserName } from '../services/adminService';
+import { getAllStudents, getAllMedicalStaff, getAllAbuseReports, updateUserRole, updateUserStatus, updateUserName } from '../services/adminService';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -19,6 +19,15 @@ const AdminDashboard = () => {
   const [modalTitle, setModalTitle] = useState('');
   const [modalChildren, setModalChildren] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // State for abuse reports
+  const [abuseReports, setAbuseReports] = useState([]);
+
+  // Compute report counts by student
+  const reportCounts = abuseReports.reduce((acc, r) => {
+    acc[r.studentId] = (acc[r.studentId] || 0) + 1;
+    return acc;
+  }, {});
 
   // Check if user is admin
   useEffect(() => {
@@ -48,13 +57,15 @@ const AdminDashboard = () => {
     setError('');
     
     try {
-      const [studentsData, medicalStaffData] = await Promise.all([
+      const [studentsData, medicalStaffData, abuseReportsData] = await Promise.all([
         getAllStudents(),
-        getAllMedicalStaff()
+        getAllMedicalStaff(),
+        getAllAbuseReports()
       ]);
       
       setStudents(studentsData.students || []);
       setMedicalStaff(medicalStaffData.medicalStaff || []);
+      setAbuseReports(abuseReportsData.reports || []);
     } catch (err) {
       console.error('Error loading users:', err);
       setError('Failed to load user data. Please try again.');
@@ -201,6 +212,31 @@ const AdminDashboard = () => {
     }
   ];
 
+  // Columns for abuse reports table
+  const abuseReportColumns = [
+    {
+      key: 'studentId',
+      header: 'Student ID',
+      render: (row) => {
+        const count = reportCounts[row.studentId] || 0;
+        const style = count >= 3 ? { color: 'red' } : {};
+        return <span style={style}>{row.studentId}</span>;
+      }
+    },
+    { key: 'description', header: 'Description' },
+    { key: 'reportDate', header: 'Date' },
+    { 
+      key: 'status', 
+      header: 'Status',
+      render: (row) => (
+        <span className={`status-badge status-${row.status}`}>
+          {row.status}
+        </span>
+      )
+    },
+    { key: 'reportType', header: 'Type' }
+  ];
+
   return (
     <div className="admin-dashboard">      <Modal
         isOpen={isModalOpen}
@@ -242,6 +278,12 @@ const AdminDashboard = () => {
         >
           Medical Staff ({medicalStaff.length})
         </button>
+        <button
+          className={`tab-button ${activeTab === 'abuse-reports' ? 'active' : ''}`}
+          onClick={() => setActiveTab('abuse-reports')}
+        >
+          Abuse Reports ({abuseReports.length})
+        </button>
       </div>
 
       <div className="dashboard-content">
@@ -264,6 +306,16 @@ const AdminDashboard = () => {
             loading={loading}
             onEditClick={handleEditUser}
             emptyMessage="No medical staff found"
+          />
+        )}
+
+        {activeTab === 'abuse-reports' && (
+          <AdminDataTable
+            data={abuseReports}
+            columns={abuseReportColumns}
+            title="Abuse Reports Management"
+            loading={loading}
+            emptyMessage="No abuse reports found"
           />
         )}
       </div>
