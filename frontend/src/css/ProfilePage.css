@@ -116,3 +116,13 @@
     color: #374151;
     font-weight: 600;
 }
+
+.profile-footer-note {
+  background-color: #f9fafb;
+  padding: 20px 30px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+  font-style: italic;
+}

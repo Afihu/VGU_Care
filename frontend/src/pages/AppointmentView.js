@@ -22,7 +22,8 @@ export default function AppointmentView() {
   const [isTemAdviceModalOpen, setIsTemAdviceModalOpen] = useState(false);
   const [isSeeAdviceModalOpen, setIsSeeAdviceModalOpen] = useState(false);
   const [isCancelConfirmModalOpen, setIsCancelConfirmModalOpen] = useState(false);
-  const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false); // New state for reject confirmation
+  const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false);
+  const [isCompleteConfirmModalOpen, setIsCompleteConfirmModalOpen] = useState(false); // New state
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [adviceList, setAdviceList] = useState([]);
   const [userInfo, setUserInfo] = useState(parsed.user);
@@ -44,7 +45,8 @@ export default function AppointmentView() {
     setAdviceList([]);
   };
   const closeCancelConfirmModal = () => setIsCancelConfirmModalOpen(false);
-  const closeRejectConfirmModal = () => setIsRejectConfirmModalOpen(false); // New close handler
+  const closeRejectConfirmModal = () => setIsRejectConfirmModalOpen(false);
+  const closeCompleteConfirmModal = () => setIsCompleteConfirmModalOpen(false); // New close handler
 
   const handleCardClick = (appointment) => {
     setSelectedAppointment(appointment);
@@ -79,37 +81,40 @@ export default function AppointmentView() {
     }
   };
 
-  const handleConfirmCancel = async () => {
-    if (!selectedAppointment) return;
+  const updateAppointmentStatus = async (appointmentId, status) => {
     try {
-        await api.appointmentUpdateService(userToken, selectedAppointment.id, "", "cancelled", "", "", "");
+        await api.appointmentUpdateService(userToken, appointmentId, "", status, "", "", "");
         const updatedAppointments = userAppointments.map(app =>
-            app.id === selectedAppointment.id ? { ...app, status: 'cancelled' } : app
+            app.id === appointmentId ? { ...app, status: status } : app
         );
         setUserAppointments(updatedAppointments);
-        alert("Appointment has been cancelled.");
-        closeModal();
-        closeCancelConfirmModal();
+        alert(`Appointment has been updated to ${status}.`);
+        return true;
     } catch (error) {
-        console.error("Failed to cancel appointment:", error);
-        alert("There was an error cancelling the appointment.");
+        console.error(`Failed to update appointment to ${status}:`, error);
+        alert(`There was an error updating the appointment.`);
+        return false;
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (await updateAppointmentStatus(selectedAppointment.id, 'cancelled')) {
+      closeModal();
+      closeCancelConfirmModal();
     }
   };
 
   const handleConfirmReject = async () => {
-    if (!selectedAppointment) return;
-    try {
-        await api.appointmentUpdateService(userToken, selectedAppointment.id, "", "rejected", "", "", "");
-        const updatedAppointments = userAppointments.map(app =>
-            app.id === selectedAppointment.id ? { ...app, status: 'rejected' } : app
-        );
-        setUserAppointments(updatedAppointments);
-        alert("Appointment has been rejected.");
-        closeModal();
-        closeRejectConfirmModal();
-    } catch (error) {
-        console.error("Failed to reject appointment:", error);
-        alert("There was an error rejecting the appointment.");
+    if (await updateAppointmentStatus(selectedAppointment.id, 'rejected')) {
+      closeModal();
+      closeRejectConfirmModal();
+    }
+  };
+
+  const handleConfirmComplete = async () => {
+    if (await updateAppointmentStatus(selectedAppointment.id, 'completed')) {
+      closeModal();
+      closeCompleteConfirmModal();
     }
   };
 
@@ -147,6 +152,7 @@ export default function AppointmentView() {
           <button type="button" className="appointment-button button-pending" onClick={() => setFilter("PENDING")}>PENDING</button>
           <button type="button" className="appointment-button button-rejected" onClick={() => setFilter("REJECTED")}>REJECTED</button>
           <button type="button" className="appointment-button button-cancelled" onClick={() => setFilter("CANCELLED")}>CANCELLED</button>
+          <button type="button" className="appointment-button button-completed" onClick={() => setFilter("COMPLETED")}>COMPLETED</button>
         </div>
         <div className='appointment-content'>
           <div className="appointments-container">
@@ -169,25 +175,33 @@ export default function AppointmentView() {
                 <p><strong>Priority:</strong> {selectedAppointment.priorityLevel}</p>
                 {(userInfo.role === 'medical_staff') && (
                     <>
-                      <p><strong>Student Name:</strong> {selectedAppointment.studentName}</p>
-                      <p><strong>Student Email:</strong> {selectedAppointment.studentEmail}</p>
+                        <p><strong>Student Name:</strong> {selectedAppointment.studentName}</p>
+                        <p><strong>Student Email:</strong> {selectedAppointment.studentEmail}</p>
                     </>
                 )}
                 <div className="modal-actions">
-                    {(selectedAppointment.status === 'pending' && userInfo.role === 'medical_staff') && (
-                        <button className="modal-button accept" onClick={() => setIsTemAdviceModalOpen(true)}>Accept Appointment</button>
+                    {selectedAppointment.status !== 'completed' && (
+                        <>
+                            {(selectedAppointment.status === 'pending' && userInfo.role === 'medical_staff') && (
+                                <button className="modal-button accept" onClick={() => setIsTemAdviceModalOpen(true)}>Accept Appointment</button>
+                            )}
+                            {(selectedAppointment.status === 'approved' && userInfo.role === 'medical_staff') && (
+                                <button className="modal-button complete" onClick={() => setIsCompleteConfirmModalOpen(true)}>Mark as Completed</button>
+                            )}
+                            {(userInfo.role === 'student') && (
+                                <button className="modal-button reschedule" onClick={handleRescheduleClick}>Modify Appointment</button>
+                            )}
+                            {(userInfo.role === 'student' && selectedAppointment.hasAdvice) && (
+                                <button className="modal-button see-advice" onClick={handleSeeAdvice}>See Provisional Advice</button>
+                            )}
+                            {(userInfo.role === 'student' && selectedAppointment.status !== 'cancelled') ? (
+                                <button className="modal-button cancel-appointment" onClick={() => setIsCancelConfirmModalOpen(true)}>Cancel Appointment</button>
+                            ) : (userInfo.role === 'medical_staff' && selectedAppointment.status === 'pending') ? (
+                                <button className="modal-button cancel-appointment" onClick={() => setIsRejectConfirmModalOpen(true)}>Reject Appointment</button>
+                            ) : null}
+                        </>
                     )}
-                    {(userInfo.role === 'student') && (
-                        <button className="modal-button reschedule" onClick={handleRescheduleClick}>Modify Appointment</button>
-                    )}
-                    {(userInfo.role === 'student' && selectedAppointment.hasAdvice) && (
-                        <button className="modal-button see-advice" onClick={handleSeeAdvice}>See Provisional Advice</button>
-                    )}
-                    {(userInfo.role === 'student' && selectedAppointment.status !== 'cancelled') ? (
-                        <button className="modal-button cancel-appointment" onClick={() => setIsCancelConfirmModalOpen(true)}>Cancel Appointment</button>
-                    ) : (userInfo.role === 'medical_staff' && selectedAppointment.status === 'pending') ? (
-                        <button className="modal-button cancel-appointment" onClick={() => setIsRejectConfirmModalOpen(true)}>Reject Appointment</button>
-                    ) : null}
+                    {/* --- The Close button is always visible --- */}
                     <button className="modal-button" onClick={closeModal}>Close</button>
                 </div>
             </div>
@@ -220,6 +234,14 @@ export default function AppointmentView() {
               <button className="modal-button no" onClick={closeRejectConfirmModal}>No</button>
           </div>
       </Modal>
+      
+      <Modal isOpen={isCompleteConfirmModalOpen} onClose={closeCompleteConfirmModal} title="Confirm Completion">
+          <p>Are you sure you want to mark this appointment as completed?</p>
+          <div className="modal-actions">
+              <button className="modal-button yes" onClick={handleConfirmComplete}>Yes</button>
+              <button className="modal-button no" onClick={closeCompleteConfirmModal}>No</button>
+          </div>
+      </Modal>
 
       <Modal isOpen={isSeeAdviceModalOpen} onClose={closeSeeAdviceModal} title="Provisional Advice">
         <div className="advice-list-container">
@@ -240,8 +262,6 @@ export default function AppointmentView() {
             </div>
         </div>
       </Modal>
-
-      <LogoutButton/>
     </div>
   );
 }

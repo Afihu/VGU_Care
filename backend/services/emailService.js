@@ -22,6 +22,7 @@ class EmailService extends BaseService {  constructor() {
     
     // Initialize SendGrid if using that provider
     if (process.env.EMAIL_PROVIDER === 'sendgrid' && process.env.SENDGRID_API_KEY) {
+      console.log('[EMAIL SERVICE] Initializing SendGrid with API key:', process.env.SENDGRID_API_KEY.substring(0, 10) + '...');
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     }
   }
@@ -108,6 +109,9 @@ class EmailService extends BaseService {  constructor() {
       // Use SendGrid directly if configured
       if (process.env.EMAIL_PROVIDER === 'sendgrid' && process.env.SENDGRID_API_KEY) {
         console.log(`[EMAIL DEBUG] Using SendGrid API directly`);
+        
+        // Re-initialize SendGrid API key to ensure it's current
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
         
         const msg = {
           to: to,

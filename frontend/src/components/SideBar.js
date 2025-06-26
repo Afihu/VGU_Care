@@ -78,7 +78,7 @@ const SideBar = ({ isOpen, toggleSidebar, onMouseEnter, onMouseLeave }) => {
                         
                         {/* --- Medical Staff-only Routes --- */}
                         {user.role === 'medical_staff' && (
-                            <li className="nav-item" onClick={() => handleNavigation('/manage-students')}>
+                            <li className="nav-item" onClick={() => handleNavigation('/manage-student')}>
                                 <span className="nav-icon"></span>
                                 <span className="nav-text">Manage Students</span>
                             </li>

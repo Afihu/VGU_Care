@@ -19,6 +19,7 @@ function ManageStudent() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [studentAppointment, setStudentAppointment] = useState([]);
 
     // functions
     const handleStudentRetrieve = async(token) => {
@@ -30,15 +31,23 @@ function ManageStudent() {
         const data = await api.reportRetrieveService(token);
         return data; 
     };    
+
+    const handleStudent_SpecificAppointmentRetrieve = async(token, studentId) => {
+        const data = await api.user_specificAppointmentRetrieveService(token, studentId);
+        return data;
+    }
     
     useEffect(() => {
         const fetchStudents = async() => {
           try {
             let data = await handleStudentRetrieve(userToken); 
+            let studentAppointmentData = await handleStudent_SpecificAppointmentRetrieve(userToken, "83d5b52a-2f0b-496f-b951-e6970662ec60");
             
             if(data && data.students){
                 setStudentData(data.students);
                 setFilteredStudents(data.students);
+
+                setStudentAppointment(studentAppointmentData);
             } else {
                 console.error('Invalid data structure received:', data);
             }
@@ -55,6 +64,9 @@ function ManageStudent() {
 
     useEffect(() => {
         console.log('students: ', studentData);  
+        console.log("student appointments: ", studentAppointment);
+        
+        
     }, [studentData]);
 
 
