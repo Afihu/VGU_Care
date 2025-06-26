@@ -13,12 +13,9 @@ const handleApiError = async (response) => {
         
         switch (response.status) {
         case 401:
-            // Token expired or invalid
-            localStorage.removeItem('token');
-            localStorage.removeItem('session-info');
             console.log('Authentication failed:', response.status);
             // Redirect to login page
-            window.location.href = '/login';
+            // window.location.href = '/login';
             throw new Error('Authentication failed. Please log in again.');
         case 403:
             // Access denied

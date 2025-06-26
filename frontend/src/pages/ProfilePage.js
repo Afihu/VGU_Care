@@ -112,6 +112,9 @@ function ProfilePage() {
                         </>
                     )}
                 </div>
+                <div className="profile-footer-note">
+                    *If you would like to modify your account information, please contact admin for support.
+                </div>
             </div>
             <LogoutButton />
         </div>
