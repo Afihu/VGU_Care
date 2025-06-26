@@ -262,8 +262,6 @@ export default function AppointmentView() {
             </div>
         </div>
       </Modal>
-
-      <LogoutButton/>
     </div>
   );
 }
